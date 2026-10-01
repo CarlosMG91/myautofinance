@@ -1,6 +1,6 @@
 # EP-001 · Especificación funcional
 
-**Estado:** contrato aprobado por el usuario el 2026-10-01; entrega Git pendiente. **Idioma y divisa:** español y EUR. **Zona horaria para el mes actual:** Europe/Madrid.
+**Estado:** contrato aprobado por el usuario el 2026-10-01 y entregado en `origin/main`. **Idioma y divisa:** español y EUR. **Zona horaria para el mes actual:** Europe/Madrid.
 
 ## 1. Objetivo y límites
 
@@ -139,4 +139,4 @@ La base SQLite reside en el almacenamiento privado local de cada instalación. L
 
 ## 8. Criterios de entrega de EP-001
 
-Los [casos de referencia](casos-referencia.md) deben poder ejecutarse como pruebas de aceptación en las épicas posteriores. El [registro de decisiones](decisiones.md) conserva el origen de cada regla. El usuario aprobó el contrato completo el 2026-10-01, con lo que se cumple la revisión funcional de T10; el cierre operativo de EP-001 queda pendiente de confirmar y subir sus artefactos al remoto Git configurado. El contrato aprobado ya puede servir de entrada a EP-002 y EP-003.
+Los [casos de referencia](casos-referencia.md) deben poder ejecutarse como pruebas de aceptación en las épicas posteriores. El [registro de decisiones](decisiones.md) conserva el origen de cada regla. El usuario aprobó el contrato completo el 2026-10-01 y sus artefactos están confirmados y subidos al remoto Git configurado. El contrato aprobado sirve de entrada a EP-002 y EP-003.

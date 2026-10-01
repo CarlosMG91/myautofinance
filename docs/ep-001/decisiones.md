@@ -1,6 +1,6 @@
 # EP-001 · Registro de decisiones
 
-**Estado:** contrato completo aprobado expresamente por el usuario el 2026-10-01; entrega Git pendiente de subida. La tabla conserva cuáles reglas procedían directamente de sus respuestas y cuáles fueron propuestas aceptadas en esa aprobación final.
+**Estado:** contrato completo aprobado expresamente por el usuario el 2026-10-01; artefactos de EP-001 confirmados y subidos a `origin/main`. La tabla conserva cuáles reglas procedían directamente de sus respuestas y cuáles fueron propuestas aceptadas en esa aprobación final.
 
 | Tema | Decisión | Origen |
 |---|---|---|
@@ -37,6 +37,6 @@ El formato concreto del XLS de Openbank sigue pendiente de una muestra real y se
 
 ## Entregas y dependencias
 
-T01–T09 están representados en la especificación, el contrato CSV y los casos numéricos. El usuario aprobó el conjunto el 2026-10-01 y satisfizo la revisión funcional de T10. La épica y sus diez tickets figuran en «My autofinance» como **MA-EPIC-001**; permanecen pendientes en el tablero hasta la entrega Git. EP-002 (propuesta visual) y EP-003 (base Flutter) pueden usar ya este contrato. La épica Openbank de MyFinance es un antecedente conceptual, sin código compartido ni dependencia de ejecución.
+T01–T09 están representados en la especificación, el contrato CSV y los casos numéricos. El usuario aprobó el conjunto el 2026-10-01 y satisfizo la revisión funcional de T10. Los artefactos de la épica **MA-EPIC-001** están entregados en Git; el estado administrativo de sus tickets se gestiona en el tablero «My autofinance». EP-002 (propuesta visual) y EP-003 (base Flutter) pueden usar ya este contrato. La épica Openbank de MyFinance es un antecedente conceptual, sin código compartido ni dependencia de ejecución.
 
-El repositorio Git y el remoto `origin` están configurados. La entrega de EP-001 se considera cerrada únicamente cuando sus artefactos estén confirmados y subidos a `origin/main`; un fallo de conexión o permisos mantiene pendiente la entrega y se informa como bloqueo. No se incluyen cambios ajenos ni se fuerza la subida.
+El repositorio Git y el remoto `origin` están configurados. Los artefactos de EP-001 se confirmaron y subieron a `origin/main` sin cambios ajenos ni subida forzada.
