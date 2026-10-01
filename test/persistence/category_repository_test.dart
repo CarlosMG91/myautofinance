@@ -144,7 +144,7 @@ void main() {
   });
 
   test(
-    'Migra v1 con respaldo, preserva metadatos y coincide con snapshot v2',
+    'Migra v1 con respaldo, preserva metadatos y coincide con snapshot vigente',
     () async {
       final path = store.databasePath!;
       await store.close();
@@ -184,7 +184,7 @@ void main() {
       expect(readSchemaVersion(backup), 1);
       backup.close();
       final snapshot = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v2.json')
+        File('drift_schemas/autofinance/drift_schema_v3.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();

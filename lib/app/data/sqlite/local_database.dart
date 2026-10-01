@@ -42,16 +42,26 @@ class LocalDatabase extends _$LocalDatabase {
             await customStatement(sql);
           }
         }
+        if (legacy.isNotEmpty) {
+          for (final sql in accountSchemaObjects) {
+            await customStatement(sql);
+          }
+        }
         await customStatement('PRAGMA application_id = $localApplicationId');
         await _checkIntegrity();
       });
     },
     onUpgrade: (_, from, to) async {
-      if (from != 1 || to != 2) {
+      if (from < 1 || from > 2 || to != 3) {
         throw const DatabaseFailure(DatabaseFailureCode.incompatible);
       }
       await transaction(() async {
-        for (final sql in categorySchemaObjects) {
+        if (from == 1) {
+          for (final sql in categorySchemaObjects) {
+            await customStatement(sql);
+          }
+        }
+        for (final sql in accountSchemaObjects) {
           await customStatement(sql);
         }
         await _checkIntegrity();
@@ -71,7 +81,8 @@ class LocalDatabase extends _$LocalDatabase {
     final foreignKeys = await customSelect('PRAGMA foreign_key_check').get();
     if (integrity.length != 1 ||
         integrity.single.data.values.single != 'ok' ||
-        foreignKeys.isNotEmpty) {
+        foreignKeys.isNotEmpty ||
+        (await customSelect(accountCoverageErrors).get()).isNotEmpty) {
       throw const DatabaseFailure(DatabaseFailureCode.incompatible);
     }
   }

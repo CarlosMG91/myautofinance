@@ -6,6 +6,8 @@ import 'package:myautofinance/app/data/sqlite/database_failure.dart';
 import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_category_repository.dart';
 import 'package:myautofinance/features/movements/movements.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
+import 'package:myautofinance/features/wealth/wealth.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -39,12 +41,49 @@ void main() {
           throwsA(isA<CategoryFailure>()),
         );
         await categories.setArchived(root.id, archived: true);
+        final accounts = SqliteAccountRepository(db);
+        final account = await accounts.create(
+          name: 'Cuenta sint?tica',
+          kind: AccountKind.account,
+          activeFrom: Month(2026, 1),
+          liquidity: Liquidity.liquid,
+        );
+        await accounts.changeLiquidity(
+          account.id,
+          Month(2026, 6),
+          Liquidity.medium,
+        );
+        await accounts.correctHistoricalLiquidity(
+          account.id,
+          Month(2026, 2),
+          Month(2026, 4),
+          Liquidity.illiquid,
+        );
+        await accounts.close(account.id, Month(2026, 8));
         await db.customStatement('UPDATE database_state SET revision=42');
         await store.close();
         final reopened = await store.open();
         final state = await reopened.select(reopened.databaseState).getSingle();
         expect(state.datasetId, initial.datasetId);
         expect(state.revision, 42);
+        final accountHistory = SqliteAccountRepository(reopened);
+        expect(
+          (await accountHistory.listForMonth(Month(2026, 1))).single.liquidity,
+          Liquidity.liquid,
+        );
+        expect(
+          (await accountHistory.listForMonth(Month(2026, 2))).single.liquidity,
+          Liquidity.illiquid,
+        );
+        expect(
+          (await accountHistory.listForMonth(Month(2026, 4))).single.liquidity,
+          Liquidity.liquid,
+        );
+        expect(
+          (await accountHistory.listForMonth(Month(2026, 8))).single.liquidity,
+          Liquidity.medium,
+        );
+        expect(await accountHistory.listForMonth(Month(2026, 9)), isEmpty);
         expect(
           (await SqliteCategoryRepository(reopened).get(leaf.id))!.archived,
           isTrue,

@@ -55,3 +55,54 @@ CREATE TRIGGER categories_update BEFORE UPDATE OF parent_id ON categories BEGIN
  ) SELECT max(depth) FROM descendants
  ) > 3;
 END;
+
+CREATE TABLE accounts (
+ id TEXT NOT NULL PRIMARY KEY CHECK (length(id)=36 AND substr(id,9,1)='-' AND substr(id,14,1)='-' AND substr(id,19,1)='-' AND substr(id,24,1)='-' AND length("replace"(id,'-',''))=32 AND "replace"(id,'-','') NOT GLOB '*[^0-9a-f]*'),
+ name TEXT NOT NULL CHECK(length(trim(name))>0),
+ kind TEXT NOT NULL CHECK(kind IN ('account','portfolio','debt')),
+ active_from TEXT NOT NULL CHECK(active_from GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(active_from,1,4) BETWEEN '0001' AND '9999' AND substr(active_from,6,2) BETWEEN '01' AND '12'),
+ active_through TEXT CHECK(active_through IS NULL OR (active_through GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(active_through,1,4) BETWEEN '0001' AND '9999' AND substr(active_through,6,2) BETWEEN '01' AND '12')),
+ created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+ CHECK(active_through IS NULL OR active_through>=active_from)
+);
+CREATE TABLE account_liquidity_periods (
+ id TEXT NOT NULL PRIMARY KEY CHECK (length(id)=36 AND substr(id,9,1)='-' AND substr(id,14,1)='-' AND substr(id,19,1)='-' AND substr(id,24,1)='-' AND length("replace"(id,'-',''))=32 AND "replace"(id,'-','') NOT GLOB '*[^0-9a-f]*'),
+ account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+ from_month TEXT NOT NULL CHECK(from_month GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(from_month,1,4) BETWEEN '0001' AND '9999' AND substr(from_month,6,2) BETWEEN '01' AND '12'),
+ until_month TEXT CHECK(until_month IS NULL OR (until_month GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(until_month,1,4) BETWEEN '0001' AND '9999' AND substr(until_month,6,2) BETWEEN '01' AND '12')),
+ liquidity TEXT NOT NULL CHECK(liquidity IN ('liquid','medium','illiquid')),
+ created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+ CHECK(until_month IS NULL OR until_month>from_month), UNIQUE(account_id,from_month)
+);
+CREATE TRIGGER liquidity_insert BEFORE INSERT ON account_liquidity_periods BEGIN
+ SELECT RAISE(ABORT,'liquidity_bounds') WHERE NOT EXISTS (
+ SELECT 1 FROM accounts a WHERE a.id=NEW.account_id AND a.kind<>'debt'
+ AND NEW.from_month>=a.active_from AND (a.active_through IS NULL OR
+ (NEW.from_month<=a.active_through AND (a.active_through='9999-12-01' OR
+ (NEW.until_month IS NOT NULL AND NEW.until_month<=date(a.active_through,'+1 month'))))));
+ SELECT RAISE(ABORT,'liquidity_overlap') WHERE EXISTS (
+ SELECT 1 FROM account_liquidity_periods p WHERE p.account_id=NEW.account_id
+ AND (NEW.until_month IS NULL OR p.from_month<NEW.until_month)
+ AND (p.until_month IS NULL OR NEW.from_month<p.until_month));
+END;
+CREATE TRIGGER liquidity_update BEFORE UPDATE ON account_liquidity_periods BEGIN
+ SELECT RAISE(ABORT,'liquidity_bounds') WHERE NOT EXISTS (
+ SELECT 1 FROM accounts a WHERE a.id=NEW.account_id AND a.kind<>'debt'
+ AND NEW.from_month>=a.active_from AND (a.active_through IS NULL OR
+ (NEW.from_month<=a.active_through AND (a.active_through='9999-12-01' OR
+ (NEW.until_month IS NOT NULL AND NEW.until_month<=date(a.active_through,'+1 month'))))));
+ SELECT RAISE(ABORT,'liquidity_overlap') WHERE EXISTS (
+ SELECT 1 FROM account_liquidity_periods p WHERE p.account_id=NEW.account_id AND p.id<>OLD.id
+ AND (NEW.until_month IS NULL OR p.from_month<NEW.until_month)
+ AND (p.until_month IS NULL OR NEW.from_month<p.until_month));
+END;
+CREATE TRIGGER account_kind_immutable BEFORE UPDATE OF kind ON accounts WHEN NEW.kind<>OLD.kind BEGIN
+ SELECT RAISE(ABORT,'account_kind_immutable');
+END;
+CREATE TRIGGER account_period_bounds BEFORE UPDATE OF active_from,active_through ON accounts BEGIN
+ SELECT RAISE(ABORT,'liquidity_bounds') WHERE EXISTS (
+ SELECT 1 FROM account_liquidity_periods p WHERE p.account_id=NEW.id AND
+ (p.from_month<NEW.active_from OR (NEW.active_through IS NOT NULL AND
+ (p.from_month>NEW.active_through OR (NEW.active_through<>'9999-12-01' AND
+ (p.until_month IS NULL OR p.until_month>date(NEW.active_through,'+1 month')))))));
+END;
