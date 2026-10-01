@@ -15,6 +15,7 @@ function configured() {
   config.consent.testUserAdded = true;
   config.drive.apiEnabled = true;
   config.windows.clientId = '123456789012-windows.apps.googleusercontent.com';
+  config.android.serverClientId = '123456789012-web.apps.googleusercontent.com';
   config.android.clients = [{
     clientId: '123456789012-android.apps.googleusercontent.com',
     certificateSha1: Array(20).fill('AA').join(':'),
@@ -79,7 +80,8 @@ test('rechaza clientes de proyectos distintos o duplicados', () => {
 
 test('rechaza configuración incompleta declarada como configurada', () => {
   for (const alter of [c => c.project.id = null, c => c.drive.apiEnabled = false,
-    c => c.consent.testUserAdded = false, c => c.android.clients = [], c => c.windows.clientId = null]) {
+    c => c.consent.testUserAdded = false, c => c.android.clients = [], c => c.windows.clientId = null,
+    c => c.android.serverClientId = null]) {
     const config = configured();
     alter(config);
     assert.throws(() => validatePublicConfig(config, packageId));

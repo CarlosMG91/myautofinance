@@ -17,6 +17,7 @@
   },
   "android": {
     "applicationId": "com.carlosmg91.myautofinance",
+    "serverClientId": null,
     "clients": []
   },
   "windows": {

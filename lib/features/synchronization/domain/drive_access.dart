@@ -20,6 +20,7 @@ enum DriveAccessIssue {
   accountChangeRequired,
   operationInProgress,
   secureStorageFailure,
+  clientConfigurationError,
 }
 
 final class DriveAccessFailure implements Exception {

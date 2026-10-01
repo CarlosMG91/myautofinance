@@ -44,7 +44,8 @@ export function validatePublicConfig(config, applicationId, { requireConfigured 
   requireValue(Array.isArray(config.drive.scopes) && config.drive.scopes.length === 1
     && config.drive.scopes[0] === scope, 'Solo se permite el scope drive.file.');
 
-  keys(config.android, ['applicationId', 'clients'], 'Android');
+  keys(config.android, ['applicationId', 'serverClientId', 'clients'], 'Android');
+  nullablePattern(config.android.serverClientId, clientIdPattern, 'Cliente Web Android');
   requireValue(config.android.applicationId === applicationId, 'El paquete OAuth no coincide con applicationId de Gradle.');
   requireValue(Array.isArray(config.android.clients), 'La lista de clientes Android no es válida.');
   const ids = new Set();
@@ -57,6 +58,7 @@ export function validatePublicConfig(config, applicationId, { requireConfigured 
     requireValue(!ids.has(value), 'Client ID duplicado.');
     ids.add(value);
   }
+  if (config.android.serverClientId !== null) validateClientId(config.android.serverClientId);
   for (const client of config.android.clients) {
     keys(client, ['clientId', 'certificateSha1', 'certificateSha256', 'builds'], 'Cliente Android');
     validateClientId(client.clientId);
@@ -87,7 +89,7 @@ export function validatePublicConfig(config, applicationId, { requireConfigured 
       'Falta el proyecto Google común.');
     requireValue(config.drive.apiEnabled && config.consent.testUserAdded,
       'Falta habilitar Drive API o añadir el usuario de prueba en Google.');
-    requireValue(config.android.clients.length > 0 && config.windows.clientId !== null,
+    requireValue(config.android.clients.length > 0 && config.android.serverClientId !== null && config.windows.clientId !== null,
       'Faltan los clientes Android y Windows.');
   }
   return config.status;

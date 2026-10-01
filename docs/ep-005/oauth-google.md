@@ -139,12 +139,21 @@ su certificado antes de instalarlo. Un cliente de la firma local no acredita
 ese APK de CI. No subir ni compartir el keystore para hacer coincidir firmas.
 La firma de producción o Play, si se incorpora, requerirá sus clientes propios.
 
-Para el futuro acceso nativo Android se prevé `AuthorizationClient` de Google
-Identity Services, solicitando `drive.file`. No usar el cliente Windows ni
-redirecciones loopback/custom scheme del flujo de escritorio en Android.
-No pedir acceso offline de servidor: esta app no tiene backend. Un cliente Web
-para autenticación OIDC no es necesario con el alcance aquí descrito; si una
-biblioteca futura lo exigiera, revisar antes la integración y este contrato.
+MA-TSK-044 usa el paquete oficial `google_sign_in` 7.2.0 y su implementación
+Android 7.2.17: Credential Manager selecciona la cuenta y `AuthorizationClient`
+solicita `drive.file`. Sin `google-services.json`, el paquete requiere además
+un cliente **Web application** del mismo proyecto, cuyo ID público se registra
+en `android.serverClientId`. No configurar secreto, backend, orígenes JavaScript
+ni redirecciones para esta integración nativa. Pasar ese ID a la composición
+Android; el cliente Android registrado con paquete/firma sigue siendo necesario.
+No usar el cliente Windows ni redirecciones loopback/custom scheme en Android.
+No pedir acceso offline ni código de servidor. El SDK de selección realiza su
+autenticación Google y entrega un ID token; Autofinance no lo consume, guarda
+ni utiliza como identidad Drive. La autorización Drive solicita exactamente
+`drive.file`; la integración comprueba también el scope del access token y
+rechaza cualquier concesión adicional. No se añaden scopes OIDC a esa petición.
+Véase [configuración oficial del paquete Android](https://pub.dev/packages/google_sign_in_android)
+y [implementación y prueba pendiente](autorizacion-android.md).
 Referencia: [autorización en Android](https://developer.android.com/identity/authorization).
 
 ## Windows: cliente instalado de escritorio

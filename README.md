@@ -104,3 +104,8 @@ MA-TSK-043 entrega el [contrato común de sesión y cuenta Drive](docs/ep-005/se
 con estados, autorización y renovación explícitas, desconexión local y carpeta
 vinculada a la cuenta. Se verifica con proveedor falso; los adaptadores OAuth
 y el almacenamiento seguro nativo se implementarán en los tickets posteriores.
+
+MA-TSK-044 implementa el [adaptador de autorización Android](docs/ep-005/autorizacion-android.md)
+con `google_sign_in`, validación de cuenta Drive y metadatos cifrados por
+instalación. Incluye pruebas sintéticas y un recorrido técnico manual; el alta
+OAuth, la firma registrada y la comprobación en dispositivo siguen pendientes.
