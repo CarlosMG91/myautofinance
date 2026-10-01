@@ -1,4 +1,13 @@
+import '../../budget/budget.dart';
 import '../../movements/movements.dart';
+
+final class ImportedBudget {
+  const ImportedBudget(this.sourceOrdinal, this.data);
+  final int sourceOrdinal;
+
+  /// Importe interno normalizado; para CSV usar BudgetInput.fromHistoricalCsv.
+  final BudgetInput data;
+}
 
 enum ImportSource { historicalCsv, bankXls }
 
@@ -22,13 +31,14 @@ final class ImportBatch {
 }
 
 abstract interface class ImportBatchRepository {
-  /// Recibe filas ya interpretadas. Confirma lote y movimientos atómicamente.
+  /// Recibe filas ya interpretadas. Confirma lote, movimientos y presupuestos atómicamente.
   Future<ImportBatch> create({
     required String sha256,
     required ImportSource source,
     required String originalName,
     required String contractVersion,
-    required List<ImportedMovement> movements,
+    List<ImportedMovement> movements = const [],
+    List<ImportedBudget> budgets = const [],
   });
   Future<ImportBatch?> getByFingerprint(String sha256);
 }

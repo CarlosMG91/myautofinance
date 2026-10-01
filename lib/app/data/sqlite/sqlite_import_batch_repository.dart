@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../../features/importing/importing.dart';
 import '../../../features/movements/movements.dart';
 import 'local_database.dart';
+import 'sqlite_budget_repository.dart';
 import 'sqlite_movement_repository.dart';
 
 final class SqliteImportBatchRepository implements ImportBatchRepository {
@@ -37,14 +38,15 @@ final class SqliteImportBatchRepository implements ImportBatchRepository {
     required ImportSource source,
     required String originalName,
     required String contractVersion,
-    required List<ImportedMovement> movements,
+    List<ImportedMovement> movements = const [],
+    List<ImportedBudget> budgets = const [],
   }) => database.transaction(() async {
     if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(sha256) ||
         originalName.trim().isEmpty ||
         originalName.contains('/') ||
         originalName.contains('\\') ||
         contractVersion.trim().isEmpty ||
-        movements.isEmpty) {
+        (movements.isEmpty && budgets.isEmpty)) {
       throw const MovementFailure(
         'Metadatos de importación inválidos o lote vacío.',
       );
@@ -56,6 +58,15 @@ final class SqliteImportBatchRepository implements ImportBatchRepository {
     for (final row in movements) {
       if (row.sourceOrdinal < 2 || !ordinals.add(row.sourceOrdinal)) {
         throw const MovementFailure('Ordinal inválido o repetido.');
+      }
+    }
+    for (final row in budgets) {
+      if (source != ImportSource.historicalCsv ||
+          row.sourceOrdinal < 2 ||
+          !ordinals.add(row.sourceOrdinal)) {
+        throw const MovementFailure(
+          'Origen u ordinal presupuestario inválido o repetido.',
+        );
       }
     }
     final id = const Uuid().v4();
@@ -81,6 +92,15 @@ final class SqliteImportBatchRepository implements ImportBatchRepository {
         [rowId, id, row.sourceOrdinal, now, now],
       );
       await repo.insertImported(row.data, rowId);
+    }
+    final budgetRepo = SqliteBudgetRepository(database);
+    for (final row in budgets) {
+      final rowId = const Uuid().v4();
+      await database.customStatement(
+        "INSERT INTO import_rows(id,batch_id,source_ordinal,record_kind,created_at,updated_at) VALUES(?,?,?,'budget',?,?)",
+        [rowId, id, row.sourceOrdinal, now, now],
+      );
+      await budgetRepo.insertImported(row.data, rowId);
     }
     return (await getByFingerprint(sha256))!;
   });

@@ -3278,6 +3278,589 @@ class AccountLiquidityPeriodsCompanion
   }
 }
 
+class Budgets extends Table with TableInfo<Budgets, Budget> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  Budgets(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = \'-\' AND substr(id, 14, 1) = \'-\' AND substr(id, 19, 1) = \'-\' AND substr(id, 24, 1) = \'-\' AND length("replace"(id, \'-\', \'\')) = 32 AND "replace"(id, \'-\', \'\') NOT GLOB \'*[^0-9a-f]*\')',
+  );
+  static const VerificationMeta _monthMeta = const VerificationMeta('month');
+  late final GeneratedColumn<String> month = GeneratedColumn<String>(
+    'month',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (month GLOB \'[0-9][0-9][0-9][0-9]-[0-9][0-9]-01\' AND substr(month, 1, 4) BETWEEN \'0001\' AND \'9999\' AND substr(month, 6, 2) BETWEEN \'01\' AND \'12\')',
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES categories(id)ON UPDATE RESTRICT ON DELETE RESTRICT',
+  );
+  static const VerificationMeta _amountCentsMeta = const VerificationMeta(
+    'amountCents',
+  );
+  late final GeneratedColumn<int> amountCents = GeneratedColumn<int>(
+    'amount_cents',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (typeof(amount_cents) = \'integer\')',
+  );
+  static const VerificationMeta _conceptMeta = const VerificationMeta(
+    'concept',
+  );
+  late final GeneratedColumn<String> concept = GeneratedColumn<String>(
+    'concept',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'CHECK (concept IS NULL OR length(trim(concept)) > 0)',
+  );
+  static const VerificationMeta _discretionMeta = const VerificationMeta(
+    'discretion',
+  );
+  late final GeneratedColumn<String> discretion = GeneratedColumn<String>(
+    'discretion',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  static const VerificationMeta _importRowIdMeta = const VerificationMeta(
+    'importRowId',
+  );
+  late final GeneratedColumn<String> importRowId = GeneratedColumn<String>(
+    'import_row_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'UNIQUE REFERENCES import_rows(id)ON UPDATE RESTRICT ON DELETE RESTRICT',
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  late final GeneratedColumn<String> createdAt = GeneratedColumn<String>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  late final GeneratedColumn<String> updatedAt = GeneratedColumn<String>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    month,
+    categoryId,
+    amountCents,
+    concept,
+    discretion,
+    importRowId,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'budgets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Budget> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('month')) {
+      context.handle(
+        _monthMeta,
+        month.isAcceptableOrUnknown(data['month']!, _monthMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_monthMeta);
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryIdMeta);
+    }
+    if (data.containsKey('amount_cents')) {
+      context.handle(
+        _amountCentsMeta,
+        amountCents.isAcceptableOrUnknown(
+          data['amount_cents']!,
+          _amountCentsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountCentsMeta);
+    }
+    if (data.containsKey('concept')) {
+      context.handle(
+        _conceptMeta,
+        concept.isAcceptableOrUnknown(data['concept']!, _conceptMeta),
+      );
+    }
+    if (data.containsKey('discretion')) {
+      context.handle(
+        _discretionMeta,
+        discretion.isAcceptableOrUnknown(data['discretion']!, _discretionMeta),
+      );
+    }
+    if (data.containsKey('import_row_id')) {
+      context.handle(
+        _importRowIdMeta,
+        importRowId.isAcceptableOrUnknown(
+          data['import_row_id']!,
+          _importRowIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {month, categoryId},
+  ];
+  @override
+  Budget map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Budget(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      month: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}month'],
+      )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      )!,
+      amountCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_cents'],
+      )!,
+      concept: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}concept'],
+      ),
+      discretion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}discretion'],
+      ),
+      importRowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}import_row_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  Budgets createAlias(String alias) {
+    return Budgets(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const ['UNIQUE(month, category_id)'];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class Budget extends DataClass implements Insertable<Budget> {
+  final String id;
+  final String month;
+  final String categoryId;
+  final int amountCents;
+  final String? concept;
+  final String? discretion;
+  final String? importRowId;
+  final String createdAt;
+  final String updatedAt;
+  const Budget({
+    required this.id,
+    required this.month,
+    required this.categoryId,
+    required this.amountCents,
+    this.concept,
+    this.discretion,
+    this.importRowId,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['month'] = Variable<String>(month);
+    map['category_id'] = Variable<String>(categoryId);
+    map['amount_cents'] = Variable<int>(amountCents);
+    if (!nullToAbsent || concept != null) {
+      map['concept'] = Variable<String>(concept);
+    }
+    if (!nullToAbsent || discretion != null) {
+      map['discretion'] = Variable<String>(discretion);
+    }
+    if (!nullToAbsent || importRowId != null) {
+      map['import_row_id'] = Variable<String>(importRowId);
+    }
+    map['created_at'] = Variable<String>(createdAt);
+    map['updated_at'] = Variable<String>(updatedAt);
+    return map;
+  }
+
+  BudgetsCompanion toCompanion(bool nullToAbsent) {
+    return BudgetsCompanion(
+      id: Value(id),
+      month: Value(month),
+      categoryId: Value(categoryId),
+      amountCents: Value(amountCents),
+      concept: concept == null && nullToAbsent
+          ? const Value.absent()
+          : Value(concept),
+      discretion: discretion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discretion),
+      importRowId: importRowId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(importRowId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Budget.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Budget(
+      id: serializer.fromJson<String>(json['id']),
+      month: serializer.fromJson<String>(json['month']),
+      categoryId: serializer.fromJson<String>(json['category_id']),
+      amountCents: serializer.fromJson<int>(json['amount_cents']),
+      concept: serializer.fromJson<String?>(json['concept']),
+      discretion: serializer.fromJson<String?>(json['discretion']),
+      importRowId: serializer.fromJson<String?>(json['import_row_id']),
+      createdAt: serializer.fromJson<String>(json['created_at']),
+      updatedAt: serializer.fromJson<String>(json['updated_at']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'month': serializer.toJson<String>(month),
+      'category_id': serializer.toJson<String>(categoryId),
+      'amount_cents': serializer.toJson<int>(amountCents),
+      'concept': serializer.toJson<String?>(concept),
+      'discretion': serializer.toJson<String?>(discretion),
+      'import_row_id': serializer.toJson<String?>(importRowId),
+      'created_at': serializer.toJson<String>(createdAt),
+      'updated_at': serializer.toJson<String>(updatedAt),
+    };
+  }
+
+  Budget copyWith({
+    String? id,
+    String? month,
+    String? categoryId,
+    int? amountCents,
+    Value<String?> concept = const Value.absent(),
+    Value<String?> discretion = const Value.absent(),
+    Value<String?> importRowId = const Value.absent(),
+    String? createdAt,
+    String? updatedAt,
+  }) => Budget(
+    id: id ?? this.id,
+    month: month ?? this.month,
+    categoryId: categoryId ?? this.categoryId,
+    amountCents: amountCents ?? this.amountCents,
+    concept: concept.present ? concept.value : this.concept,
+    discretion: discretion.present ? discretion.value : this.discretion,
+    importRowId: importRowId.present ? importRowId.value : this.importRowId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Budget copyWithCompanion(BudgetsCompanion data) {
+    return Budget(
+      id: data.id.present ? data.id.value : this.id,
+      month: data.month.present ? data.month.value : this.month,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      amountCents: data.amountCents.present
+          ? data.amountCents.value
+          : this.amountCents,
+      concept: data.concept.present ? data.concept.value : this.concept,
+      discretion: data.discretion.present
+          ? data.discretion.value
+          : this.discretion,
+      importRowId: data.importRowId.present
+          ? data.importRowId.value
+          : this.importRowId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Budget(')
+          ..write('id: $id, ')
+          ..write('month: $month, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('concept: $concept, ')
+          ..write('discretion: $discretion, ')
+          ..write('importRowId: $importRowId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    month,
+    categoryId,
+    amountCents,
+    concept,
+    discretion,
+    importRowId,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Budget &&
+          other.id == this.id &&
+          other.month == this.month &&
+          other.categoryId == this.categoryId &&
+          other.amountCents == this.amountCents &&
+          other.concept == this.concept &&
+          other.discretion == this.discretion &&
+          other.importRowId == this.importRowId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class BudgetsCompanion extends UpdateCompanion<Budget> {
+  final Value<String> id;
+  final Value<String> month;
+  final Value<String> categoryId;
+  final Value<int> amountCents;
+  final Value<String?> concept;
+  final Value<String?> discretion;
+  final Value<String?> importRowId;
+  final Value<String> createdAt;
+  final Value<String> updatedAt;
+  final Value<int> rowid;
+  const BudgetsCompanion({
+    this.id = const Value.absent(),
+    this.month = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.amountCents = const Value.absent(),
+    this.concept = const Value.absent(),
+    this.discretion = const Value.absent(),
+    this.importRowId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BudgetsCompanion.insert({
+    required String id,
+    required String month,
+    required String categoryId,
+    required int amountCents,
+    this.concept = const Value.absent(),
+    this.discretion = const Value.absent(),
+    this.importRowId = const Value.absent(),
+    required String createdAt,
+    required String updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       month = Value(month),
+       categoryId = Value(categoryId),
+       amountCents = Value(amountCents),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Budget> custom({
+    Expression<String>? id,
+    Expression<String>? month,
+    Expression<String>? categoryId,
+    Expression<int>? amountCents,
+    Expression<String>? concept,
+    Expression<String>? discretion,
+    Expression<String>? importRowId,
+    Expression<String>? createdAt,
+    Expression<String>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (month != null) 'month': month,
+      if (categoryId != null) 'category_id': categoryId,
+      if (amountCents != null) 'amount_cents': amountCents,
+      if (concept != null) 'concept': concept,
+      if (discretion != null) 'discretion': discretion,
+      if (importRowId != null) 'import_row_id': importRowId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BudgetsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? month,
+    Value<String>? categoryId,
+    Value<int>? amountCents,
+    Value<String?>? concept,
+    Value<String?>? discretion,
+    Value<String?>? importRowId,
+    Value<String>? createdAt,
+    Value<String>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return BudgetsCompanion(
+      id: id ?? this.id,
+      month: month ?? this.month,
+      categoryId: categoryId ?? this.categoryId,
+      amountCents: amountCents ?? this.amountCents,
+      concept: concept ?? this.concept,
+      discretion: discretion ?? this.discretion,
+      importRowId: importRowId ?? this.importRowId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (month.present) {
+      map['month'] = Variable<String>(month.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (amountCents.present) {
+      map['amount_cents'] = Variable<int>(amountCents.value);
+    }
+    if (concept.present) {
+      map['concept'] = Variable<String>(concept.value);
+    }
+    if (discretion.present) {
+      map['discretion'] = Variable<String>(discretion.value);
+    }
+    if (importRowId.present) {
+      map['import_row_id'] = Variable<String>(importRowId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<String>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<String>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetsCompanion(')
+          ..write('id: $id, ')
+          ..write('month: $month, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('concept: $concept, ')
+          ..write('discretion: $discretion, ')
+          ..write('importRowId: $importRowId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$LocalDatabase extends GeneratedDatabase {
   _$LocalDatabase(QueryExecutor e) : super(e);
   $LocalDatabaseManager get managers => $LocalDatabaseManager(this);
@@ -3357,6 +3940,23 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     'CREATE TRIGGER account_period_bounds BEFORE UPDATE OF active_from, active_through ON accounts BEGIN SELECT RAISE (ABORT, \'liquidity_bounds\') WHERE EXISTS (SELECT 1 FROM account_liquidity_periods AS p WHERE p.account_id = NEW.id AND(p.from_month < NEW.active_from OR(NEW.active_through IS NOT NULL AND(p.from_month > NEW.active_through OR(NEW.active_through <> \'9999-12-01\' AND(p.until_month IS NULL OR p.until_month > date(NEW.active_through, \'+1 month\')))))));END',
     'account_period_bounds',
   );
+  late final Budgets budgets = Budgets(this);
+  late final Index budgetsCategoryMonth = Index(
+    'budgets_category_month',
+    'CREATE INDEX budgets_category_month ON budgets (category_id, month)',
+  );
+  late final Trigger budgetsInsert = Trigger(
+    'CREATE TRIGGER budgets_insert BEFORE INSERT ON budgets BEGIN SELECT RAISE (ABORT, \'budget_overlap\') WHERE EXISTS (WITH RECURSIVE ancestors (id, parent_id) AS (SELECT id, parent_id FROM categories WHERE id = NEW.category_id UNION ALL SELECT c.id, c.parent_id FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id), descendants (id) AS (SELECT NEW.category_id UNION ALL SELECT c.id FROM categories AS c JOIN descendants AS d ON c.parent_id = d.id) SELECT 1 FROM budgets AS b WHERE b.month = NEW.month AND b.id <> NEW.id AND(b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id FROM descendants)));SELECT RAISE (ABORT, \'budget_origin\') WHERE NEW.import_row_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM import_rows WHERE id = NEW.import_row_id AND record_kind = \'budget\');END',
+    'budgets_insert',
+  );
+  late final Trigger budgetsUpdate = Trigger(
+    'CREATE TRIGGER budgets_update BEFORE UPDATE ON budgets BEGIN SELECT RAISE (ABORT, \'budget_overlap\') WHERE EXISTS (WITH RECURSIVE ancestors (id, parent_id) AS (SELECT id, parent_id FROM categories WHERE id = NEW.category_id UNION ALL SELECT c.id, c.parent_id FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id), descendants (id) AS (SELECT NEW.category_id UNION ALL SELECT c.id FROM categories AS c JOIN descendants AS d ON c.parent_id = d.id) SELECT 1 FROM budgets AS b WHERE b.month = NEW.month AND b.id <> NEW.id AND(b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id FROM descendants)));SELECT RAISE (ABORT, \'budget_origin_immutable\') WHERE NEW.import_row_id IS NOT OLD.import_row_id;END',
+    'budgets_update',
+  );
+  late final Trigger categoriesBudgetHistory = Trigger(
+    'CREATE TRIGGER categories_budget_history BEFORE UPDATE OF parent_id, is_income ON categories WHEN NEW.parent_id IS NOT OLD.parent_id OR NEW.is_income IS NOT OLD.is_income BEGIN SELECT RAISE (ABORT, \'budget_category_history\') WHERE EXISTS (WITH RECURSIVE branch (id) AS (SELECT OLD.id UNION ALL SELECT c.id FROM categories AS c JOIN branch AS b ON c.parent_id = b.id) SELECT 1 FROM budgets WHERE category_id IN (SELECT id FROM branch));END',
+    'categories_budget_history',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3386,6 +3986,11 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     liquidityUpdate,
     accountKindImmutable,
     accountPeriodBounds,
+    budgets,
+    budgetsCategoryMonth,
+    budgetsInsert,
+    budgetsUpdate,
+    categoriesBudgetHistory,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3476,6 +4081,27 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'accounts',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'budgets',
+        limitUpdateKind: UpdateKind.insert,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'budgets',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
         limitUpdateKind: UpdateKind.update,
       ),
       result: [],
@@ -3907,6 +4533,25 @@ final class $ImportRowsReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<Budgets, List<Budget>> _budgetsRefsTable(
+    _$LocalDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.budgets,
+    aliasName: 'import_rows__id__budgets__import_row_id',
+  );
+
+  $BudgetsProcessedTableManager get budgetsRefs {
+    final manager = $BudgetsTableManager(
+      $_db,
+      $_db.budgets,
+    ).filter((f) => f.importRowId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_budgetsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $ImportRowsFilterComposer extends Composer<_$LocalDatabase, ImportRows> {
@@ -3981,6 +4626,31 @@ class $ImportRowsFilterComposer extends Composer<_$LocalDatabase, ImportRows> {
           }) => $MovementsFilterComposer(
             $db: $db,
             $table: $db.movements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> budgetsRefs(
+    Expression<bool> Function($BudgetsFilterComposer f) f,
+  ) {
+    final $BudgetsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.importRowId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetsFilterComposer(
+            $db: $db,
+            $table: $db.budgets,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4124,6 +4794,31 @@ class $ImportRowsAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> budgetsRefs<T extends Object>(
+    Expression<T> Function($BudgetsAnnotationComposer a) f,
+  ) {
+    final $BudgetsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.importRowId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetsAnnotationComposer(
+            $db: $db,
+            $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $ImportRowsTableManager
@@ -4139,7 +4834,11 @@ class $ImportRowsTableManager
           $ImportRowsUpdateCompanionBuilder,
           (ImportRow, $ImportRowsReferences),
           ImportRow,
-          PrefetchHooks Function({bool batchId, bool movementsRefs})
+          PrefetchHooks Function({
+            bool batchId,
+            bool movementsRefs,
+            bool budgetsRefs,
+          })
         > {
   $ImportRowsTableManager(_$LocalDatabase db, ImportRows table)
     : super(
@@ -4196,60 +4895,87 @@ class $ImportRowsTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({batchId = false, movementsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (movementsRefs) db.movements],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (batchId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.batchId,
-                        referencedTable: $ImportRowsReferences._batchIdTable(
-                          db,
-                        ),
-                        referencedColumn: $ImportRowsReferences
-                            ._batchIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({batchId = false, movementsRefs = false, budgetsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (movementsRefs) db.movements,
+                    if (budgetsRefs) db.budgets,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (batchId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.batchId,
+                            referencedTable: $ImportRowsReferences
+                                ._batchIdTable(db),
+                            referencedColumn: $ImportRowsReferences
+                                ._batchIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (movementsRefs)
+                        await $_getPrefetchedData<
+                          ImportRow,
+                          ImportRows,
+                          Movement
+                        >(
+                          currentTable: table,
+                          referencedTable: $ImportRowsReferences
+                              ._movementsRefsTable(db),
+                          managerFromTypedResult: (p0) => $ImportRowsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).movementsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.importRowId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (budgetsRefs)
+                        await $_getPrefetchedData<
+                          ImportRow,
+                          ImportRows,
+                          Budget
+                        >(
+                          currentTable: table,
+                          referencedTable: $ImportRowsReferences
+                              ._budgetsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $ImportRowsReferences(db, table, p0).budgetsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.importRowId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (movementsRefs)
-                    await $_getPrefetchedData<ImportRow, ImportRows, Movement>(
-                      currentTable: table,
-                      referencedTable: $ImportRowsReferences
-                          ._movementsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $ImportRowsReferences(db, table, p0).movementsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.importRowId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -4266,7 +4992,11 @@ typedef $ImportRowsProcessedTableManager =
       $ImportRowsUpdateCompanionBuilder,
       (ImportRow, $ImportRowsReferences),
       ImportRow,
-      PrefetchHooks Function({bool batchId, bool movementsRefs})
+      PrefetchHooks Function({
+        bool batchId,
+        bool movementsRefs,
+        bool budgetsRefs,
+      })
     >;
 typedef $AccountsCreateCompanionBuilder = AccountsCompanion Function({
   required String id,
@@ -4767,6 +5497,25 @@ final class $CategoriesReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<Budgets, List<Budget>> _budgetsRefsTable(
+    _$LocalDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.budgets,
+    aliasName: 'categories__id__budgets__category_id',
+  );
+
+  $BudgetsProcessedTableManager get budgetsRefs {
+    final manager = $BudgetsTableManager(
+      $_db,
+      $_db.budgets,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_budgetsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $CategoriesFilterComposer extends Composer<_$LocalDatabase, Categories> {
@@ -4846,6 +5595,31 @@ class $CategoriesFilterComposer extends Composer<_$LocalDatabase, Categories> {
           }) => $MovementsFilterComposer(
             $db: $db,
             $table: $db.movements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> budgetsRefs(
+    Expression<bool> Function($BudgetsFilterComposer f) f,
+  ) {
+    final $BudgetsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetsFilterComposer(
+            $db: $db,
+            $table: $db.budgets,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4993,6 +5767,31 @@ class $CategoriesAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> budgetsRefs<T extends Object>(
+    Expression<T> Function($BudgetsAnnotationComposer a) f,
+  ) {
+    final $BudgetsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $BudgetsAnnotationComposer(
+            $db: $db,
+            $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $CategoriesTableManager
@@ -5008,7 +5807,11 @@ class $CategoriesTableManager
           $CategoriesUpdateCompanionBuilder,
           (Category, $CategoriesReferences),
           Category,
-          PrefetchHooks Function({bool parentId, bool movementsRefs})
+          PrefetchHooks Function({
+            bool parentId,
+            bool movementsRefs,
+            bool budgetsRefs,
+          })
         > {
   $CategoriesTableManager(_$LocalDatabase db, Categories table)
     : super(
@@ -5069,58 +5872,83 @@ class $CategoriesTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({parentId = false, movementsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (movementsRefs) db.movements],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (parentId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.parentId,
-                        referencedTable: $CategoriesReferences._parentIdTable(
-                          db,
-                        ),
-                        referencedColumn: $CategoriesReferences
-                            ._parentIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({parentId = false, movementsRefs = false, budgetsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (movementsRefs) db.movements,
+                    if (budgetsRefs) db.budgets,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (parentId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.parentId,
+                            referencedTable: $CategoriesReferences
+                                ._parentIdTable(db),
+                            referencedColumn: $CategoriesReferences
+                                ._parentIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (movementsRefs)
+                        await $_getPrefetchedData<
+                          Category,
+                          Categories,
+                          Movement
+                        >(
+                          currentTable: table,
+                          referencedTable: $CategoriesReferences
+                              ._movementsRefsTable(db),
+                          managerFromTypedResult: (p0) => $CategoriesReferences(
+                            db,
+                            table,
+                            p0,
+                          ).movementsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (budgetsRefs)
+                        await $_getPrefetchedData<Category, Categories, Budget>(
+                          currentTable: table,
+                          referencedTable: $CategoriesReferences
+                              ._budgetsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $CategoriesReferences(db, table, p0).budgetsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (movementsRefs)
-                    await $_getPrefetchedData<Category, Categories, Movement>(
-                      currentTable: table,
-                      referencedTable: $CategoriesReferences
-                          ._movementsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $CategoriesReferences(db, table, p0).movementsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.categoryId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -5137,7 +5965,11 @@ typedef $CategoriesProcessedTableManager =
       $CategoriesUpdateCompanionBuilder,
       (Category, $CategoriesReferences),
       Category,
-      PrefetchHooks Function({bool parentId, bool movementsRefs})
+      PrefetchHooks Function({
+        bool parentId,
+        bool movementsRefs,
+        bool budgetsRefs,
+      })
     >;
 typedef $MovementsCreateCompanionBuilder = MovementsCompanion Function({
   required String id,
@@ -6260,6 +7092,482 @@ typedef $AccountLiquidityPeriodsProcessedTableManager =
       AccountLiquidityPeriod,
       PrefetchHooks Function({bool accountId})
     >;
+typedef $BudgetsCreateCompanionBuilder = BudgetsCompanion Function({
+  required String id,
+  required String month,
+  required String categoryId,
+  required int amountCents,
+  Value<String?> concept,
+  Value<String?> discretion,
+  Value<String?> importRowId,
+  required String createdAt,
+  required String updatedAt,
+  Value<int> rowid,
+});
+typedef $BudgetsUpdateCompanionBuilder = BudgetsCompanion Function({
+  Value<String> id,
+  Value<String> month,
+  Value<String> categoryId,
+  Value<int> amountCents,
+  Value<String?> concept,
+  Value<String?> discretion,
+  Value<String?> importRowId,
+  Value<String> createdAt,
+  Value<String> updatedAt,
+  Value<int> rowid,
+});
+
+final class $BudgetsReferences
+    extends BaseReferences<_$LocalDatabase, Budgets, Budget> {
+  $BudgetsReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static Categories _categoryIdTable(_$LocalDatabase db) =>
+      db.categories.createAlias('budgets__category_id__categories__id');
+
+  $CategoriesProcessedTableManager get categoryId {
+    final $_column = $_itemColumn<String>('category_id')!;
+
+    final manager = $CategoriesTableManager(
+      $_db,
+      $_db.categories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static ImportRows _importRowIdTable(_$LocalDatabase db) =>
+      db.importRows.createAlias('budgets__import_row_id__import_rows__id');
+
+  $ImportRowsProcessedTableManager? get importRowId {
+    final $_column = $_itemColumn<String>('import_row_id');
+    if ($_column == null) return null;
+    final manager = $ImportRowsTableManager(
+      $_db,
+      $_db.importRows,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_importRowIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $BudgetsFilterComposer extends Composer<_$LocalDatabase, Budgets> {
+  $BudgetsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get month => $composableBuilder(
+    column: $table.month,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get concept => $composableBuilder(
+    column: $table.concept,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get discretion => $composableBuilder(
+    column: $table.discretion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $CategoriesFilterComposer get categoryId {
+    final $CategoriesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CategoriesFilterComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ImportRowsFilterComposer get importRowId {
+    final $ImportRowsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.importRowId,
+      referencedTable: $db.importRows,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportRowsFilterComposer(
+            $db: $db,
+            $table: $db.importRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetsOrderingComposer extends Composer<_$LocalDatabase, Budgets> {
+  $BudgetsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get month => $composableBuilder(
+    column: $table.month,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get concept => $composableBuilder(
+    column: $table.concept,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get discretion => $composableBuilder(
+    column: $table.discretion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $CategoriesOrderingComposer get categoryId {
+    final $CategoriesOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CategoriesOrderingComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ImportRowsOrderingComposer get importRowId {
+    final $ImportRowsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.importRowId,
+      referencedTable: $db.importRows,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportRowsOrderingComposer(
+            $db: $db,
+            $table: $db.importRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetsAnnotationComposer extends Composer<_$LocalDatabase, Budgets> {
+  $BudgetsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get month =>
+      $composableBuilder(column: $table.month, builder: (column) => column);
+
+  GeneratedColumn<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get concept =>
+      $composableBuilder(column: $table.concept, builder: (column) => column);
+
+  GeneratedColumn<String> get discretion => $composableBuilder(
+    column: $table.discretion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $CategoriesAnnotationComposer get categoryId {
+    final $CategoriesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CategoriesAnnotationComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $ImportRowsAnnotationComposer get importRowId {
+    final $ImportRowsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.importRowId,
+      referencedTable: $db.importRows,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportRowsAnnotationComposer(
+            $db: $db,
+            $table: $db.importRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $BudgetsTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          Budgets,
+          Budget,
+          $BudgetsFilterComposer,
+          $BudgetsOrderingComposer,
+          $BudgetsAnnotationComposer,
+          $BudgetsCreateCompanionBuilder,
+          $BudgetsUpdateCompanionBuilder,
+          (Budget, $BudgetsReferences),
+          Budget,
+          PrefetchHooks Function({bool categoryId, bool importRowId})
+        > {
+  $BudgetsTableManager(_$LocalDatabase db, Budgets table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $BudgetsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $BudgetsOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $BudgetsAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> month = const Value.absent(),
+                Value<String> categoryId = const Value.absent(),
+                Value<int> amountCents = const Value.absent(),
+                Value<String?> concept = const Value.absent(),
+                Value<String?> discretion = const Value.absent(),
+                Value<String?> importRowId = const Value.absent(),
+                Value<String> createdAt = const Value.absent(),
+                Value<String> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetsCompanion(
+                id: id,
+                month: month,
+                categoryId: categoryId,
+                amountCents: amountCents,
+                concept: concept,
+                discretion: discretion,
+                importRowId: importRowId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String month,
+                required String categoryId,
+                required int amountCents,
+                Value<String?> concept = const Value.absent(),
+                Value<String?> discretion = const Value.absent(),
+                Value<String?> importRowId = const Value.absent(),
+                required String createdAt,
+                required String updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetsCompanion.insert(
+                id: id,
+                month: month,
+                categoryId: categoryId,
+                amountCents: amountCents,
+                concept: concept,
+                discretion: discretion,
+                importRowId: importRowId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<Budgets, Budget>(table),
+                  $BudgetsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({categoryId = false, importRowId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (categoryId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.categoryId,
+                        referencedTable: $BudgetsReferences._categoryIdTable(
+                          db,
+                        ),
+                        referencedColumn: $BudgetsReferences
+                            ._categoryIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (importRowId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.importRowId,
+                        referencedTable: $BudgetsReferences._importRowIdTable(
+                          db,
+                        ),
+                        referencedColumn: $BudgetsReferences
+                            ._importRowIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $BudgetsProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      Budgets,
+      Budget,
+      $BudgetsFilterComposer,
+      $BudgetsOrderingComposer,
+      $BudgetsAnnotationComposer,
+      $BudgetsCreateCompanionBuilder,
+      $BudgetsUpdateCompanionBuilder,
+      (Budget, $BudgetsReferences),
+      Budget,
+      PrefetchHooks Function({bool categoryId, bool importRowId})
+    >;
 
 class $LocalDatabaseManager {
   final _$LocalDatabase _db;
@@ -6278,4 +7586,5 @@ class $LocalDatabaseManager {
       $DatabaseStateTableManager(_db, _db.databaseState);
   $AccountLiquidityPeriodsTableManager get accountLiquidityPeriods =>
       $AccountLiquidityPeriodsTableManager(_db, _db.accountLiquidityPeriods);
+  $BudgetsTableManager get budgets => $BudgetsTableManager(_db, _db.budgets);
 }

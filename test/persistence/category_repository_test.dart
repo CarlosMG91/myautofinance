@@ -128,15 +128,10 @@ void main() {
       "INSERT INTO movements(id,account_id,value_date,concept,amount_cents,category_id,created_at,updated_at) VALUES('bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee','aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee','2026-01-01','Sintético',-100,?,'t','t')",
       [leaf.id],
     );
-    // Presupuestos todavía usa un fixture; movimientos ya tiene tabla real.
-    for (final table in ['budgets']) {
-      await repo.database.customStatement(
-        'CREATE TABLE $table(category_id TEXT REFERENCES categories(id) ON DELETE RESTRICT ON UPDATE RESTRICT)',
-      );
-      await repo.database.customStatement('INSERT INTO $table VALUES (?)', [
-        leaf.id,
-      ]);
-    }
+    await repo.database.customStatement(
+      "INSERT INTO budgets(id,month,category_id,amount_cents,created_at,updated_at) VALUES('cccccccc-bbbb-4ccc-8ddd-eeeeeeeeeeee','2026-01-01',?,300000,'t','t')",
+      [leaf.id],
+    );
     await repo.setArchived(root.id, archived: true);
     for (final table in ['movements', 'budgets']) {
       expect(
@@ -191,7 +186,7 @@ void main() {
       expect(readSchemaVersion(backup), 1);
       backup.close();
       final snapshot = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v4.json')
+        File('drift_schemas/autofinance/drift_schema_v5.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();

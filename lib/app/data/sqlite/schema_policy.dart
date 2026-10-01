@@ -2,7 +2,7 @@ import 'package:sqlite3/common.dart';
 
 import 'database_failure.dart';
 
-const localSchemaVersion = 4;
+const localSchemaVersion = 5;
 // ASCII AFNC: identifica este formato, independientemente del dataset_id.
 const localApplicationId = 0x41464e43;
 
@@ -61,7 +61,8 @@ void validateExistingDatabase(CommonDatabase db) {
               ? 5
               : 5 +
                     accountSchemaObjects.length +
-                    (version >= 4 ? movementSchemaObjects.length : 0))) {
+                    (version >= 4 ? movementSchemaObjects.length : 0) +
+                    (version >= 5 ? budgetSchemaObjects.length : 0))) {
     throw const DatabaseFailure(DatabaseFailureCode.incompatible);
   }
   final object = objects.singleWhere(
@@ -98,6 +99,18 @@ void validateExistingDatabase(CommonDatabase db) {
       }
     }
     if (db.select(movementIntegrityErrors).isNotEmpty) {
+      throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+    }
+  }
+  if (version >= 5) {
+    for (final sql in budgetSchemaObjects) {
+      if (!objects.any(
+        (o) => normalizeSchema(o['sql'] as String) == normalizeSchema(sql),
+      )) {
+        throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+      }
+    }
+    if (db.select(budgetIntegrityErrors).isNotEmpty) {
       throw const DatabaseFailure(DatabaseFailureCode.incompatible);
     }
   }
@@ -214,4 +227,20 @@ LEFT JOIN import_rows r ON r.id=m.import_row_id
 WHERE a.kind<>'account' OR substr(m.value_date,1,7)||'-01'<a.active_from
 OR (a.active_through IS NOT NULL AND substr(m.value_date,1,7)||'-01'>a.active_through)
 OR (m.import_row_id IS NOT NULL AND (r.id IS NULL OR r.record_kind<>'movement'))
+''';
+
+const budgetSchemaObjects = <String>[
+  '''CREATE TABLE "budgets" ("id" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length("replace"(id, '-', '')) = 32 AND "replace"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), "month" TEXT NOT NULL CHECK (month GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(month, 1, 4) BETWEEN '0001' AND '9999' AND substr(month, 6, 2) BETWEEN '01' AND '12'), "category_id" TEXT NOT NULL REFERENCES categories(id)ON UPDATE RESTRICT ON DELETE RESTRICT, "amount_cents" INTEGER NOT NULL CHECK (typeof(amount_cents) = 'integer'), "concept" TEXT CHECK (concept IS NULL OR length(trim(concept)) > 0), "discretion" TEXT, "import_row_id" TEXT UNIQUE REFERENCES import_rows(id)ON UPDATE RESTRICT ON DELETE RESTRICT, "created_at" TEXT NOT NULL, "updated_at" TEXT NOT NULL, UNIQUE(month, category_id));''',
+  '''CREATE INDEX budgets_category_month ON budgets (category_id, month)''',
+  '''CREATE TRIGGER budgets_insert BEFORE INSERT ON budgets BEGIN SELECT RAISE (ABORT, 'budget_overlap') WHERE EXISTS (WITH RECURSIVE ancestors (id, parent_id) AS (SELECT id, parent_id FROM categories WHERE id = NEW.category_id UNION ALL SELECT c.id, c.parent_id FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id), descendants (id) AS (SELECT NEW.category_id UNION ALL SELECT c.id FROM categories AS c JOIN descendants AS d ON c.parent_id = d.id) SELECT 1 FROM budgets AS b WHERE b.month = NEW.month AND b.id <> NEW.id AND(b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id FROM descendants)));SELECT RAISE (ABORT, 'budget_origin') WHERE NEW.import_row_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM import_rows WHERE id = NEW.import_row_id AND record_kind = 'budget');END''',
+  '''CREATE TRIGGER budgets_update BEFORE UPDATE ON budgets BEGIN SELECT RAISE (ABORT, 'budget_overlap') WHERE EXISTS (WITH RECURSIVE ancestors (id, parent_id) AS (SELECT id, parent_id FROM categories WHERE id = NEW.category_id UNION ALL SELECT c.id, c.parent_id FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id), descendants (id) AS (SELECT NEW.category_id UNION ALL SELECT c.id FROM categories AS c JOIN descendants AS d ON c.parent_id = d.id) SELECT 1 FROM budgets AS b WHERE b.month = NEW.month AND b.id <> NEW.id AND(b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id FROM descendants)));SELECT RAISE (ABORT, 'budget_origin_immutable') WHERE NEW.import_row_id IS NOT OLD.import_row_id;END''',
+  '''CREATE TRIGGER categories_budget_history BEFORE UPDATE OF parent_id, is_income ON categories WHEN NEW.parent_id IS NOT OLD.parent_id OR NEW.is_income IS NOT OLD.is_income BEGIN SELECT RAISE (ABORT, 'budget_category_history') WHERE EXISTS (WITH RECURSIVE branch (id) AS (SELECT OLD.id UNION ALL SELECT c.id FROM categories AS c JOIN branch AS b ON c.parent_id = b.id) SELECT 1 FROM budgets WHERE category_id IN (SELECT id FROM branch));END''',
+];
+const budgetIntegrityErrors = '''
+WITH RECURSIVE ancestry(id,ancestor) AS (
+ SELECT id,parent_id FROM categories WHERE parent_id IS NOT NULL
+ UNION ALL SELECT a.id,c.parent_id FROM ancestry a JOIN categories c ON c.id=a.ancestor WHERE c.parent_id IS NOT NULL
+) SELECT b.id FROM budgets b LEFT JOIN import_rows r ON r.id=b.import_row_id
+WHERE (b.import_row_id IS NOT NULL AND (r.id IS NULL OR r.record_kind<>'budget'))
+OR EXISTS(SELECT 1 FROM budgets p JOIN ancestry a ON a.id=b.category_id AND a.ancestor=p.category_id WHERE p.month=b.month)
 ''';

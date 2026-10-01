@@ -53,11 +53,15 @@ class LocalDatabase extends _$LocalDatabase {
             await customStatement(sql);
           }
         }
+        for (final sql
+            in legacy.isNotEmpty ? budgetSchemaObjects : <String>[]) {
+          await customStatement(sql);
+        }
         await _checkIntegrity();
       });
     },
     onUpgrade: (_, from, to) async {
-      if (from < 1 || from > 3 || to != 4) {
+      if (from < 1 || from > 4 || to != 5) {
         throw const DatabaseFailure(DatabaseFailureCode.incompatible);
       }
       await transaction(() async {
@@ -69,7 +73,10 @@ class LocalDatabase extends _$LocalDatabase {
         for (final sql in from < 3 ? accountSchemaObjects : <String>[]) {
           await customStatement(sql);
         }
-        for (final sql in movementSchemaObjects) {
+        for (final sql in from < 4 ? movementSchemaObjects : <String>[]) {
+          await customStatement(sql);
+        }
+        for (final sql in budgetSchemaObjects) {
           await customStatement(sql);
         }
         await _checkIntegrity();
@@ -90,6 +97,7 @@ class LocalDatabase extends _$LocalDatabase {
     if (integrity.length != 1 ||
         integrity.single.data.values.single != 'ok' ||
         foreignKeys.isNotEmpty ||
+        (await customSelect(budgetIntegrityErrors).get()).isNotEmpty ||
         (await customSelect(movementIntegrityErrors).get()).isNotEmpty ||
         (await customSelect(accountCoverageErrors).get()).isNotEmpty) {
       throw const DatabaseFailure(DatabaseFailureCode.incompatible);

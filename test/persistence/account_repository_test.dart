@@ -284,7 +284,10 @@ void main() {
       final path = store.databasePath!;
       await store.close();
       final previous = sqlite3.open(path);
-      for (final sql in movementSchemaObjects.reversed) {
+      for (final sql in [
+        ...movementSchemaObjects,
+        ...budgetSchemaObjects,
+      ].reversed) {
         final match = RegExp(r'CREATE (TABLE|INDEX|TRIGGER)\s+"?([a-z_]+)')
             .firstMatch(sql)!;
         previous.execute('DROP ${match[1]} "${match[2]}"');
@@ -337,7 +340,7 @@ void main() {
       expect(readSchemaVersion(backup), 2);
       backup.close();
       final snap = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v4.json')
+        File('drift_schemas/autofinance/drift_schema_v5.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();
