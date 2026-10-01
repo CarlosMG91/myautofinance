@@ -84,4 +84,24 @@ assert.equal(proposal(sum(select(actuals, '2026-02', 'Alimentación'))), cents('
 assert.equal(proposal(sum(select(actuals, '2026-01', 'Ingresos'))), cents('3100.00'));
 assert.equal(proposal(sum(select(actuals, '2026-03', 'Ingresos'))), 0);
 
-console.log('EP-001: 48 presupuestos, 10 reales; enero +1.229,75 €, real anual +2.329,65 €, presupuesto anual +13.200,00 €. OK');
+// Variante independiente D: referencia numérica, no prueba de persistencia.
+const historicalPortfolio = [
+  { from: '2026-01-01', until: '2026-02-01', liquidity: 'medium' },
+  { from: '2026-02-01', until: null, liquidity: 'liquid' },
+];
+const classificationAt = month => historicalPortfolio.filter(period =>
+  period.from <= month && (period.until === null || month < period.until));
+assert.equal(classificationAt('2026-01-01').length, 1);
+assert.equal(classificationAt('2026-02-01').length, 1);
+assert.equal(classificationAt('2026-01-01')[0].liquidity, 'medium');
+assert.equal(classificationAt('2026-02-01')[0].liquidity, 'liquid');
+assert.equal(liquid * 12 / annualIncome, 3); // Enero permanece igual.
+const februaryAccounts = cents('6200.00') + cents('0.00');
+const februaryPortfolio = cents('10500.00');
+const februaryAssets = februaryAccounts + februaryPortfolio;
+assert.equal(februaryAssets, cents('16700.00'));
+assert.equal(februaryAssets - cents('4800.00'), cents('11900.00'));
+assert.equal((februaryAssets * 12 / annualIncome).toFixed(2), '5.57');
+assert.equal((februaryAccounts * 12 / annualIncome).toFixed(2), '2.07');
+
+console.log('EP-001: 48 presupuestos, 10 reales; enero +1.229,75 €, real anual +2.329,65 €, presupuesto anual +13.200,00 €; liquidez histórica enero 3,00 y febrero 5,57 meses. OK');

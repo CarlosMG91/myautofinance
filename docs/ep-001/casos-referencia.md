@@ -54,6 +54,10 @@ En una copia del caso, registrar para febrero únicamente `Cuenta principal = 6.
 
 En otra copia, dar de alta una ficha `Cuenta nueva` con vigencia desde marzo de 2026. No se exige en enero ni febrero; una foto de marzo requiere su valor, incluso si es `0,00`. Darla de baja con último mes vigente abril conserva sus fotos de marzo y abril y deja de exigir valor en mayo. Ninguno de estos cambios rellena meses sin foto.
 
+### Variante independiente del caso D · Liquidez histórica
+
+En una copia de la foto completa de febrero del caso D (Cuenta principal 6.200,00; ahorro 0,00; cartera 10.500,00; deuda 4.800,00), cambiar la cartera de media a líquida desde 2026-02-01. Enero conserva líquidos 9.000,00 y colchón 3,00 meses. Febrero pasa a líquidos 16.700,00 y colchón 5,57 meses; activos, deudas y patrimonio neto siguen en 16.700,00, 4.800,00 y 11.900,00. Los periodos de la cartera son media hasta febrero exclusivo y líquida desde febrero. Rechazar un periodo solapado o un hueco dentro de su vigencia sin cambiar el estado anterior. Corregir expresamente febrero a media devuelve líquidos 6.200,00 y colchón 2,07 meses. Sin foto de febrero, cualquier clasificación sigue dando «sin dato». Esta variante no modifica los casos originales.
+
 ## Caso E · Presupuesto anual de 2026
 
 Cada uno de los doce meses muestra ingresos `+3.000,00`, vivienda `−1.000,00`, alimentación `−400,00`, ahorro `−500,00` y total `+1.100,00`. El año suma ingresos `+36.000,00`, vivienda `−12.000,00`, alimentación `−4.800,00`, ahorro `−6.000,00` y **total `+13.200,00`**. La matriz se puede abrir hasta las 48 partidas originales.

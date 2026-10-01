@@ -31,6 +31,8 @@
 
 ## Dudas de cálculo y asuntos diferidos
 
+**MA-TSK-031 · 2026-10-01:** el requisito del usuario de liquidez histórica se concreta en periodos mensuales sin solapes y con cobertura de la vigencia del activo. Un cambio desde un mes conserva los anteriores; una corrección histórica explícita recalcula los meses afectados sin cambiar sus valoraciones. Las deudas no tienen liquidez. Véanse la especificación y el [modelo EP-004](../ep-004/modelo-datos.md). No se modifican las demás reglas aprobadas.
+
 No quedan dudas abiertas que cambien los cálculos del contrato aprobado. El signo de reales y presupuestos, la agregación por ramas, la diferencia `real − previsto`, el redondeo de la propuesta anual, el patrimonio neto y el colchón están definidos en la [especificación](especificacion.md) y comprobados con los [casos de referencia](casos-referencia.md). Una revisión futura que cambie cualquiera de estas reglas requiere actualizar también los resultados esperados de esos casos.
 
 El formato concreto del XLS de Openbank sigue pendiente de una muestra real y se resolverá en EP-014. Esa decisión afecta al adaptador de importación bancaria, no a los cálculos ni al contrato CSV histórico de EP-001. Las fotos patrimoniales antiguas quedan fuera de la migración aprobada.
