@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'app/app.dart';
+import 'app/bootstrap.dart';
 
 export 'app/app.dart' show AutofinanceApp;
 
-void main() {
-  runApp(const AutofinanceApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(await initializeApp());
 }
