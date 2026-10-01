@@ -2,7 +2,7 @@ import 'package:sqlite3/common.dart';
 
 import 'database_failure.dart';
 
-const localSchemaVersion = 5;
+const localSchemaVersion = 6;
 // ASCII AFNC: identifica este formato, independientemente del dataset_id.
 const localApplicationId = 0x41464e43;
 
@@ -62,7 +62,8 @@ void validateExistingDatabase(CommonDatabase db) {
               : 5 +
                     accountSchemaObjects.length +
                     (version >= 4 ? movementSchemaObjects.length : 0) +
-                    (version >= 5 ? budgetSchemaObjects.length : 0))) {
+                    (version >= 5 ? budgetSchemaObjects.length : 0) +
+                    (version >= 6 ? wealthSchemaObjects.length : 0))) {
     throw const DatabaseFailure(DatabaseFailureCode.incompatible);
   }
   final object = objects.singleWhere(
@@ -111,6 +112,18 @@ void validateExistingDatabase(CommonDatabase db) {
       }
     }
     if (db.select(budgetIntegrityErrors).isNotEmpty) {
+      throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+    }
+  }
+  if (version >= 6) {
+    for (final sql in wealthSchemaObjects) {
+      if (!objects.any(
+        (o) => normalizeSchema(o['sql'] as String) == normalizeSchema(sql),
+      )) {
+        throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+      }
+    }
+    if (db.select(wealthIntegrityErrors).isNotEmpty) {
       throw const DatabaseFailure(DatabaseFailureCode.incompatible);
     }
   }
@@ -244,3 +257,18 @@ WITH RECURSIVE ancestry(id,ancestor) AS (
 WHERE (b.import_row_id IS NOT NULL AND (r.id IS NULL OR r.record_kind<>'budget'))
 OR EXISTS(SELECT 1 FROM budgets p JOIN ancestry a ON a.id=b.category_id AND a.ancestor=p.category_id WHERE p.month=b.month)
 ''';
+
+const wealthIntegrityErrors = '''
+SELECT v.id FROM wealth_values v JOIN wealth_snapshots s ON s.id=v.snapshot_id
+JOIN accounts a ON a.id=v.account_id WHERE s.month<a.active_from OR
+(a.active_through IS NOT NULL AND s.month>a.active_through)
+''';
+const wealthSchemaObjects = <String>[
+  '''CREATE TABLE "wealth_snapshots" ("id" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length("replace"(id, '-', '')) = 32 AND "replace"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), "month" TEXT NOT NULL UNIQUE CHECK (month GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(month, 1, 4) BETWEEN '0001' AND '9999' AND substr(month, 6, 2) BETWEEN '01' AND '12'), "created_at" TEXT NOT NULL, "updated_at" TEXT NOT NULL);''',
+  '''CREATE TABLE "wealth_values" ("id" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length("replace"(id, '-', '')) = 32 AND "replace"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), "snapshot_id" TEXT NOT NULL REFERENCES wealth_snapshots(id)ON UPDATE RESTRICT ON DELETE RESTRICT, "account_id" TEXT NOT NULL REFERENCES accounts(id)ON UPDATE RESTRICT ON DELETE RESTRICT, "amount_cents" INTEGER NOT NULL CHECK (typeof(amount_cents) = 'integer' AND amount_cents >= 0), "created_at" TEXT NOT NULL, "updated_at" TEXT NOT NULL, UNIQUE(snapshot_id, account_id));''',
+  '''CREATE INDEX wealth_values_account_snapshot ON wealth_values (account_id, snapshot_id)''',
+  '''CREATE TRIGGER wealth_values_insert BEFORE INSERT ON wealth_values BEGIN SELECT RAISE (ABORT, 'wealth_bounds') WHERE NOT EXISTS (SELECT 1 FROM accounts AS a JOIN wealth_snapshots AS s ON s.id = NEW.snapshot_id WHERE a.id = NEW.account_id AND a.active_from <= s.month AND(a.active_through IS NULL OR a.active_through >= s.month));END''',
+  '''CREATE TRIGGER wealth_values_update BEFORE UPDATE ON wealth_values BEGIN SELECT RAISE (ABORT, 'wealth_bounds') WHERE NOT EXISTS (SELECT 1 FROM accounts AS a JOIN wealth_snapshots AS s ON s.id = NEW.snapshot_id WHERE a.id = NEW.account_id AND a.active_from <= s.month AND(a.active_through IS NULL OR a.active_through >= s.month));END''',
+  '''CREATE TRIGGER wealth_month_immutable BEFORE UPDATE OF month ON wealth_snapshots WHEN NEW.month <> OLD.month AND EXISTS (SELECT 1 FROM wealth_values WHERE snapshot_id = OLD.id) BEGIN SELECT RAISE (ABORT, 'wealth_month_immutable');END''',
+  '''CREATE TRIGGER accounts_wealth_bounds BEFORE UPDATE OF active_from, active_through ON accounts BEGIN SELECT RAISE (ABORT, 'wealth_bounds') WHERE EXISTS (SELECT 1 FROM wealth_values AS v JOIN wealth_snapshots AS s ON s.id = v.snapshot_id WHERE v.account_id = NEW.id AND(s.month < NEW.active_from OR(NEW.active_through IS NOT NULL AND s.month > NEW.active_through)));END''',
+];

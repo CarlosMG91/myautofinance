@@ -266,35 +266,32 @@ void main() {
       );
     },
   );
-  test(
-    'v4 migra a v5 preservando categorías, revisión y esquema validado',
-    () async {
-      await store.close();
-      final raw = sqlite3.open(store.databasePath!);
-      for (final sql in budgetSchemaObjects.reversed) {
-        final m = RegExp(r'CREATE (TABLE|INDEX|TRIGGER)\s+"?([a-z_]+)')
-            .firstMatch(sql)!;
-        raw.execute('DROP ${m[1]} "${m[2]}"');
-      }
-      raw.execute('PRAGMA user_version=4');
-      raw.execute('UPDATE database_state SET revision=27');
-      raw.close();
-      repo = SqliteBudgetRepository(await store.open());
-      expect(
-        (await repo.database.select(repo.database.databaseState).getSingle())
-            .revision,
-        27,
-      );
-      expect(
-        (await SqliteCategoryRepository(repo.database).get(root))!.id,
-        root,
-      );
-      await repo.create(input(root));
-      await store.close();
-      final current = sqlite3.open(store.databasePath!);
-      validateExistingDatabase(current);
-      expect(readSchemaVersion(current), 5);
-      current.close();
-    },
-  );
+  test('v4 migra a la esquema vigente preservando categorías, revisión y esquema validado', () async {
+    await store.close();
+    final raw = sqlite3.open(store.databasePath!);
+    for (final sql in [
+      ...budgetSchemaObjects,
+      ...wealthSchemaObjects,
+    ].reversed) {
+      final m = RegExp(r'CREATE (TABLE|INDEX|TRIGGER)\s+"?([a-z_]+)')
+          .firstMatch(sql)!;
+      raw.execute('DROP ${m[1]} "${m[2]}"');
+    }
+    raw.execute('PRAGMA user_version=4');
+    raw.execute('UPDATE database_state SET revision=27');
+    raw.close();
+    repo = SqliteBudgetRepository(await store.open());
+    expect(
+      (await repo.database.select(repo.database.databaseState).getSingle())
+          .revision,
+      27,
+    );
+    expect((await SqliteCategoryRepository(repo.database).get(root))!.id, root);
+    await repo.create(input(root));
+    await store.close();
+    final current = sqlite3.open(store.databasePath!);
+    validateExistingDatabase(current);
+    expect(readSchemaVersion(current), localSchemaVersion);
+    current.close();
+  });
 }

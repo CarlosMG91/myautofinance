@@ -3861,6 +3861,745 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
   }
 }
 
+class WealthSnapshots extends Table
+    with TableInfo<WealthSnapshots, WealthSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  WealthSnapshots(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = \'-\' AND substr(id, 14, 1) = \'-\' AND substr(id, 19, 1) = \'-\' AND substr(id, 24, 1) = \'-\' AND length("replace"(id, \'-\', \'\')) = 32 AND "replace"(id, \'-\', \'\') NOT GLOB \'*[^0-9a-f]*\')',
+  );
+  static const VerificationMeta _monthMeta = const VerificationMeta('month');
+  late final GeneratedColumn<String> month = GeneratedColumn<String>(
+    'month',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL UNIQUE CHECK (month GLOB \'[0-9][0-9][0-9][0-9]-[0-9][0-9]-01\' AND substr(month, 1, 4) BETWEEN \'0001\' AND \'9999\' AND substr(month, 6, 2) BETWEEN \'01\' AND \'12\')',
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  late final GeneratedColumn<String> createdAt = GeneratedColumn<String>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  late final GeneratedColumn<String> updatedAt = GeneratedColumn<String>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, month, createdAt, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'wealth_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WealthSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('month')) {
+      context.handle(
+        _monthMeta,
+        month.isAcceptableOrUnknown(data['month']!, _monthMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_monthMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WealthSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WealthSnapshot(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      month: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}month'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  WealthSnapshots createAlias(String alias) {
+    return WealthSnapshots(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class WealthSnapshot extends DataClass implements Insertable<WealthSnapshot> {
+  final String id;
+  final String month;
+  final String createdAt;
+  final String updatedAt;
+  const WealthSnapshot({
+    required this.id,
+    required this.month,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['month'] = Variable<String>(month);
+    map['created_at'] = Variable<String>(createdAt);
+    map['updated_at'] = Variable<String>(updatedAt);
+    return map;
+  }
+
+  WealthSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return WealthSnapshotsCompanion(
+      id: Value(id),
+      month: Value(month),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory WealthSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WealthSnapshot(
+      id: serializer.fromJson<String>(json['id']),
+      month: serializer.fromJson<String>(json['month']),
+      createdAt: serializer.fromJson<String>(json['created_at']),
+      updatedAt: serializer.fromJson<String>(json['updated_at']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'month': serializer.toJson<String>(month),
+      'created_at': serializer.toJson<String>(createdAt),
+      'updated_at': serializer.toJson<String>(updatedAt),
+    };
+  }
+
+  WealthSnapshot copyWith({
+    String? id,
+    String? month,
+    String? createdAt,
+    String? updatedAt,
+  }) => WealthSnapshot(
+    id: id ?? this.id,
+    month: month ?? this.month,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  WealthSnapshot copyWithCompanion(WealthSnapshotsCompanion data) {
+    return WealthSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      month: data.month.present ? data.month.value : this.month,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WealthSnapshot(')
+          ..write('id: $id, ')
+          ..write('month: $month, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, month, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WealthSnapshot &&
+          other.id == this.id &&
+          other.month == this.month &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class WealthSnapshotsCompanion extends UpdateCompanion<WealthSnapshot> {
+  final Value<String> id;
+  final Value<String> month;
+  final Value<String> createdAt;
+  final Value<String> updatedAt;
+  final Value<int> rowid;
+  const WealthSnapshotsCompanion({
+    this.id = const Value.absent(),
+    this.month = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WealthSnapshotsCompanion.insert({
+    required String id,
+    required String month,
+    required String createdAt,
+    required String updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       month = Value(month),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<WealthSnapshot> custom({
+    Expression<String>? id,
+    Expression<String>? month,
+    Expression<String>? createdAt,
+    Expression<String>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (month != null) 'month': month,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WealthSnapshotsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? month,
+    Value<String>? createdAt,
+    Value<String>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return WealthSnapshotsCompanion(
+      id: id ?? this.id,
+      month: month ?? this.month,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (month.present) {
+      map['month'] = Variable<String>(month.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<String>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<String>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WealthSnapshotsCompanion(')
+          ..write('id: $id, ')
+          ..write('month: $month, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class WealthValues extends Table with TableInfo<WealthValues, WealthValue> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  WealthValues(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = \'-\' AND substr(id, 14, 1) = \'-\' AND substr(id, 19, 1) = \'-\' AND substr(id, 24, 1) = \'-\' AND length("replace"(id, \'-\', \'\')) = 32 AND "replace"(id, \'-\', \'\') NOT GLOB \'*[^0-9a-f]*\')',
+  );
+  static const VerificationMeta _snapshotIdMeta = const VerificationMeta(
+    'snapshotId',
+  );
+  late final GeneratedColumn<String> snapshotId = GeneratedColumn<String>(
+    'snapshot_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES wealth_snapshots(id)ON UPDATE RESTRICT ON DELETE RESTRICT',
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES accounts(id)ON UPDATE RESTRICT ON DELETE RESTRICT',
+  );
+  static const VerificationMeta _amountCentsMeta = const VerificationMeta(
+    'amountCents',
+  );
+  late final GeneratedColumn<int> amountCents = GeneratedColumn<int>(
+    'amount_cents',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (typeof(amount_cents) = \'integer\' AND amount_cents >= 0)',
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  late final GeneratedColumn<String> createdAt = GeneratedColumn<String>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  late final GeneratedColumn<String> updatedAt = GeneratedColumn<String>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    snapshotId,
+    accountId,
+    amountCents,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'wealth_values';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WealthValue> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('snapshot_id')) {
+      context.handle(
+        _snapshotIdMeta,
+        snapshotId.isAcceptableOrUnknown(data['snapshot_id']!, _snapshotIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_snapshotIdMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('amount_cents')) {
+      context.handle(
+        _amountCentsMeta,
+        amountCents.isAcceptableOrUnknown(
+          data['amount_cents']!,
+          _amountCentsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountCentsMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {snapshotId, accountId},
+  ];
+  @override
+  WealthValue map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WealthValue(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      snapshotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}snapshot_id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+      amountCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_cents'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  WealthValues createAlias(String alias) {
+    return WealthValues(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'UNIQUE(snapshot_id, account_id)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class WealthValue extends DataClass implements Insertable<WealthValue> {
+  final String id;
+  final String snapshotId;
+  final String accountId;
+  final int amountCents;
+  final String createdAt;
+  final String updatedAt;
+  const WealthValue({
+    required this.id,
+    required this.snapshotId,
+    required this.accountId,
+    required this.amountCents,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['snapshot_id'] = Variable<String>(snapshotId);
+    map['account_id'] = Variable<String>(accountId);
+    map['amount_cents'] = Variable<int>(amountCents);
+    map['created_at'] = Variable<String>(createdAt);
+    map['updated_at'] = Variable<String>(updatedAt);
+    return map;
+  }
+
+  WealthValuesCompanion toCompanion(bool nullToAbsent) {
+    return WealthValuesCompanion(
+      id: Value(id),
+      snapshotId: Value(snapshotId),
+      accountId: Value(accountId),
+      amountCents: Value(amountCents),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory WealthValue.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WealthValue(
+      id: serializer.fromJson<String>(json['id']),
+      snapshotId: serializer.fromJson<String>(json['snapshot_id']),
+      accountId: serializer.fromJson<String>(json['account_id']),
+      amountCents: serializer.fromJson<int>(json['amount_cents']),
+      createdAt: serializer.fromJson<String>(json['created_at']),
+      updatedAt: serializer.fromJson<String>(json['updated_at']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'snapshot_id': serializer.toJson<String>(snapshotId),
+      'account_id': serializer.toJson<String>(accountId),
+      'amount_cents': serializer.toJson<int>(amountCents),
+      'created_at': serializer.toJson<String>(createdAt),
+      'updated_at': serializer.toJson<String>(updatedAt),
+    };
+  }
+
+  WealthValue copyWith({
+    String? id,
+    String? snapshotId,
+    String? accountId,
+    int? amountCents,
+    String? createdAt,
+    String? updatedAt,
+  }) => WealthValue(
+    id: id ?? this.id,
+    snapshotId: snapshotId ?? this.snapshotId,
+    accountId: accountId ?? this.accountId,
+    amountCents: amountCents ?? this.amountCents,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  WealthValue copyWithCompanion(WealthValuesCompanion data) {
+    return WealthValue(
+      id: data.id.present ? data.id.value : this.id,
+      snapshotId: data.snapshotId.present
+          ? data.snapshotId.value
+          : this.snapshotId,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      amountCents: data.amountCents.present
+          ? data.amountCents.value
+          : this.amountCents,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WealthValue(')
+          ..write('id: $id, ')
+          ..write('snapshotId: $snapshotId, ')
+          ..write('accountId: $accountId, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, snapshotId, accountId, amountCents, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WealthValue &&
+          other.id == this.id &&
+          other.snapshotId == this.snapshotId &&
+          other.accountId == this.accountId &&
+          other.amountCents == this.amountCents &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class WealthValuesCompanion extends UpdateCompanion<WealthValue> {
+  final Value<String> id;
+  final Value<String> snapshotId;
+  final Value<String> accountId;
+  final Value<int> amountCents;
+  final Value<String> createdAt;
+  final Value<String> updatedAt;
+  final Value<int> rowid;
+  const WealthValuesCompanion({
+    this.id = const Value.absent(),
+    this.snapshotId = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.amountCents = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WealthValuesCompanion.insert({
+    required String id,
+    required String snapshotId,
+    required String accountId,
+    required int amountCents,
+    required String createdAt,
+    required String updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       snapshotId = Value(snapshotId),
+       accountId = Value(accountId),
+       amountCents = Value(amountCents),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<WealthValue> custom({
+    Expression<String>? id,
+    Expression<String>? snapshotId,
+    Expression<String>? accountId,
+    Expression<int>? amountCents,
+    Expression<String>? createdAt,
+    Expression<String>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (snapshotId != null) 'snapshot_id': snapshotId,
+      if (accountId != null) 'account_id': accountId,
+      if (amountCents != null) 'amount_cents': amountCents,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WealthValuesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? snapshotId,
+    Value<String>? accountId,
+    Value<int>? amountCents,
+    Value<String>? createdAt,
+    Value<String>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return WealthValuesCompanion(
+      id: id ?? this.id,
+      snapshotId: snapshotId ?? this.snapshotId,
+      accountId: accountId ?? this.accountId,
+      amountCents: amountCents ?? this.amountCents,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (snapshotId.present) {
+      map['snapshot_id'] = Variable<String>(snapshotId.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (amountCents.present) {
+      map['amount_cents'] = Variable<int>(amountCents.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<String>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<String>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WealthValuesCompanion(')
+          ..write('id: $id, ')
+          ..write('snapshotId: $snapshotId, ')
+          ..write('accountId: $accountId, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$LocalDatabase extends GeneratedDatabase {
   _$LocalDatabase(QueryExecutor e) : super(e);
   $LocalDatabaseManager get managers => $LocalDatabaseManager(this);
@@ -3957,6 +4696,28 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     'CREATE TRIGGER categories_budget_history BEFORE UPDATE OF parent_id, is_income ON categories WHEN NEW.parent_id IS NOT OLD.parent_id OR NEW.is_income IS NOT OLD.is_income BEGIN SELECT RAISE (ABORT, \'budget_category_history\') WHERE EXISTS (WITH RECURSIVE branch (id) AS (SELECT OLD.id UNION ALL SELECT c.id FROM categories AS c JOIN branch AS b ON c.parent_id = b.id) SELECT 1 FROM budgets WHERE category_id IN (SELECT id FROM branch));END',
     'categories_budget_history',
   );
+  late final WealthSnapshots wealthSnapshots = WealthSnapshots(this);
+  late final WealthValues wealthValues = WealthValues(this);
+  late final Index wealthValuesAccountSnapshot = Index(
+    'wealth_values_account_snapshot',
+    'CREATE INDEX wealth_values_account_snapshot ON wealth_values (account_id, snapshot_id)',
+  );
+  late final Trigger wealthValuesInsert = Trigger(
+    'CREATE TRIGGER wealth_values_insert BEFORE INSERT ON wealth_values BEGIN SELECT RAISE (ABORT, \'wealth_bounds\') WHERE NOT EXISTS (SELECT 1 FROM accounts AS a JOIN wealth_snapshots AS s ON s.id = NEW.snapshot_id WHERE a.id = NEW.account_id AND a.active_from <= s.month AND(a.active_through IS NULL OR a.active_through >= s.month));END',
+    'wealth_values_insert',
+  );
+  late final Trigger wealthValuesUpdate = Trigger(
+    'CREATE TRIGGER wealth_values_update BEFORE UPDATE ON wealth_values BEGIN SELECT RAISE (ABORT, \'wealth_bounds\') WHERE NOT EXISTS (SELECT 1 FROM accounts AS a JOIN wealth_snapshots AS s ON s.id = NEW.snapshot_id WHERE a.id = NEW.account_id AND a.active_from <= s.month AND(a.active_through IS NULL OR a.active_through >= s.month));END',
+    'wealth_values_update',
+  );
+  late final Trigger wealthMonthImmutable = Trigger(
+    'CREATE TRIGGER wealth_month_immutable BEFORE UPDATE OF month ON wealth_snapshots WHEN NEW.month <> OLD.month AND EXISTS (SELECT 1 FROM wealth_values WHERE snapshot_id = OLD.id) BEGIN SELECT RAISE (ABORT, \'wealth_month_immutable\');END',
+    'wealth_month_immutable',
+  );
+  late final Trigger accountsWealthBounds = Trigger(
+    'CREATE TRIGGER accounts_wealth_bounds BEFORE UPDATE OF active_from, active_through ON accounts BEGIN SELECT RAISE (ABORT, \'wealth_bounds\') WHERE EXISTS (SELECT 1 FROM wealth_values AS v JOIN wealth_snapshots AS s ON s.id = v.snapshot_id WHERE v.account_id = NEW.id AND(s.month < NEW.active_from OR(NEW.active_through IS NOT NULL AND s.month > NEW.active_through)));END',
+    'accounts_wealth_bounds',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3991,6 +4752,13 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     budgetsInsert,
     budgetsUpdate,
     categoriesBudgetHistory,
+    wealthSnapshots,
+    wealthValues,
+    wealthValuesAccountSnapshot,
+    wealthValuesInsert,
+    wealthValuesUpdate,
+    wealthMonthImmutable,
+    accountsWealthBounds,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4102,6 +4870,34 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'categories',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wealth_values',
+        limitUpdateKind: UpdateKind.insert,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wealth_values',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'wealth_snapshots',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'accounts',
         limitUpdateKind: UpdateKind.update,
       ),
       result: [],
@@ -5066,6 +5862,24 @@ final class $AccountsReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<WealthValues, List<WealthValue>>
+  _wealthValuesRefsTable(_$LocalDatabase db) => MultiTypedResultKey.fromTable(
+    db.wealthValues,
+    aliasName: 'accounts__id__wealth_values__account_id',
+  );
+
+  $WealthValuesProcessedTableManager get wealthValuesRefs {
+    final manager = $WealthValuesTableManager(
+      $_db,
+      $_db.wealthValues,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_wealthValuesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $AccountsFilterComposer extends Composer<_$LocalDatabase, Accounts> {
@@ -5152,6 +5966,31 @@ class $AccountsFilterComposer extends Composer<_$LocalDatabase, Accounts> {
           }) => $AccountLiquidityPeriodsFilterComposer(
             $db: $db,
             $table: $db.accountLiquidityPeriods,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> wealthValuesRefs(
+    Expression<bool> Function($WealthValuesFilterComposer f) f,
+  ) {
+    final $WealthValuesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wealthValues,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $WealthValuesFilterComposer(
+            $db: $db,
+            $table: $db.wealthValues,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5289,6 +6128,31 @@ class $AccountsAnnotationComposer extends Composer<_$LocalDatabase, Accounts> {
         );
     return f(composer);
   }
+
+  Expression<T> wealthValuesRefs<T extends Object>(
+    Expression<T> Function($WealthValuesAnnotationComposer a) f,
+  ) {
+    final $WealthValuesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wealthValues,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $WealthValuesAnnotationComposer(
+            $db: $db,
+            $table: $db.wealthValues,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $AccountsTableManager
@@ -5307,6 +6171,7 @@ class $AccountsTableManager
           PrefetchHooks Function({
             bool movementsRefs,
             bool accountLiquidityPeriodsRefs,
+            bool wealthValuesRefs,
           })
         > {
   $AccountsTableManager(_$LocalDatabase db, Accounts table)
@@ -5369,12 +6234,17 @@ class $AccountsTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({movementsRefs = false, accountLiquidityPeriodsRefs = false}) {
+              ({
+                movementsRefs = false,
+                accountLiquidityPeriodsRefs = false,
+                wealthValuesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (movementsRefs) db.movements,
                     if (accountLiquidityPeriodsRefs) db.accountLiquidityPeriods,
+                    if (wealthValuesRefs) db.wealthValues,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -5412,6 +6282,26 @@ class $AccountsTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (wealthValuesRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          Accounts,
+                          WealthValue
+                        >(
+                          currentTable: table,
+                          referencedTable: $AccountsReferences
+                              ._wealthValuesRefsTable(db),
+                          managerFromTypedResult: (p0) => $AccountsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).wealthValuesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -5435,6 +6325,7 @@ typedef $AccountsProcessedTableManager =
       PrefetchHooks Function({
         bool movementsRefs,
         bool accountLiquidityPeriodsRefs,
+        bool wealthValuesRefs,
       })
     >;
 typedef $CategoriesCreateCompanionBuilder = CategoriesCompanion Function({
@@ -7568,6 +8459,707 @@ typedef $BudgetsProcessedTableManager =
       Budget,
       PrefetchHooks Function({bool categoryId, bool importRowId})
     >;
+typedef $WealthSnapshotsCreateCompanionBuilder =
+    WealthSnapshotsCompanion Function({
+      required String id,
+      required String month,
+      required String createdAt,
+      required String updatedAt,
+      Value<int> rowid,
+    });
+typedef $WealthSnapshotsUpdateCompanionBuilder =
+    WealthSnapshotsCompanion Function({
+      Value<String> id,
+      Value<String> month,
+      Value<String> createdAt,
+      Value<String> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $WealthSnapshotsReferences
+    extends BaseReferences<_$LocalDatabase, WealthSnapshots, WealthSnapshot> {
+  $WealthSnapshotsReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<WealthValues, List<WealthValue>>
+  _wealthValuesRefsTable(_$LocalDatabase db) => MultiTypedResultKey.fromTable(
+    db.wealthValues,
+    aliasName: 'wealth_snapshots__id__wealth_values__snapshot_id',
+  );
+
+  $WealthValuesProcessedTableManager get wealthValuesRefs {
+    final manager = $WealthValuesTableManager(
+      $_db,
+      $_db.wealthValues,
+    ).filter((f) => f.snapshotId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_wealthValuesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $WealthSnapshotsFilterComposer
+    extends Composer<_$LocalDatabase, WealthSnapshots> {
+  $WealthSnapshotsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get month => $composableBuilder(
+    column: $table.month,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> wealthValuesRefs(
+    Expression<bool> Function($WealthValuesFilterComposer f) f,
+  ) {
+    final $WealthValuesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wealthValues,
+      getReferencedColumn: (t) => t.snapshotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $WealthValuesFilterComposer(
+            $db: $db,
+            $table: $db.wealthValues,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $WealthSnapshotsOrderingComposer
+    extends Composer<_$LocalDatabase, WealthSnapshots> {
+  $WealthSnapshotsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get month => $composableBuilder(
+    column: $table.month,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $WealthSnapshotsAnnotationComposer
+    extends Composer<_$LocalDatabase, WealthSnapshots> {
+  $WealthSnapshotsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get month =>
+      $composableBuilder(column: $table.month, builder: (column) => column);
+
+  GeneratedColumn<String> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> wealthValuesRefs<T extends Object>(
+    Expression<T> Function($WealthValuesAnnotationComposer a) f,
+  ) {
+    final $WealthValuesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.wealthValues,
+      getReferencedColumn: (t) => t.snapshotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $WealthValuesAnnotationComposer(
+            $db: $db,
+            $table: $db.wealthValues,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $WealthSnapshotsTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          WealthSnapshots,
+          WealthSnapshot,
+          $WealthSnapshotsFilterComposer,
+          $WealthSnapshotsOrderingComposer,
+          $WealthSnapshotsAnnotationComposer,
+          $WealthSnapshotsCreateCompanionBuilder,
+          $WealthSnapshotsUpdateCompanionBuilder,
+          (WealthSnapshot, $WealthSnapshotsReferences),
+          WealthSnapshot,
+          PrefetchHooks Function({bool wealthValuesRefs})
+        > {
+  $WealthSnapshotsTableManager(_$LocalDatabase db, WealthSnapshots table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $WealthSnapshotsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $WealthSnapshotsOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $WealthSnapshotsAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> month = const Value.absent(),
+                Value<String> createdAt = const Value.absent(),
+                Value<String> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WealthSnapshotsCompanion(
+                id: id,
+                month: month,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String month,
+                required String createdAt,
+                required String updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => WealthSnapshotsCompanion.insert(
+                id: id,
+                month: month,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<WealthSnapshots, WealthSnapshot>(table),
+                  $WealthSnapshotsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({wealthValuesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (wealthValuesRefs) db.wealthValues],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (wealthValuesRefs)
+                    await $_getPrefetchedData<
+                      WealthSnapshot,
+                      WealthSnapshots,
+                      WealthValue
+                    >(
+                      currentTable: table,
+                      referencedTable: $WealthSnapshotsReferences
+                          ._wealthValuesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $WealthSnapshotsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).wealthValuesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.snapshotId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $WealthSnapshotsProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      WealthSnapshots,
+      WealthSnapshot,
+      $WealthSnapshotsFilterComposer,
+      $WealthSnapshotsOrderingComposer,
+      $WealthSnapshotsAnnotationComposer,
+      $WealthSnapshotsCreateCompanionBuilder,
+      $WealthSnapshotsUpdateCompanionBuilder,
+      (WealthSnapshot, $WealthSnapshotsReferences),
+      WealthSnapshot,
+      PrefetchHooks Function({bool wealthValuesRefs})
+    >;
+typedef $WealthValuesCreateCompanionBuilder = WealthValuesCompanion Function({
+  required String id,
+  required String snapshotId,
+  required String accountId,
+  required int amountCents,
+  required String createdAt,
+  required String updatedAt,
+  Value<int> rowid,
+});
+typedef $WealthValuesUpdateCompanionBuilder = WealthValuesCompanion Function({
+  Value<String> id,
+  Value<String> snapshotId,
+  Value<String> accountId,
+  Value<int> amountCents,
+  Value<String> createdAt,
+  Value<String> updatedAt,
+  Value<int> rowid,
+});
+
+final class $WealthValuesReferences
+    extends BaseReferences<_$LocalDatabase, WealthValues, WealthValue> {
+  $WealthValuesReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static WealthSnapshots _snapshotIdTable(_$LocalDatabase db) => db
+      .wealthSnapshots
+      .createAlias('wealth_values__snapshot_id__wealth_snapshots__id');
+
+  $WealthSnapshotsProcessedTableManager get snapshotId {
+    final $_column = $_itemColumn<String>('snapshot_id')!;
+
+    final manager = $WealthSnapshotsTableManager(
+      $_db,
+      $_db.wealthSnapshots,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_snapshotIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static Accounts _accountIdTable(_$LocalDatabase db) =>
+      db.accounts.createAlias('wealth_values__account_id__accounts__id');
+
+  $AccountsProcessedTableManager get accountId {
+    final $_column = $_itemColumn<String>('account_id')!;
+
+    final manager = $AccountsTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $WealthValuesFilterComposer
+    extends Composer<_$LocalDatabase, WealthValues> {
+  $WealthValuesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $WealthSnapshotsFilterComposer get snapshotId {
+    final $WealthSnapshotsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.snapshotId,
+      referencedTable: $db.wealthSnapshots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $WealthSnapshotsFilterComposer(
+            $db: $db,
+            $table: $db.wealthSnapshots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $AccountsFilterComposer get accountId {
+    final $AccountsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $AccountsFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $WealthValuesOrderingComposer
+    extends Composer<_$LocalDatabase, WealthValues> {
+  $WealthValuesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $WealthSnapshotsOrderingComposer get snapshotId {
+    final $WealthSnapshotsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.snapshotId,
+      referencedTable: $db.wealthSnapshots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $WealthSnapshotsOrderingComposer(
+            $db: $db,
+            $table: $db.wealthSnapshots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $AccountsOrderingComposer get accountId {
+    final $AccountsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $AccountsOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $WealthValuesAnnotationComposer
+    extends Composer<_$LocalDatabase, WealthValues> {
+  $WealthValuesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $WealthSnapshotsAnnotationComposer get snapshotId {
+    final $WealthSnapshotsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.snapshotId,
+      referencedTable: $db.wealthSnapshots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $WealthSnapshotsAnnotationComposer(
+            $db: $db,
+            $table: $db.wealthSnapshots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $AccountsAnnotationComposer get accountId {
+    final $AccountsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $AccountsAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $WealthValuesTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          WealthValues,
+          WealthValue,
+          $WealthValuesFilterComposer,
+          $WealthValuesOrderingComposer,
+          $WealthValuesAnnotationComposer,
+          $WealthValuesCreateCompanionBuilder,
+          $WealthValuesUpdateCompanionBuilder,
+          (WealthValue, $WealthValuesReferences),
+          WealthValue,
+          PrefetchHooks Function({bool snapshotId, bool accountId})
+        > {
+  $WealthValuesTableManager(_$LocalDatabase db, WealthValues table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $WealthValuesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $WealthValuesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $WealthValuesAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> snapshotId = const Value.absent(),
+                Value<String> accountId = const Value.absent(),
+                Value<int> amountCents = const Value.absent(),
+                Value<String> createdAt = const Value.absent(),
+                Value<String> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WealthValuesCompanion(
+                id: id,
+                snapshotId: snapshotId,
+                accountId: accountId,
+                amountCents: amountCents,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String snapshotId,
+                required String accountId,
+                required int amountCents,
+                required String createdAt,
+                required String updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => WealthValuesCompanion.insert(
+                id: id,
+                snapshotId: snapshotId,
+                accountId: accountId,
+                amountCents: amountCents,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<WealthValues, WealthValue>(table),
+                  $WealthValuesReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({snapshotId = false, accountId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (snapshotId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.snapshotId,
+                        referencedTable: $WealthValuesReferences
+                            ._snapshotIdTable(db),
+                        referencedColumn: $WealthValuesReferences
+                            ._snapshotIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (accountId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.accountId,
+                        referencedTable: $WealthValuesReferences
+                            ._accountIdTable(db),
+                        referencedColumn: $WealthValuesReferences
+                            ._accountIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $WealthValuesProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      WealthValues,
+      WealthValue,
+      $WealthValuesFilterComposer,
+      $WealthValuesOrderingComposer,
+      $WealthValuesAnnotationComposer,
+      $WealthValuesCreateCompanionBuilder,
+      $WealthValuesUpdateCompanionBuilder,
+      (WealthValue, $WealthValuesReferences),
+      WealthValue,
+      PrefetchHooks Function({bool snapshotId, bool accountId})
+    >;
 
 class $LocalDatabaseManager {
   final _$LocalDatabase _db;
@@ -7587,4 +9179,8 @@ class $LocalDatabaseManager {
   $AccountLiquidityPeriodsTableManager get accountLiquidityPeriods =>
       $AccountLiquidityPeriodsTableManager(_db, _db.accountLiquidityPeriods);
   $BudgetsTableManager get budgets => $BudgetsTableManager(_db, _db.budgets);
+  $WealthSnapshotsTableManager get wealthSnapshots =>
+      $WealthSnapshotsTableManager(_db, _db.wealthSnapshots);
+  $WealthValuesTableManager get wealthValues =>
+      $WealthValuesTableManager(_db, _db.wealthValues);
 }

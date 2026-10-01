@@ -8,6 +8,7 @@ import 'package:myautofinance/app/data/sqlite/local_database.dart';
 import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
 import 'package:myautofinance/app/data/sqlite/schema_policy.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_wealth_repository.dart';
 import 'package:myautofinance/app/data/sqlite/database_failure.dart';
 import 'package:myautofinance/features/wealth/wealth.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -189,22 +190,11 @@ void main() {
       final a = await asset();
       final db = repo.database;
       await db.customStatement(
-        'CREATE TABLE wealth_snapshots(id TEXT PRIMARY KEY,month TEXT)',
-      );
-      await db.customStatement(
-        'CREATE TABLE wealth_values(account_id TEXT REFERENCES accounts(id) ON DELETE RESTRICT ON UPDATE RESTRICT,snapshot_id TEXT REFERENCES wealth_snapshots(id))',
-      );
-      await db.customStatement(
         "INSERT INTO movements(id,account_id,value_date,concept,amount_cents,created_at,updated_at) VALUES('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',?,'2026-05-31','Sintético',-100,'2026-01-01T00:00:00.000Z','2026-01-01T00:00:00.000Z')",
         [a.id],
       );
       await expectLater(repo.close(a.id, m(4)), throwsA(isA<AccountFailure>()));
-      await db.customStatement(
-        "INSERT INTO wealth_snapshots VALUES('photo','2026-06-01')",
-      );
-      await db.customStatement("INSERT INTO wealth_values VALUES(?,'photo')", [
-        a.id,
-      ]);
+      await SqliteWealthRepository(db).setValue(m(6), a.id, 0);
       await expectLater(repo.close(a.id, m(5)), throwsA(isA<AccountFailure>()));
       expect((await repo.history(a.id)).single.until, isNull);
       await repo.close(a.id, m(6));
@@ -287,6 +277,7 @@ void main() {
       for (final sql in [
         ...movementSchemaObjects,
         ...budgetSchemaObjects,
+        ...wealthSchemaObjects,
       ].reversed) {
         final match = RegExp(r'CREATE (TABLE|INDEX|TRIGGER)\s+"?([a-z_]+)')
             .firstMatch(sql)!;
@@ -340,7 +331,7 @@ void main() {
       expect(readSchemaVersion(backup), 2);
       backup.close();
       final snap = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v5.json')
+        File('drift_schemas/autofinance/drift_schema_v6.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();

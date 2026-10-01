@@ -57,11 +57,15 @@ class LocalDatabase extends _$LocalDatabase {
             in legacy.isNotEmpty ? budgetSchemaObjects : <String>[]) {
           await customStatement(sql);
         }
+        for (final sql
+            in legacy.isNotEmpty ? wealthSchemaObjects : <String>[]) {
+          await customStatement(sql);
+        }
         await _checkIntegrity();
       });
     },
     onUpgrade: (_, from, to) async {
-      if (from < 1 || from > 4 || to != 5) {
+      if (from < 1 || from > 5 || to != 6) {
         throw const DatabaseFailure(DatabaseFailureCode.incompatible);
       }
       await transaction(() async {
@@ -76,7 +80,10 @@ class LocalDatabase extends _$LocalDatabase {
         for (final sql in from < 4 ? movementSchemaObjects : <String>[]) {
           await customStatement(sql);
         }
-        for (final sql in budgetSchemaObjects) {
+        for (final sql in from < 5 ? budgetSchemaObjects : <String>[]) {
+          await customStatement(sql);
+        }
+        for (final sql in wealthSchemaObjects) {
           await customStatement(sql);
         }
         await _checkIntegrity();
@@ -97,6 +104,7 @@ class LocalDatabase extends _$LocalDatabase {
     if (integrity.length != 1 ||
         integrity.single.data.values.single != 'ok' ||
         foreignKeys.isNotEmpty ||
+        (await customSelect(wealthIntegrityErrors).get()).isNotEmpty ||
         (await customSelect(budgetIntegrityErrors).get()).isNotEmpty ||
         (await customSelect(movementIntegrityErrors).get()).isNotEmpty ||
         (await customSelect(accountCoverageErrors).get()).isNotEmpty) {

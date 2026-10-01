@@ -7,6 +7,7 @@ import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_category_repository.dart';
 import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_wealth_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_import_batch_repository.dart';
 import 'package:myautofinance/features/importing/importing.dart';
@@ -63,6 +64,18 @@ void main() {
           Liquidity.illiquid,
         );
         await accounts.close(account.id, Month(2026, 8));
+        final wealth = SqliteWealthRepository(db);
+        expect(
+          (await wealth.read(Month(2026, 1))).status,
+          WealthSnapshotStatus.absent,
+        );
+        await wealth.setValue(Month(2026, 1), account.id, 0);
+        await wealth.setValue(Month(2026, 2), account.id, 12345);
+        await wealth.setValue(Month(2026, 2), account.id, 23456);
+        await expectLater(
+          wealth.setValue(Month(2026, 2), account.id, -1),
+          throwsA(isA<WealthFailure>()),
+        );
         final data = MovementInput(
           accountId: account.id,
           valueDate: ValueDate(2026, 1, 15),
@@ -83,6 +96,25 @@ void main() {
         final state = await reopened.select(reopened.databaseState).getSingle();
         expect(state.datasetId, initial.datasetId);
         expect(state.revision, 42);
+        final persistedWealth = SqliteWealthRepository(reopened);
+        expect(
+          (await persistedWealth.read(Month(2026, 1)))
+              .values
+              .single
+              .amountCents,
+          0,
+        );
+        final februaryPhoto = await persistedWealth.read(Month(2026, 2));
+        expect(februaryPhoto.status, WealthSnapshotStatus.complete);
+        expect(februaryPhoto.values.single.amountCents, 23456);
+        expect(
+          februaryPhoto.values.single.account.liquidity,
+          Liquidity.illiquid,
+        );
+        expect(
+          (await persistedWealth.read(Month(2026, 3))).status,
+          WealthSnapshotStatus.absent,
+        );
         final movements = await SqliteMovementRepository(reopened).list(
           from: ValueDate(2026, 1, 1),
           until: ValueDate(2026, 2, 1),
