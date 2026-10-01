@@ -17,6 +17,11 @@ secretos, firmas ni servicios externos de la aplicación. La descarga del SDK
 y de paquetes requiere acceso a los proveedores. Este ticket no compila
 destinos nativos; las compilaciones pertenecen al ticket siguiente.
 
+Antes de consultar la versión JSON se inicializa el SDK con `flutter --version`.
+Esto evita que los mensajes del primer arranque en Windows contaminen la salida
+que procesa el verificador. Los errores del script se publican como anotaciones
+de Actions y conservan el resultado fallido.
+
 ## Verificación local · 2026-10-01
 
 - `actionlint` 1.7.12: workflow válido, sin errores.
@@ -29,8 +34,25 @@ destinos nativos; las compilaciones pertenecen al ticket siguiente.
 Se utilizó el ticket completo facilitado por el usuario. Epic Board no tiene
 herramienta disponible en esta sesión y no se ha modificado el tablero.
 `AGENTS.md` y `README.md` ya estaban sin seguimiento al empezar y se excluyen
-del commit. El resultado remoto se registra después de subir el workflow;
-las verificaciones locales no equivalen a una ejecución verde de Actions.
+del commit.
+
+## Ejecución remota acreditada
+
+[Ejecución 36851297636](https://github.com/CarlosMG91/myautofinance/actions/runs/36851297636),
+activada por `push` a `main` del commit
+`ce058eb13c1df146afe88a37226a9432006503d9`: **success**, con los dos jobs
+Windows y Ubuntu completados en verde el 2026-10-01.
+
+Los primeros intentos detectaron un fallo al interpretar JSON en el primer
+arranque del SDK Windows; quedó resuelto con la inicialización previa. La API
+pública de descarga de logs respondió HTTP 403 y no había navegador disponible;
+las anotaciones públicas permitieron diagnosticar el error sin añadir secretos
+ni permisos al workflow. No queda bloqueo externo para este ticket.
+
+El workflow previo `toolchain.yml`, procedente de MA-TSK-022, también mostró un
+fallo en Windows durante estas ejecuciones. No se modificó en este ticket. La
+ejecución verde acreditada corresponde a **Calidad Flutter**; no acredita que
+todos los workflows del repositorio estén en verde ni builds nativos.
 
 ## Fuentes
 
