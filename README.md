@@ -116,3 +116,9 @@ Credential Manager conserva la sesión local; las acciones manuales reutilizan
 o renuevan credenciales sin consentimiento repetido. Incluye pruebas sintéticas
 y un recorrido nativo preparado; el consentimiento con un cliente real sigue
 pendiente del alta Google de MA-TSK-042.
+
+MA-TSK-046 entrega el [cliente de metadatos Drive v3](docs/ep-005/metadatos-drive.md)
+con puerto simulable, paginación completa, errores tipados y creación expresa
+exclusivamente de la carpeta Autofinance. Solo opera con `drive.file`; no
+transfiere contenido ni se conecta al arranque. Se verifica mediante respuestas
+HTTP sintéticas; el acceso a una cuenta real sigue pendiente del alta OAuth.
