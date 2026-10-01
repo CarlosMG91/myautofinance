@@ -133,8 +133,34 @@ El inventario sigue `blocked_external` y sin cliente Desktop real. Falta
 verificar consentimiento y revocación reales, navegador predeterminado,
 aislamiento entre instalaciones y almacenamiento nativo. Las pruebas sintéticas
 no acreditan esos criterios. La entrega de código no permite declarar todavía
-completa la aceptación real del ticket. La evidencia CI, cuando se obtenga,
-se registra debajo sin confundirla con autorización Google.
+completa la aceptación real del ticket. La evidencia CI siguiente verifica
+builds y almacenamiento, sin confundirlos con autorización Google.
+
+## Evidencia remota del código entregado
+
+El código está publicado en `origin/main`: implementación `476b495` y revisión
+final `f7fd4088f3feccec09bc32be03d1a5291fa56bab`. En este último SHA:
+
+- [Calidad Flutter](https://github.com/CarlosMG91/myautofinance/actions/runs/36892735777):
+  ambos jobs, Windows 2022 y Ubuntu 24.04, **success**.
+- [Entorno Flutter](https://github.com/CarlosMG91/myautofinance/actions/runs/36892735793):
+  workflow **success**.
+- [Compilaciones Flutter](https://github.com/CarlosMG91/myautofinance/actions/runs/36892735839):
+  job Windows **success**, incluido build release, integración SQLite existente
+  y nueva prueba nativa Credential Manager. La prueba verifica escribir, leer
+  mediante otra instancia del adaptador y borrar credenciales sintéticas con
+  el canal C++ real; el escenario OAuth manual se omite expresamente en CI.
+  El job Android seguía compilando al registrar esta evidencia; todavía no se
+  afirma su resultado final para este SHA. En el SHA previo `476b495`, el APK
+  ya había compilado correctamente.
+- La revisión final volvió a pasar análisis y las 11 pruebas del receptor
+  localmente; sanea también errores de socket al responder tras cerrar el
+  navegador. `actionlint` y `git diff --check` pasan.
+
+Las compilaciones y la prueba nativa remotas resuelven la limitación del
+toolchain local para validar el código Windows. Quedan pendientes el
+consentimiento/revocación con cliente real y el aislamiento entre dos
+instalaciones en una máquina de prueba. No se modificó el estado del tablero.
 
 ## Recorrido preparado con instalación dedicada
 
