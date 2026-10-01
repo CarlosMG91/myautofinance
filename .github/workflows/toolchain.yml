@@ -1,0 +1,43 @@
+name: Entorno Flutter
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  toolchain:
+    name: Versiones y doctor (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - name: Leer versiones del repositorio
+        id: versions
+        run: |
+          $config = Get-Content toolchain.json -Raw | ConvertFrom-Json
+          "flutter=$($config.flutter)" >> $env:GITHUB_OUTPUT
+          "channel=$($config.channel)" >> $env:GITHUB_OUTPUT
+          "java=$($config.java)" >> $env:GITHUB_OUTPUT
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ steps.versions.outputs.java }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.versions.outputs.flutter }}
+          channel: ${{ steps.versions.outputs.channel }}
+      - name: Verificar Flutter y Dart exactos
+        run: ./scripts/check-toolchain.ps1
+      - name: Diagnostico del runner
+        run: |
+          flutter doctor -v
+          if ($LASTEXITCODE -ne 0) { throw 'flutter doctor no pudo ejecutarse.' }

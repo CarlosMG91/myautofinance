@@ -1,0 +1,9 @@
+{
+  "flutter": "3.47.0",
+  "dart": "3.13.0",
+  "channel": "stable",
+  "java": "17",
+  "androidPlatform": "36",
+  "androidBuildTools": "36.0.0",
+  "androidNdk": "28.2.13676358"
+}
