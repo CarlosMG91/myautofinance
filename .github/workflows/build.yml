@@ -42,8 +42,6 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ steps.versions.outputs.java }}
-      - uses: android-actions/setup-android@v3
-        if: matrix.target == 'android'
       - name: Instalar paquetes Android fijados
         if: matrix.target == 'android'
         env:
@@ -51,7 +49,9 @@ jobs:
           SDK_BUILD_TOOLS: ${{ steps.versions.outputs.androidBuildTools }}
           SDK_NDK: ${{ steps.versions.outputs.androidNdk }}
         run: |
-          sdkmanager "platforms;android-$env:SDK_PLATFORM" "build-tools;$env:SDK_BUILD_TOOLS" "ndk;$env:SDK_NDK" 'platform-tools'
+          $sdkManager = Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager'
+          if (-not (Test-Path $sdkManager)) { throw 'El runner no proporciona Android command-line tools.' }
+          & $sdkManager "platforms;android-$env:SDK_PLATFORM" "build-tools;$env:SDK_BUILD_TOOLS" "ndk;$env:SDK_NDK" 'platform-tools'
           if ($LASTEXITCODE -ne 0) { throw 'No se pudo preparar Android SDK.' }
       - uses: subosito/flutter-action@v2
         with:
