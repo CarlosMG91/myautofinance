@@ -1,0 +1,1190 @@
+{
+  "_meta": {
+    "description": "This file contains a serialized version of schema entities for drift.",
+    "version": "1.3.0"
+  },
+  "options": {
+    "store_date_time_values_as_text": false
+  },
+  "entities": [
+    {
+      "id": 0,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "import_batches",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "content_sha256",
+            "getter_name": "contentSha256",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL UNIQUE CHECK (length(content_sha256) = 64 AND content_sha256 NOT GLOB '*[^0-9a-f]*')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "unique"
+            ]
+          },
+          {
+            "name": "source_kind",
+            "getter_name": "sourceKind",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (source_kind IN ('historical_csv', 'bank_xls'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "original_name",
+            "getter_name": "originalName",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(original_name)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "contract_version",
+            "getter_name": "contractVersion",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(contract_version)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "imported_at",
+            "getter_name": "importedAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 1,
+      "references": [
+        0
+      ],
+      "type": "table",
+      "data": {
+        "name": "import_rows",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "batch_id",
+            "getter_name": "batchId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES import_batches(id)ON UPDATE RESTRICT ON DELETE RESTRICT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "import_batches",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": "restrict",
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          },
+          {
+            "name": "source_ordinal",
+            "getter_name": "sourceOrdinal",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (typeof(source_ordinal) = 'integer' AND source_ordinal >= 2)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "record_kind",
+            "getter_name": "recordKind",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (record_kind IN ('movement', 'budget'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "UNIQUE(batch_id, source_ordinal)"
+        ],
+        "unique_keys": [
+          [
+            "batch_id",
+            "source_ordinal"
+          ]
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "accounts",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "name",
+            "getter_name": "name",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(name)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "kind",
+            "getter_name": "kind",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (kind IN ('account', 'portfolio', 'debt'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "active_from",
+            "getter_name": "activeFrom",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (active_from GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(active_from, 1, 4) BETWEEN '0001' AND '9999' AND substr(active_from, 6, 2) BETWEEN '01' AND '12')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "active_through",
+            "getter_name": "activeThrough",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "CHECK (active_through IS NULL OR(active_through GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(active_through, 1, 4) BETWEEN '0001' AND '9999' AND substr(active_through, 6, 2) BETWEEN '01' AND '12'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK(active_through IS NULL OR active_through >= active_from)"
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "categories",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "parent_id",
+            "getter_name": "parentId",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "REFERENCES categories(id)ON UPDATE RESTRICT ON DELETE RESTRICT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "categories",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": "restrict",
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          },
+          {
+            "name": "name",
+            "getter_name": "name",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(name)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "is_income",
+            "getter_name": "isIncome",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "CHECK (is_income IN (0, 1))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "archived",
+            "getter_name": "archived",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL DEFAULT 0 CHECK (archived IN (0, 1))",
+            "default_dart": "const CustomExpression('0')",
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK((parent_id IS NULL AND is_income IS NOT NULL)OR(parent_id IS NOT NULL AND is_income IS NULL))"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "references": [
+        2,
+        3,
+        1
+      ],
+      "type": "table",
+      "data": {
+        "name": "movements",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "account_id",
+            "getter_name": "accountId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES accounts(id)ON UPDATE RESTRICT ON DELETE RESTRICT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "accounts",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": "restrict",
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          },
+          {
+            "name": "value_date",
+            "getter_name": "valueDate",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (value_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND substr(value_date, 1, 4) BETWEEN '0001' AND '9999' AND date(value_date, '+0 days') IS NOT NULL AND date(value_date, '+0 days') = value_date)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "concept",
+            "getter_name": "concept",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(concept)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "amount_cents",
+            "getter_name": "amountCents",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (typeof(amount_cents) = 'integer' AND amount_cents <> 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "category_id",
+            "getter_name": "categoryId",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "REFERENCES categories(id)ON UPDATE RESTRICT ON DELETE RESTRICT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "categories",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": "restrict",
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          },
+          {
+            "name": "discretion",
+            "getter_name": "discretion",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "import_row_id",
+            "getter_name": "importRowId",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "UNIQUE REFERENCES import_rows(id)ON UPDATE RESTRICT ON DELETE RESTRICT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "unique",
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "import_rows",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": "restrict",
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 5,
+      "references": [
+        4
+      ],
+      "type": "index",
+      "data": {
+        "on": 4,
+        "name": "movements_date",
+        "sql": "CREATE INDEX movements_date ON movements(value_date,id);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 6,
+      "references": [
+        4
+      ],
+      "type": "index",
+      "data": {
+        "on": 4,
+        "name": "movements_account_date",
+        "sql": "CREATE INDEX movements_account_date ON movements(account_id,value_date,id);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 7,
+      "references": [
+        4
+      ],
+      "type": "index",
+      "data": {
+        "on": 4,
+        "name": "movements_category_date",
+        "sql": "CREATE INDEX movements_category_date ON movements(category_id,value_date,id);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 8,
+      "references": [
+        4,
+        2,
+        1
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 4,
+        "references_in_body": [
+          4,
+          2,
+          1
+        ],
+        "name": "movements_insert",
+        "sql": "CREATE TRIGGER movements_insert BEFORE INSERT ON movements BEGIN\n SELECT RAISE(ABORT,'movement_account') WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE id=NEW.account_id AND kind='account' AND substr(NEW.value_date,1,7)||'-01'>=active_from AND (active_through IS NULL OR substr(NEW.value_date,1,7)||'-01'<=active_through));\n SELECT RAISE(ABORT,'movement_origin') WHERE NEW.import_row_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM import_rows WHERE id=NEW.import_row_id AND record_kind='movement');\nEND;"
+      }
+    },
+    {
+      "id": 9,
+      "references": [
+        4,
+        2
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 4,
+        "references_in_body": [
+          4,
+          2
+        ],
+        "name": "movements_update",
+        "sql": "CREATE TRIGGER movements_update BEFORE UPDATE ON movements BEGIN\n SELECT RAISE(ABORT,'movement_account') WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE id=NEW.account_id AND kind='account' AND substr(NEW.value_date,1,7)||'-01'>=active_from AND (active_through IS NULL OR substr(NEW.value_date,1,7)||'-01'<=active_through));\n SELECT RAISE(ABORT,'movement_origin_immutable') WHERE NEW.import_row_id IS NOT OLD.import_row_id;\nEND;"
+      }
+    },
+    {
+      "id": 10,
+      "references": [
+        1
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 1,
+        "references_in_body": [
+          1
+        ],
+        "name": "import_rows_immutable",
+        "sql": "CREATE TRIGGER import_rows_immutable BEFORE UPDATE ON import_rows BEGIN SELECT RAISE(ABORT,'import_origin_immutable'); END;"
+      }
+    },
+    {
+      "id": 11,
+      "references": [
+        1
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 1,
+        "references_in_body": [
+          1
+        ],
+        "name": "import_rows_keep",
+        "sql": "CREATE TRIGGER import_rows_keep BEFORE DELETE ON import_rows BEGIN SELECT RAISE(ABORT,'import_origin_keep'); END;"
+      }
+    },
+    {
+      "id": 12,
+      "references": [
+        0
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 0,
+        "references_in_body": [
+          0
+        ],
+        "name": "import_batches_immutable",
+        "sql": "CREATE TRIGGER import_batches_immutable BEFORE UPDATE ON import_batches BEGIN SELECT RAISE(ABORT,'import_origin_immutable'); END;"
+      }
+    },
+    {
+      "id": 13,
+      "references": [
+        0
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 0,
+        "references_in_body": [
+          0
+        ],
+        "name": "import_batches_keep",
+        "sql": "CREATE TRIGGER import_batches_keep BEFORE DELETE ON import_batches BEGIN SELECT RAISE(ABORT,'import_origin_keep'); END;"
+      }
+    },
+    {
+      "id": 14,
+      "references": [
+        2,
+        4
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 2,
+        "references_in_body": [
+          2,
+          4
+        ],
+        "name": "accounts_movement_bounds",
+        "sql": "CREATE TRIGGER accounts_movement_bounds BEFORE UPDATE OF active_from,active_through ON accounts BEGIN\n SELECT RAISE(ABORT,'movement_bounds') WHERE EXISTS (SELECT 1 FROM movements WHERE account_id=NEW.id AND (substr(value_date,1,7)||'-01'<NEW.active_from OR (NEW.active_through IS NOT NULL AND substr(value_date,1,7)||'-01'>NEW.active_through)));\nEND;"
+      }
+    },
+    {
+      "id": 15,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "database_state",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "singleton",
+            "getter_name": "singleton",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (singleton = 1)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "dataset_id",
+            "getter_name": "datasetId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(dataset_id) = 36 AND substr(dataset_id, 9, 1) = '-' AND substr(dataset_id, 14, 1) = '-' AND substr(dataset_id, 19, 1) = '-' AND substr(dataset_id, 24, 1) = '-' AND length(\"replace\"(dataset_id, '-', '')) = 32 AND \"replace\"(dataset_id, '-', '') NOT GLOB '*[^0-9a-f]*')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "revision",
+            "getter_name": "revision",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (typeof(revision) = 'integer' AND revision >= 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 16,
+      "references": [
+        3
+      ],
+      "type": "index",
+      "data": {
+        "on": 3,
+        "name": "categories_parent",
+        "sql": "CREATE INDEX categories_parent ON categories(parent_id);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 17,
+      "references": [
+        3
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 3,
+        "references_in_body": [
+          3
+        ],
+        "name": "categories_insert",
+        "sql": "CREATE TRIGGER categories_insert BEFORE INSERT ON categories BEGIN\n SELECT RAISE(ABORT, 'category_cycle') WHERE NEW.parent_id=NEW.id OR EXISTS (\n WITH RECURSIVE ancestors(id,parent_id) AS (\n SELECT id,parent_id FROM categories WHERE id=NEW.parent_id\n UNION SELECT c.id,c.parent_id FROM categories c JOIN ancestors a ON c.id=a.parent_id\n ) SELECT 1 FROM ancestors WHERE id=NEW.id);\n SELECT RAISE(ABORT, 'category_depth') WHERE (\n WITH RECURSIVE ancestors(id,parent_id) AS (\n SELECT id,parent_id FROM categories WHERE id=NEW.parent_id\n UNION ALL SELECT c.id,c.parent_id FROM categories c JOIN ancestors a ON c.id=a.parent_id\n ) SELECT count(*) FROM ancestors\n ) + (\n WITH RECURSIVE descendants(id,depth) AS (\n SELECT NEW.id,1 UNION ALL SELECT c.id,d.depth+1 FROM categories c JOIN descendants d ON c.parent_id=d.id\n ) SELECT max(depth) FROM descendants\n ) > 3;\nEND;"
+      }
+    },
+    {
+      "id": 18,
+      "references": [
+        3
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 3,
+        "references_in_body": [
+          3
+        ],
+        "name": "categories_update",
+        "sql": "CREATE TRIGGER categories_update BEFORE UPDATE OF parent_id ON categories BEGIN\n SELECT RAISE(ABORT, 'category_cycle') WHERE NEW.parent_id=NEW.id OR EXISTS (\n WITH RECURSIVE ancestors(id,parent_id) AS (\n SELECT id,parent_id FROM categories WHERE id=NEW.parent_id\n UNION SELECT c.id,c.parent_id FROM categories c JOIN ancestors a ON c.id=a.parent_id\n ) SELECT 1 FROM ancestors WHERE id=NEW.id);\n SELECT RAISE(ABORT, 'category_depth') WHERE (\n WITH RECURSIVE ancestors(id,parent_id) AS (\n SELECT id,parent_id FROM categories WHERE id=NEW.parent_id\n UNION ALL SELECT c.id,c.parent_id FROM categories c JOIN ancestors a ON c.id=a.parent_id\n ) SELECT count(*) FROM ancestors\n ) + (\n WITH RECURSIVE descendants(id,depth) AS (\n SELECT NEW.id,1 UNION ALL SELECT c.id,d.depth+1 FROM categories c JOIN descendants d ON c.parent_id=d.id\n ) SELECT max(depth) FROM descendants\n ) > 3;\nEND;"
+      }
+    },
+    {
+      "id": 19,
+      "references": [
+        2
+      ],
+      "type": "table",
+      "data": {
+        "name": "account_liquidity_periods",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "account_id",
+            "getter_name": "accountId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES accounts(id)ON UPDATE RESTRICT ON DELETE RESTRICT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "accounts",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": "restrict",
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          },
+          {
+            "name": "from_month",
+            "getter_name": "fromMonth",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (from_month GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(from_month, 1, 4) BETWEEN '0001' AND '9999' AND substr(from_month, 6, 2) BETWEEN '01' AND '12')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "until_month",
+            "getter_name": "untilMonth",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "CHECK (until_month IS NULL OR(until_month GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(until_month, 1, 4) BETWEEN '0001' AND '9999' AND substr(until_month, 6, 2) BETWEEN '01' AND '12'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "liquidity",
+            "getter_name": "liquidity",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (liquidity IN ('liquid', 'medium', 'illiquid'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK(until_month IS NULL OR until_month > from_month)",
+          "UNIQUE(account_id, from_month)"
+        ],
+        "unique_keys": [
+          [
+            "account_id",
+            "from_month"
+          ]
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "references": [
+        19,
+        2
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 19,
+        "references_in_body": [
+          19,
+          2
+        ],
+        "name": "liquidity_insert",
+        "sql": "CREATE TRIGGER liquidity_insert BEFORE INSERT ON account_liquidity_periods BEGIN\n SELECT RAISE(ABORT,'liquidity_bounds') WHERE NOT EXISTS (\n SELECT 1 FROM accounts a WHERE a.id=NEW.account_id AND a.kind<>'debt'\n AND NEW.from_month>=a.active_from AND (a.active_through IS NULL OR\n (NEW.from_month<=a.active_through AND (a.active_through='9999-12-01' OR\n (NEW.until_month IS NOT NULL AND NEW.until_month<=date(a.active_through,'+1 month'))))));\n SELECT RAISE(ABORT,'liquidity_overlap') WHERE EXISTS (\n SELECT 1 FROM account_liquidity_periods p WHERE p.account_id=NEW.account_id\n AND (NEW.until_month IS NULL OR p.from_month<NEW.until_month)\n AND (p.until_month IS NULL OR NEW.from_month<p.until_month));\nEND;"
+      }
+    },
+    {
+      "id": 21,
+      "references": [
+        19,
+        2
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 19,
+        "references_in_body": [
+          19,
+          2
+        ],
+        "name": "liquidity_update",
+        "sql": "CREATE TRIGGER liquidity_update BEFORE UPDATE ON account_liquidity_periods BEGIN\n SELECT RAISE(ABORT,'liquidity_bounds') WHERE NOT EXISTS (\n SELECT 1 FROM accounts a WHERE a.id=NEW.account_id AND a.kind<>'debt'\n AND NEW.from_month>=a.active_from AND (a.active_through IS NULL OR\n (NEW.from_month<=a.active_through AND (a.active_through='9999-12-01' OR\n (NEW.until_month IS NOT NULL AND NEW.until_month<=date(a.active_through,'+1 month'))))));\n SELECT RAISE(ABORT,'liquidity_overlap') WHERE EXISTS (\n SELECT 1 FROM account_liquidity_periods p WHERE p.account_id=NEW.account_id AND p.id<>OLD.id\n AND (NEW.until_month IS NULL OR p.from_month<NEW.until_month)\n AND (p.until_month IS NULL OR NEW.from_month<p.until_month));\nEND;"
+      }
+    },
+    {
+      "id": 22,
+      "references": [
+        2
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 2,
+        "references_in_body": [
+          2
+        ],
+        "name": "account_kind_immutable",
+        "sql": "CREATE TRIGGER account_kind_immutable BEFORE UPDATE OF kind ON accounts WHEN NEW.kind<>OLD.kind BEGIN\n SELECT RAISE(ABORT,'account_kind_immutable');\nEND;"
+      }
+    },
+    {
+      "id": 23,
+      "references": [
+        2,
+        19
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 2,
+        "references_in_body": [
+          2,
+          19
+        ],
+        "name": "account_period_bounds",
+        "sql": "CREATE TRIGGER account_period_bounds BEFORE UPDATE OF active_from,active_through ON accounts BEGIN\n SELECT RAISE(ABORT,'liquidity_bounds') WHERE EXISTS (\n SELECT 1 FROM account_liquidity_periods p WHERE p.account_id=NEW.id AND\n (p.from_month<NEW.active_from OR (NEW.active_through IS NOT NULL AND\n (p.from_month>NEW.active_through OR (NEW.active_through<>'9999-12-01' AND\n (p.until_month IS NULL OR p.until_month>date(NEW.active_through,'+1 month')))))));\nEND;"
+      }
+    }
+  ],
+  "fixed_sql": [
+    {
+      "name": "import_batches",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"import_batches\" (\"id\" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), \"content_sha256\" TEXT NOT NULL UNIQUE CHECK (length(content_sha256) = 64 AND content_sha256 NOT GLOB '*[^0-9a-f]*'), \"source_kind\" TEXT NOT NULL CHECK (source_kind IN ('historical_csv', 'bank_xls')), \"original_name\" TEXT NOT NULL CHECK (length(trim(original_name)) > 0), \"contract_version\" TEXT NOT NULL CHECK (length(trim(contract_version)) > 0), \"imported_at\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL);"
+        }
+      ]
+    },
+    {
+      "name": "import_rows",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"import_rows\" (\"id\" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), \"batch_id\" TEXT NOT NULL REFERENCES import_batches(id)ON UPDATE RESTRICT ON DELETE RESTRICT, \"source_ordinal\" INTEGER NOT NULL CHECK (typeof(source_ordinal) = 'integer' AND source_ordinal >= 2), \"record_kind\" TEXT NOT NULL CHECK (record_kind IN ('movement', 'budget')), \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, UNIQUE(batch_id, source_ordinal));"
+        }
+      ]
+    },
+    {
+      "name": "accounts",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"accounts\" (\"id\" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), \"name\" TEXT NOT NULL CHECK (length(trim(name)) > 0), \"kind\" TEXT NOT NULL CHECK (kind IN ('account', 'portfolio', 'debt')), \"active_from\" TEXT NOT NULL CHECK (active_from GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(active_from, 1, 4) BETWEEN '0001' AND '9999' AND substr(active_from, 6, 2) BETWEEN '01' AND '12'), \"active_through\" TEXT CHECK (active_through IS NULL OR(active_through GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(active_through, 1, 4) BETWEEN '0001' AND '9999' AND substr(active_through, 6, 2) BETWEEN '01' AND '12')), \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, CHECK(active_through IS NULL OR active_through >= active_from));"
+        }
+      ]
+    },
+    {
+      "name": "categories",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"categories\" (\"id\" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), \"parent_id\" TEXT REFERENCES categories(id)ON UPDATE RESTRICT ON DELETE RESTRICT, \"name\" TEXT NOT NULL CHECK (length(trim(name)) > 0), \"is_income\" INTEGER CHECK (is_income IN (0, 1)), \"archived\" INTEGER NOT NULL DEFAULT 0 CHECK (archived IN (0, 1)), \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, CHECK((parent_id IS NULL AND is_income IS NOT NULL)OR(parent_id IS NOT NULL AND is_income IS NULL)));"
+        }
+      ]
+    },
+    {
+      "name": "movements",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"movements\" (\"id\" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), \"account_id\" TEXT NOT NULL REFERENCES accounts(id)ON UPDATE RESTRICT ON DELETE RESTRICT, \"value_date\" TEXT NOT NULL CHECK (value_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' AND substr(value_date, 1, 4) BETWEEN '0001' AND '9999' AND date(value_date, '+0 days') IS NOT NULL AND date(value_date, '+0 days') = value_date), \"concept\" TEXT NOT NULL CHECK (length(trim(concept)) > 0), \"amount_cents\" INTEGER NOT NULL CHECK (typeof(amount_cents) = 'integer' AND amount_cents <> 0), \"category_id\" TEXT REFERENCES categories(id)ON UPDATE RESTRICT ON DELETE RESTRICT, \"discretion\" TEXT, \"import_row_id\" TEXT UNIQUE REFERENCES import_rows(id)ON UPDATE RESTRICT ON DELETE RESTRICT, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL);"
+        }
+      ]
+    },
+    {
+      "name": "movements_date",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX movements_date ON movements (value_date, id)"
+        }
+      ]
+    },
+    {
+      "name": "movements_account_date",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX movements_account_date ON movements (account_id, value_date, id)"
+        }
+      ]
+    },
+    {
+      "name": "movements_category_date",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX movements_category_date ON movements (category_id, value_date, id)"
+        }
+      ]
+    },
+    {
+      "name": "movements_insert",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER movements_insert BEFORE INSERT ON movements BEGIN SELECT RAISE (ABORT, 'movement_account') WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE id = NEW.account_id AND kind = 'account' AND substr(NEW.value_date, 1, 7) || '-01' >= active_from AND(active_through IS NULL OR substr(NEW.value_date, 1, 7) || '-01' <= active_through));SELECT RAISE (ABORT, 'movement_origin') WHERE NEW.import_row_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM import_rows WHERE id = NEW.import_row_id AND record_kind = 'movement');END"
+        }
+      ]
+    },
+    {
+      "name": "movements_update",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER movements_update BEFORE UPDATE ON movements BEGIN SELECT RAISE (ABORT, 'movement_account') WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE id = NEW.account_id AND kind = 'account' AND substr(NEW.value_date, 1, 7) || '-01' >= active_from AND(active_through IS NULL OR substr(NEW.value_date, 1, 7) || '-01' <= active_through));SELECT RAISE (ABORT, 'movement_origin_immutable') WHERE NEW.import_row_id IS NOT OLD.import_row_id;END"
+        }
+      ]
+    },
+    {
+      "name": "import_rows_immutable",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER import_rows_immutable BEFORE UPDATE ON import_rows BEGIN SELECT RAISE (ABORT, 'import_origin_immutable');END"
+        }
+      ]
+    },
+    {
+      "name": "import_rows_keep",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER import_rows_keep BEFORE DELETE ON import_rows BEGIN SELECT RAISE (ABORT, 'import_origin_keep');END"
+        }
+      ]
+    },
+    {
+      "name": "import_batches_immutable",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER import_batches_immutable BEFORE UPDATE ON import_batches BEGIN SELECT RAISE (ABORT, 'import_origin_immutable');END"
+        }
+      ]
+    },
+    {
+      "name": "import_batches_keep",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER import_batches_keep BEFORE DELETE ON import_batches BEGIN SELECT RAISE (ABORT, 'import_origin_keep');END"
+        }
+      ]
+    },
+    {
+      "name": "accounts_movement_bounds",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER accounts_movement_bounds BEFORE UPDATE OF active_from, active_through ON accounts BEGIN SELECT RAISE (ABORT, 'movement_bounds') WHERE EXISTS (SELECT 1 FROM movements WHERE account_id = NEW.id AND(substr(value_date, 1, 7) || '-01' < NEW.active_from OR(NEW.active_through IS NOT NULL AND substr(value_date, 1, 7) || '-01' > NEW.active_through)));END"
+        }
+      ]
+    },
+    {
+      "name": "database_state",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"database_state\" (\"singleton\" INTEGER NOT NULL PRIMARY KEY CHECK (singleton = 1), \"dataset_id\" TEXT NOT NULL CHECK (length(dataset_id) = 36 AND substr(dataset_id, 9, 1) = '-' AND substr(dataset_id, 14, 1) = '-' AND substr(dataset_id, 19, 1) = '-' AND substr(dataset_id, 24, 1) = '-' AND length(\"replace\"(dataset_id, '-', '')) = 32 AND \"replace\"(dataset_id, '-', '') NOT GLOB '*[^0-9a-f]*'), \"revision\" INTEGER NOT NULL CHECK (typeof(revision) = 'integer' AND revision >= 0));"
+        }
+      ]
+    },
+    {
+      "name": "categories_parent",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX categories_parent ON categories (parent_id)"
+        }
+      ]
+    },
+    {
+      "name": "categories_insert",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER categories_insert BEFORE INSERT ON categories BEGIN SELECT RAISE (ABORT, 'category_cycle') WHERE NEW.parent_id = NEW.id OR EXISTS (WITH RECURSIVE ancestors (id, parent_id) AS (SELECT id, parent_id FROM categories WHERE id = NEW.parent_id UNION SELECT c.id, c.parent_id FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id) SELECT 1 FROM ancestors WHERE id = NEW.id);SELECT RAISE (ABORT, 'category_depth') WHERE (WITH RECURSIVE ancestors (id, parent_id) AS (SELECT id, parent_id FROM categories WHERE id = NEW.parent_id UNION ALL SELECT c.id, c.parent_id FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id) SELECT count(*) FROM ancestors) + (WITH RECURSIVE descendants (id, depth) AS (SELECT NEW.id, 1 UNION ALL SELECT c.id, d.depth + 1 FROM categories AS c JOIN descendants AS d ON c.parent_id = d.id) SELECT max(depth) FROM descendants) > 3;END"
+        }
+      ]
+    },
+    {
+      "name": "categories_update",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER categories_update BEFORE UPDATE OF parent_id ON categories BEGIN SELECT RAISE (ABORT, 'category_cycle') WHERE NEW.parent_id = NEW.id OR EXISTS (WITH RECURSIVE ancestors (id, parent_id) AS (SELECT id, parent_id FROM categories WHERE id = NEW.parent_id UNION SELECT c.id, c.parent_id FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id) SELECT 1 FROM ancestors WHERE id = NEW.id);SELECT RAISE (ABORT, 'category_depth') WHERE (WITH RECURSIVE ancestors (id, parent_id) AS (SELECT id, parent_id FROM categories WHERE id = NEW.parent_id UNION ALL SELECT c.id, c.parent_id FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id) SELECT count(*) FROM ancestors) + (WITH RECURSIVE descendants (id, depth) AS (SELECT NEW.id, 1 UNION ALL SELECT c.id, d.depth + 1 FROM categories AS c JOIN descendants AS d ON c.parent_id = d.id) SELECT max(depth) FROM descendants) > 3;END"
+        }
+      ]
+    },
+    {
+      "name": "account_liquidity_periods",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"account_liquidity_periods\" (\"id\" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length(\"replace\"(id, '-', '')) = 32 AND \"replace\"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), \"account_id\" TEXT NOT NULL REFERENCES accounts(id)ON UPDATE RESTRICT ON DELETE RESTRICT, \"from_month\" TEXT NOT NULL CHECK (from_month GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(from_month, 1, 4) BETWEEN '0001' AND '9999' AND substr(from_month, 6, 2) BETWEEN '01' AND '12'), \"until_month\" TEXT CHECK (until_month IS NULL OR(until_month GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-01' AND substr(until_month, 1, 4) BETWEEN '0001' AND '9999' AND substr(until_month, 6, 2) BETWEEN '01' AND '12')), \"liquidity\" TEXT NOT NULL CHECK (liquidity IN ('liquid', 'medium', 'illiquid')), \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, CHECK(until_month IS NULL OR until_month > from_month), UNIQUE(account_id, from_month));"
+        }
+      ]
+    },
+    {
+      "name": "liquidity_insert",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER liquidity_insert BEFORE INSERT ON account_liquidity_periods BEGIN SELECT RAISE (ABORT, 'liquidity_bounds') WHERE NOT EXISTS (SELECT 1 FROM accounts AS a WHERE a.id = NEW.account_id AND a.kind <> 'debt' AND NEW.from_month >= a.active_from AND(a.active_through IS NULL OR(NEW.from_month <= a.active_through AND(a.active_through = '9999-12-01' OR(NEW.until_month IS NOT NULL AND NEW.until_month <= date(a.active_through, '+1 month'))))));SELECT RAISE (ABORT, 'liquidity_overlap') WHERE EXISTS (SELECT 1 FROM account_liquidity_periods AS p WHERE p.account_id = NEW.account_id AND(NEW.until_month IS NULL OR p.from_month < NEW.until_month)AND(p.until_month IS NULL OR NEW.from_month < p.until_month));END"
+        }
+      ]
+    },
+    {
+      "name": "liquidity_update",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER liquidity_update BEFORE UPDATE ON account_liquidity_periods BEGIN SELECT RAISE (ABORT, 'liquidity_bounds') WHERE NOT EXISTS (SELECT 1 FROM accounts AS a WHERE a.id = NEW.account_id AND a.kind <> 'debt' AND NEW.from_month >= a.active_from AND(a.active_through IS NULL OR(NEW.from_month <= a.active_through AND(a.active_through = '9999-12-01' OR(NEW.until_month IS NOT NULL AND NEW.until_month <= date(a.active_through, '+1 month'))))));SELECT RAISE (ABORT, 'liquidity_overlap') WHERE EXISTS (SELECT 1 FROM account_liquidity_periods AS p WHERE p.account_id = NEW.account_id AND p.id <> OLD.id AND(NEW.until_month IS NULL OR p.from_month < NEW.until_month)AND(p.until_month IS NULL OR NEW.from_month < p.until_month));END"
+        }
+      ]
+    },
+    {
+      "name": "account_kind_immutable",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER account_kind_immutable BEFORE UPDATE OF kind ON accounts WHEN NEW.kind <> OLD.kind BEGIN SELECT RAISE (ABORT, 'account_kind_immutable');END"
+        }
+      ]
+    },
+    {
+      "name": "account_period_bounds",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER account_period_bounds BEFORE UPDATE OF active_from, active_through ON accounts BEGIN SELECT RAISE (ABORT, 'liquidity_bounds') WHERE EXISTS (SELECT 1 FROM account_liquidity_periods AS p WHERE p.account_id = NEW.id AND(p.from_month < NEW.active_from OR(NEW.active_through IS NOT NULL AND(p.from_month > NEW.active_through OR(NEW.active_through <> '9999-12-01' AND(p.until_month IS NULL OR p.until_month > date(NEW.active_through, '+1 month')))))));END"
+        }
+      ]
+    }
+  ]
+}

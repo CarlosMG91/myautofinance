@@ -189,17 +189,15 @@ void main() {
       final a = await asset();
       final db = repo.database;
       await db.customStatement(
-        'CREATE TABLE movements(account_id TEXT REFERENCES accounts(id) ON DELETE RESTRICT ON UPDATE RESTRICT,value_date TEXT)',
-      );
-      await db.customStatement(
         'CREATE TABLE wealth_snapshots(id TEXT PRIMARY KEY,month TEXT)',
       );
       await db.customStatement(
         'CREATE TABLE wealth_values(account_id TEXT REFERENCES accounts(id) ON DELETE RESTRICT ON UPDATE RESTRICT,snapshot_id TEXT REFERENCES wealth_snapshots(id))',
       );
-      await db.customStatement("INSERT INTO movements VALUES(?,'2026-05-31')", [
-        a.id,
-      ]);
+      await db.customStatement(
+        "INSERT INTO movements(id,account_id,value_date,concept,amount_cents,created_at,updated_at) VALUES('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',?,'2026-05-31','Sintético',-100,'2026-01-01T00:00:00.000Z','2026-01-01T00:00:00.000Z')",
+        [a.id],
+      );
       await expectLater(repo.close(a.id, m(4)), throwsA(isA<AccountFailure>()));
       await db.customStatement(
         "INSERT INTO wealth_snapshots VALUES('photo','2026-06-01')",
@@ -281,11 +279,16 @@ void main() {
     },
   );
   test(
-    'v2 a v3 preserva categorías, UUID, revisión; rollback y snapshot exacto',
+    'v2 a v4 preserva categorías, UUID, revisión; rollback y snapshot exacto',
     () async {
       final path = store.databasePath!;
       await store.close();
       final previous = sqlite3.open(path);
+      for (final sql in movementSchemaObjects.reversed) {
+        final match = RegExp(r'CREATE (TABLE|INDEX|TRIGGER)\s+"?([a-z_]+)')
+            .firstMatch(sql)!;
+        previous.execute('DROP ${match[1]} "${match[2]}"');
+      }
       // Fixture anterior genuino, reconstruido solo por esta prueba.
       for (final name in [
         'account_period_bounds',
@@ -334,7 +337,7 @@ void main() {
       expect(readSchemaVersion(backup), 2);
       backup.close();
       final snap = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v3.json')
+        File('drift_schemas/autofinance/drift_schema_v4.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();

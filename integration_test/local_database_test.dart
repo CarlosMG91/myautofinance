@@ -7,6 +7,9 @@ import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_category_repository.dart';
 import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_import_batch_repository.dart';
+import 'package:myautofinance/features/importing/importing.dart';
 import 'package:myautofinance/features/wealth/wealth.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -60,12 +63,34 @@ void main() {
           Liquidity.illiquid,
         );
         await accounts.close(account.id, Month(2026, 8));
+        final data = MovementInput(
+          accountId: account.id,
+          valueDate: ValueDate(2026, 1, 15),
+          concept: 'Café sintético',
+          amountCents: -1000,
+          discretion: 'Opcional',
+        );
+        await SqliteImportBatchRepository(db).create(
+          sha256: 'a' * 64,
+          source: ImportSource.historicalCsv,
+          originalName: 'sintetico.csv',
+          contractVersion: '1',
+          movements: [ImportedMovement(2, data), ImportedMovement(3, data)],
+        );
         await db.customStatement('UPDATE database_state SET revision=42');
         await store.close();
         final reopened = await store.open();
         final state = await reopened.select(reopened.databaseState).getSingle();
         expect(state.datasetId, initial.datasetId);
         expect(state.revision, 42);
+        final movements = await SqliteMovementRepository(reopened).list(
+          from: ValueDate(2026, 1, 1),
+          until: ValueDate(2026, 2, 1),
+          accountId: account.id,
+        );
+        expect(movements.length, 2);
+        expect(movements.map((m) => m.sourceOrdinal).toSet(), {2, 3});
+        expect(movements.first.data.discretion, 'Opcional');
         final accountHistory = SqliteAccountRepository(reopened);
         expect(
           (await accountHistory.listForMonth(Month(2026, 1))).single.liquidity,

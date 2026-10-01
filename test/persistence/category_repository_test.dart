@@ -121,8 +121,15 @@ void main() {
   test('Archivo conserva referencias históricas; edición estructural con historia rechazada', () async {
     final root = await repo.create(name: 'Ingresos', isIncome: true);
     final leaf = await repo.create(name: 'Nómina', parentId: root.id);
-    // Fixtures temporales: contratos FK de los tickets de reales/presupuestos.
-    for (final table in ['movements', 'budgets']) {
+    await repo.database.customStatement(
+      "INSERT INTO accounts(id,name,kind,active_from,created_at,updated_at) VALUES('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee','Sintética','account','2026-01-01','t','t')",
+    );
+    await repo.database.customStatement(
+      "INSERT INTO movements(id,account_id,value_date,concept,amount_cents,category_id,created_at,updated_at) VALUES('bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee','aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee','2026-01-01','Sintético',-100,?,'t','t')",
+      [leaf.id],
+    );
+    // Presupuestos todavía usa un fixture; movimientos ya tiene tabla real.
+    for (final table in ['budgets']) {
       await repo.database.customStatement(
         'CREATE TABLE $table(category_id TEXT REFERENCES categories(id) ON DELETE RESTRICT ON UPDATE RESTRICT)',
       );
@@ -184,7 +191,7 @@ void main() {
       expect(readSchemaVersion(backup), 1);
       backup.close();
       final snapshot = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v3.json')
+        File('drift_schemas/autofinance/drift_schema_v4.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();
