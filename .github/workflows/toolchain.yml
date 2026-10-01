@@ -36,7 +36,10 @@ jobs:
           flutter-version: ${{ steps.versions.outputs.flutter }}
           channel: ${{ steps.versions.outputs.channel }}
       - name: Verificar Flutter y Dart exactos
-        run: ./scripts/check-toolchain.ps1
+        run: |
+          flutter --version
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo inicializar Flutter.' }
+          ./scripts/check-toolchain.ps1
       - name: Diagnostico del runner
         run: |
           flutter doctor -v

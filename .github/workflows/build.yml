@@ -1,0 +1,87 @@
+name: Compilaciones Flutter
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: windows
+            os: windows-2022
+            output: build/windows/x64/runner/Release/
+          - target: android
+            os: ubuntu-24.04
+            output: build/app/outputs/flutter-apk/app-debug.apk
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Leer versiones fijadas
+        id: versions
+        run: |
+          $config = Get-Content toolchain.json -Raw | ConvertFrom-Json
+          foreach ($key in @('flutter', 'channel', 'java', 'androidPlatform', 'androidBuildTools', 'androidNdk')) {
+            "$key=$($config.$key)" >> $env:GITHUB_OUTPUT
+          }
+      - uses: actions/setup-java@v4
+        if: matrix.target == 'android'
+        with:
+          distribution: temurin
+          java-version: ${{ steps.versions.outputs.java }}
+      - uses: android-actions/setup-android@v3
+        if: matrix.target == 'android'
+      - name: Instalar paquetes Android fijados
+        if: matrix.target == 'android'
+        env:
+          SDK_PLATFORM: ${{ steps.versions.outputs.androidPlatform }}
+          SDK_BUILD_TOOLS: ${{ steps.versions.outputs.androidBuildTools }}
+          SDK_NDK: ${{ steps.versions.outputs.androidNdk }}
+        run: |
+          sdkmanager "platforms;android-$env:SDK_PLATFORM" "build-tools;$env:SDK_BUILD_TOOLS" "ndk;$env:SDK_NDK" 'platform-tools'
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo preparar Android SDK.' }
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.versions.outputs.flutter }}
+          channel: ${{ steps.versions.outputs.channel }}
+      - name: Inicializar y verificar SDK y dependencias
+        run: |
+          flutter --version
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo inicializar Flutter.' }
+          ./scripts/check-toolchain.ps1
+          flutter pub get --enforce-lockfile
+          if ($LASTEXITCODE -ne 0) { throw 'Falló la resolución del lockfile.' }
+      - name: Compilar Windows
+        if: matrix.target == 'windows'
+        run: |
+          flutter config --enable-windows-desktop
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo habilitar Windows.' }
+          flutter build windows --release --no-pub --dart-define=APP_ENV=test
+          if ($LASTEXITCODE -ne 0) { throw 'Falló el build Windows.' }
+      - name: Compilar APK de prueba
+        if: matrix.target == 'android'
+        run: |
+          flutter config --jdk-dir "$env:JAVA_HOME"
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo configurar JDK.' }
+          flutter build apk --debug --no-pub --dart-define=APP_ENV=test
+          if ($LASTEXITCODE -ne 0) { throw 'Falló el build Android.' }
+      - name: Conservar compilación para inspección
+        uses: actions/upload-artifact@v4
+        with:
+          name: autofinance-${{ matrix.target }}-${{ github.sha }}
+          path: ${{ matrix.output }}
+          if-no-files-found: error
+          retention-days: 14
