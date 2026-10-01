@@ -1,6 +1,10 @@
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myautofinance/app/data/sqlite/local_database.dart'
+    show LocalDatabase;
+import 'package:myautofinance/app/data/sqlite/schema_policy.dart';
 import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_budget_repository.dart';
@@ -178,6 +182,139 @@ void main() {
   tearDown(() async {
     await store.close();
     await dir.delete(recursive: true);
+  });
+
+  test('MA-TSK-040: reinicio, rollback y copia del recorrido completo A–G', () async {
+    final db = await store.open();
+    final state = await db.readState();
+    // Captura todas las tablas persistentes, también IDs, trazabilidad,
+    // liquidez histórica y metadatos; ningún efecto parcial puede ocultarse.
+    Future<Map<String, List<Map<String, Object?>>>> contents(
+      LocalDatabase connection,
+    ) async {
+      final tables = await connection
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name NOT GLOB 'sqlite_*' ORDER BY name",
+          )
+          .get();
+      return {
+        for (final table in tables)
+          table.read<String>('name'): [
+            for (final row
+                in await connection
+                    .customSelect(
+                      'SELECT * FROM "${table.read<String>('name')}" ORDER BY rowid',
+                    )
+                    .get())
+              row.data,
+          ],
+      };
+    }
+
+    final before = await contents(db);
+    await expectLater(
+      db.run(() async {
+        await categories.create(name: 'Debe revertirse');
+        await movements.create(
+          MovementInput(
+            accountId: mainAccount,
+            valueDate: ValueDate(2026, 1, 31),
+            concept: 'Debe revertirse',
+            amountCents: 100,
+          ),
+        );
+        await wealth.setValue(jan, mainAccount, 1);
+        // Caso A/H: padre y descendiente presupuestados en el mismo mes.
+        await budgets.create(
+          BudgetInput(
+            month: BudgetMonth(2026, 1),
+            categoryId: nodes['Vivienda']!,
+            amountCents: -100000,
+          ),
+        );
+      }),
+      throwsA(isA<BudgetFailure>()),
+    );
+    expect(await contents(db), before);
+    expect((await db.readState()).revision, state.revision);
+    await store.close();
+    // Propietario nuevo: no basta con reutilizar objetos en memoria.
+    store = LocalDatabaseStore(supportDirectory: () async => dir);
+    final reopened = await store.open();
+    expect(await contents(reopened), before);
+    final backup = await store.createConsistentBackup();
+    expect(backup.state.datasetId, state.datasetId);
+    expect(backup.state.revision, state.revision);
+    final copy = LocalDatabase(
+      NativeDatabase(File(backup.path), setup: configureConnection),
+    );
+    try {
+      for (final connection in [reopened, copy]) {
+        expect(await contents(connection), before);
+        expect((await connection.readState()).datasetId, state.datasetId);
+        expect((await connection.readState()).revision, state.revision);
+        expect(
+          (await connection.customSelect('PRAGMA user_version').getSingle())
+              .data
+              .values
+              .single,
+          localSchemaVersion,
+        );
+        expect(
+          (await connection.customSelect('PRAGMA application_id').getSingle())
+              .data
+              .values
+              .single,
+          localApplicationId,
+        );
+        expect(
+          await connection.customSelect('PRAGMA foreign_key_check').get(),
+          isEmpty,
+        );
+        expect(
+          (await connection.customSelect('PRAGMA integrity_check').getSingle())
+              .data
+              .values
+              .single,
+          'ok',
+        );
+        final real = SqliteMovementRepository(connection);
+        final plan = SqliteBudgetRepository(connection);
+        final photos = SqliteWealthRepository(connection);
+        expect((await real.readYear(2026)).length, 10);
+        expect((await plan.readYear(2026)).length, 48);
+        expect(sumMovements(await real.readYear(2026)), 232965);
+        expect(sumBudgets(await plan.readYear(2026)), 1320000);
+        expect(sumMovements(await real.readMonth(2026, 1)), 122975);
+        expect(sumMovements(await real.readMonth(2026, 2)), 109990);
+        final cafes = await real.readMonth(2026, 1, categoryId: nodes['Ocio']);
+        expect(cafes.length, 2);
+        expect(cafes.map((r) => r.id).toSet().length, 2);
+        expect(cafes.map((r) => r.sourceOrdinal).toSet().length, 2);
+        expect(sumMovements(cafes), -2000);
+        final photo = await photos.read(jan);
+        expect(photo.status, WealthSnapshotStatus.complete);
+        expect(liquid(photo), 900000);
+        final assets = photo.values
+            .where((v) => v.account.kind != AccountKind.debt)
+            .fold<int>(0, (s, v) => s + v.amountCents);
+        expect(assets, 1900000);
+        expect(
+          assets -
+              photo.values
+                  .singleWhere((v) => v.account.kind == AccountKind.debt)
+                  .amountCents,
+          1400000,
+        );
+        expect((await photos.read(feb)).status, WealthSnapshotStatus.absent);
+        final income = sumBudgets(await plan.readYear(2026, incomeOnly: true));
+        expect(income, 3600000);
+        expect(liquid(photo) / (income / 12), 3);
+      }
+    } finally {
+      await copy.close();
+    }
   });
 
   test(

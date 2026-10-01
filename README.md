@@ -81,6 +81,10 @@ servicios simulados del prototipo ni código del proyecto MyFinance.
 
 ## Contrato funcional
 
+La [guía de integración SQLite](docs/ep-004/guia-integracion.md) entrega las
+API de repositorios, esquema v6, migraciones y límites para CSV, Openbank,
+informes y Drive, con el recorrido integrado automatizado de MA-TSK-040.
+
 EP-001 fue aprobado el 2026-10-01. Consultar
 [especificación](docs/ep-001/especificacion.md),
 [contrato CSV](docs/ep-001/contrato-csv.md),
