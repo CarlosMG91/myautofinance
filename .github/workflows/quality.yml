@@ -1,0 +1,38 @@
+name: Calidad Flutter
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Formato, análisis y pruebas (${{ matrix.os }})
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Leer versión fijada
+        id: versions
+        run: |
+          $config = Get-Content toolchain.json -Raw | ConvertFrom-Json
+          "flutter=$($config.flutter)" >> $env:GITHUB_OUTPUT
+          "channel=$($config.channel)" >> $env:GITHUB_OUTPUT
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.versions.outputs.flutter }}
+          channel: ${{ steps.versions.outputs.channel }}
+      - name: Verificar versiones, dependencias, formato, análisis y pruebas
+        run: ./scripts/check-quality.ps1
