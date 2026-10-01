@@ -21,7 +21,7 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Leer versión fijada
@@ -35,4 +35,11 @@ jobs:
           flutter-version: ${{ steps.versions.outputs.flutter }}
           channel: ${{ steps.versions.outputs.channel }}
       - name: Verificar versiones, dependencias, formato, análisis y pruebas
-        run: ./scripts/check-quality.ps1
+        run: |
+          try {
+            ./scripts/check-quality.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Output "::error::$message"
+            throw
+          }
