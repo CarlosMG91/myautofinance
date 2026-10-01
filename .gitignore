@@ -32,3 +32,12 @@ android/captures/
 android/gradlew
 android/gradlew.bat
 android/gradle/wrapper/gradle-wrapper.jar
+
+# OAuth: solo config/google-oauth.public.json contiene ajustes versionables.
+config/private/
+client_secret*.json
+credentials.json
+token.json
+tokens.json
+oauth-session*.json
+google-services.json

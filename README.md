@@ -94,3 +94,8 @@ EP-001 fue aprobado el 2026-10-01. Consultar
 
 La evidencia local y remota de MA-TSK-029 está en
 [CI de compilaciones](docs/ep-003/ci-compilaciones.md).
+
+MA-TSK-042 prepara la [configuración mínima de OAuth Google](docs/ep-005/oauth-google.md)
+para Android y Windows, con inventario público y verificador local. El
+[registro de entrega](docs/ep-005/verificacion-oauth.md) documenta el bloqueo de
+acceso a Google Cloud; los clientes reales y el consentimiento siguen pendientes.

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "status": "blocked_external",
+  "project": {
+    "id": null,
+    "number": null
+  },
+  "consent": {
+    "appName": "Autofinance",
+    "audience": "external",
+    "publishingStatus": "testing",
+    "testUserAdded": false
+  },
+  "drive": {
+    "apiEnabled": false,
+    "scopes": ["https://www.googleapis.com/auth/drive.file"]
+  },
+  "android": {
+    "applicationId": "com.carlosmg91.myautofinance",
+    "clients": []
+  },
+  "windows": {
+    "type": "desktop",
+    "clientId": null
+  }
+}
