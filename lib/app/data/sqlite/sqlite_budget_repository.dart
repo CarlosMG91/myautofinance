@@ -93,10 +93,10 @@ AND (b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id 
 
   /// Solo el coordinador de lotes aporta la procedencia, en su transacción.
   Future<BudgetRecord> insertImported(BudgetInput data, String rowId) =>
-      _insert(data, rowId);
+      database.writeTransaction(() => _insert(data, rowId));
   @override
   Future<BudgetRecord> create(BudgetInput data) =>
-      database.transaction(() => _insert(data, null));
+      database.writeTransaction(() => _insert(data, null));
   @override
   Future<BudgetRecord?> get(String id) async {
     final rows = await database
@@ -107,7 +107,7 @@ AND (b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id 
 
   @override
   Future<BudgetRecord> edit(String id, BudgetInput data) =>
-      database.transaction(() async {
+      database.writeTransaction(() async {
         final old = await get(id);
         if (old == null) throw const BudgetFailure('La partida no existe.');
         await _validate(
@@ -130,7 +130,7 @@ AND (b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id 
         return (await get(id))!;
       });
   @override
-  Future<void> delete(String id) => database.transaction(() async {
+  Future<void> delete(String id) => database.writeTransaction(() async {
     if (await get(id) == null) {
       throw const BudgetFailure('La partida no existe.');
     }

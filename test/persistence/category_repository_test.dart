@@ -125,6 +125,9 @@ void main() {
       "INSERT INTO accounts(id,name,kind,active_from,created_at,updated_at) VALUES('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee','Sintética','account','2026-01-01','t','t')",
     );
     await repo.database.customStatement(
+      "INSERT INTO account_liquidity_periods VALUES('dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee','aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee','2026-01-01',NULL,'liquid','t','t')",
+    );
+    await repo.database.customStatement(
       "INSERT INTO movements(id,account_id,value_date,concept,amount_cents,category_id,created_at,updated_at) VALUES('bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee','aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee','2026-01-01','Sintético',-100,?,'t','t')",
       [leaf.id],
     );

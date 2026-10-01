@@ -124,7 +124,7 @@ WITH RECURSIVE tree(id,parent_id,name,income,archived,depth) AS (
     required String name,
     String? parentId,
     bool? isIncome,
-  }) => database.transaction(() async {
+  }) => database.writeTransaction(() async {
     final id = const Uuid().v4();
     await _validate(
       id,
@@ -153,7 +153,7 @@ WITH RECURSIVE tree(id,parent_id,name,income,archived,depth) AS (
     required String name,
     required String? parentId,
     required bool? isIncome,
-  }) => database.transaction(() async {
+  }) => database.writeTransaction(() async {
     final old = await get(id);
     if (old == null) throw const CategoryFailure('La categoría no existe.');
     await _validate(id, name, parentId, isIncome);
@@ -177,7 +177,7 @@ WITH RECURSIVE tree(id,parent_id,name,income,archived,depth) AS (
 
   @override
   Future<void> setArchived(String id, {required bool archived}) =>
-      database.transaction(() async {
+      database.writeTransaction(() async {
         if (await get(id) == null) {
           throw const CategoryFailure('La categoría no existe.');
         }

@@ -1,14 +1,87 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import 'database_failure.dart';
 import 'schema_policy.dart';
+import '../../../core/persistence/unit_of_work.dart';
 
 part 'local_database.g.dart';
 
 @DriftDatabase(include: {'schema.drift'})
-class LocalDatabase extends _$LocalDatabase {
+class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
   LocalDatabase(super.executor);
+
+  final Object _workKey = Object();
+  bool get inUnitOfWork => Zone.current[_workKey] == true;
+
+  @override
+  Future<DatasetState> readState() async {
+    final row = await customSelect(
+      'SELECT dataset_id,revision FROM database_state WHERE singleton=1',
+    ).getSingle();
+    return DatasetState(
+      datasetId: row.read<String>('dataset_id'),
+      revision: row.read<int>('revision'),
+    );
+  }
+
+  @override
+  Future<T> run<T>(Future<T> Function() operation) =>
+      writeTransaction(operation);
+
+  Future<T> writeTransaction<T>(Future<T> Function() operation) {
+    if (inUnitOfWork) return transaction(operation, requireNew: true);
+    return transaction(
+      () => runZoned(() async {
+        await customStatement('UPDATE local_mutation SET dirty=0');
+        final result = await operation();
+        await _checkIntegrity();
+        await customStatement(
+          'UPDATE database_state SET revision=revision+1 WHERE singleton=1 AND (SELECT dirty FROM local_mutation)=1',
+        );
+        return result;
+      }, zoneValues: {_workKey: true}),
+    );
+  }
+
+  // TEMP objects stay on this connection, are rolled back with savepoints and
+  // never become part of the shared schema or its copies.
+  Future<void> _installMutationTracking() async {
+    await customStatement(
+      'CREATE TEMP TABLE local_mutation(dirty INTEGER NOT NULL)',
+    );
+    await customStatement('INSERT INTO local_mutation VALUES(0)');
+    for (final table in [
+      'categories',
+      'accounts',
+      'account_liquidity_periods',
+      'movements',
+      'import_batches',
+      'import_rows',
+      'budgets',
+      'wealth_snapshots',
+      'wealth_values',
+    ]) {
+      final columns = await customSelect('PRAGMA table_info($table)').get();
+      final changed = columns
+          .where(
+            (c) =>
+                !['created_at', 'updated_at'].contains(c.read<String>('name')),
+          )
+          .map(
+            (c) =>
+                'NEW.${c.read<String>('name')} IS NOT OLD.${c.read<String>('name')}',
+          )
+          .join(' OR ');
+      for (final event in ['INSERT', 'UPDATE', 'DELETE']) {
+        await customStatement(
+          'CREATE TEMP TRIGGER track_${table}_${event.toLowerCase()} AFTER $event ON main.$table ${event == 'UPDATE' ? 'WHEN $changed' : ''} BEGIN UPDATE local_mutation SET dirty=1; END',
+        );
+      }
+    }
+  }
 
   @override
   int get schemaVersion => localSchemaVersion;
@@ -95,6 +168,7 @@ class LocalDatabase extends _$LocalDatabase {
         throw const DatabaseFailure(DatabaseFailureCode.open);
       }
       await _checkIntegrity();
+      await _installMutationTracking();
     },
   );
 

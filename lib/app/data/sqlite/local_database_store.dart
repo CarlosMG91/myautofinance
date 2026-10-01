@@ -9,12 +9,14 @@ import 'package:uuid/uuid.dart';
 import 'database_failure.dart';
 import 'local_database.dart';
 import 'schema_policy.dart';
+import '../../../core/persistence/unit_of_work.dart';
+import '../../../features/synchronization/synchronization.dart';
 
 typedef SupportDirectory = Future<Directory> Function();
 
 /// Propietario de una conexión por instalación. app inyectará la misma base
 /// en los futuros repositorios. Crear este objeto no abre ni escribe archivos.
-final class LocalDatabaseStore {
+final class LocalDatabaseStore implements LocalBackupSource {
   LocalDatabaseStore({SupportDirectory? supportDirectory})
     : _supportDirectory = supportDirectory ?? getApplicationSupportDirectory;
 
@@ -27,6 +29,49 @@ final class LocalDatabaseStore {
   String? _databasePath;
   String? get migrationBackupPath => _migrationBackupPath;
   String? _migrationBackupPath;
+
+  @override
+  Future<LocalBackup> createConsistentBackup() async {
+    final database = await open();
+    if (database.inUnitOfWork) {
+      throw const DatabaseFailure(DatabaseFailureCode.backup);
+    }
+    // Private new directory: never overwrite the active base or a prior copy.
+    Directory? staging;
+    try {
+      final directory = await Directory(
+        p.join(p.dirname(_databasePath!), 'copies'),
+      ).create(recursive: true);
+      staging = await directory.createTemp('snapshot-');
+      final file = File(p.join(staging.path, 'autofinance.sqlite'));
+      await database.customStatement('VACUUM INTO ?', [file.path]);
+      final copy = sqlite3.open(file.path, mode: OpenMode.readOnly);
+      try {
+        validateExistingDatabase(copy);
+        final row = copy
+            .select(
+              'SELECT dataset_id,revision FROM database_state WHERE singleton=1',
+            )
+            .single;
+        return LocalBackup(
+          path: file.path,
+          state: DatasetState(
+            datasetId: row['dataset_id'] as String,
+            revision: row['revision'] as int,
+          ),
+        );
+      } finally {
+        copy.close();
+      }
+    } catch (_) {
+      try {
+        await staging?.delete(recursive: true);
+      } catch (_) {
+        /* Only our incomplete copy. */
+      }
+      throw const DatabaseFailure(DatabaseFailureCode.backup);
+    }
+  }
 
   Future<LocalDatabase> open() async {
     if (_closing case final closing?) await closing;

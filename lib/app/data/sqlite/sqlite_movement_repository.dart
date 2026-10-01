@@ -68,7 +68,7 @@ final class SqliteMovementRepository implements MovementRepository {
   Future<MovementRecord> insertImported(
     MovementInput data,
     String importRowId,
-  ) => _insert(data, importRowId);
+  ) => database.writeTransaction(() => _insert(data, importRowId));
   Future<MovementRecord> _insert(MovementInput data, String? rowId) async {
     await _validate(data);
     final id = const Uuid().v4();
@@ -93,7 +93,7 @@ final class SqliteMovementRepository implements MovementRepository {
 
   @override
   Future<MovementRecord> create(MovementInput data) =>
-      database.transaction(() => _insert(data, null));
+      database.writeTransaction(() => _insert(data, null));
   @override
   Future<MovementRecord?> get(String id) async {
     final rows = await database
@@ -107,7 +107,7 @@ final class SqliteMovementRepository implements MovementRepository {
       (throw const MovementFailure('El movimiento no existe.'));
   @override
   Future<MovementRecord> edit(String id, MovementInput data) =>
-      database.transaction(() async {
+      database.writeTransaction(() async {
         final old = await _require(id);
         await _validate(data, previousCategory: old.data.categoryId);
         await database.customStatement(
@@ -126,7 +126,7 @@ final class SqliteMovementRepository implements MovementRepository {
       });
   @override
   Future<void> setDiscretion(String id, String? discretion) =>
-      database.transaction(() async {
+      database.writeTransaction(() async {
         await _require(id);
         await database.customStatement(
           'UPDATE movements SET discretion=?,updated_at=? WHERE id=?',
@@ -134,7 +134,7 @@ final class SqliteMovementRepository implements MovementRepository {
         );
       });
   @override
-  Future<void> delete(String id) => database.transaction(() async {
+  Future<void> delete(String id) => database.writeTransaction(() async {
     await _require(id);
     await database.customStatement('DELETE FROM movements WHERE id=?', [id]);
   });

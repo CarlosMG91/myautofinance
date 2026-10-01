@@ -40,7 +40,7 @@ final class SqliteImportBatchRepository implements ImportBatchRepository {
     required String contractVersion,
     List<ImportedMovement> movements = const [],
     List<ImportedBudget> budgets = const [],
-  }) => database.transaction(() async {
+  }) => database.writeTransaction(() async {
     if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(sha256) ||
         originalName.trim().isEmpty ||
         originalName.contains('/') ||

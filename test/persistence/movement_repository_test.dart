@@ -8,6 +8,7 @@ import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_import_batch_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_category_repository.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_wealth_repository.dart';
 import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/features/importing/importing.dart';
 import 'package:myautofinance/features/wealth/wealth.dart';
@@ -244,20 +245,8 @@ void main() {
   });
   test('Edición no altera fotos; vigencia, tipo, historia y procedencia protegidos', () async {
     final db = repo.database;
-    // Las fotos se implementarán en su ticket. Este fixture detecta escrituras.
-    await db.customStatement(
-      'CREATE TEMP TABLE wealth_snapshots(id TEXT,month TEXT)',
-    );
-    await db.customStatement(
-      'CREATE TEMP TABLE wealth_values(snapshot_id TEXT,account_id TEXT,amount_cents INTEGER)',
-    );
-    await db.customStatement(
-      "INSERT INTO wealth_snapshots VALUES('photo','2026-01-01')",
-    );
-    await db.customStatement(
-      "INSERT INTO wealth_values VALUES('photo',?,900000)",
-      [accountId],
-    );
+    await SqliteWealthRepository(db)
+        .setValue(Month(2026, 1), accountId, 900000);
     final accounts = SqliteAccountRepository(db);
     for (final kind in [AccountKind.debt, AccountKind.portfolio]) {
       final a = await accounts.create(

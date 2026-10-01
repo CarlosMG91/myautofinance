@@ -34,12 +34,12 @@ final class SqliteWealthRepository implements WealthRepository {
   }
 
   @override
-  Future<void> prepare(Month month) => database.transaction(() async {
+  Future<void> prepare(Month month) => database.writeTransaction(() async {
     await _prepare(month);
   });
   @override
   Future<void> setValue(Month month, String accountId, int amountCents) =>
-      database.transaction(() async {
+      database.writeTransaction(() async {
         if (amountCents < 0) {
           throw const WealthFailure('La valoración debe ser no negativa.');
         }
@@ -61,60 +61,63 @@ WHERE wealth_values.amount_cents<>excluded.amount_cents''',
       });
   @override
   Future<void> deleteValue(Month month, String accountId) =>
-      database.transaction(() async {
+      database.writeTransaction(() async {
         await database.customStatement(
           'DELETE FROM wealth_values WHERE snapshot_id IN (SELECT id FROM wealth_snapshots WHERE month=?) AND account_id=?',
           [month.value, accountId],
         );
       });
   @override
-  Future<void> deleteSnapshot(Month month) => database.transaction(() async {
-    await database.customStatement(
-      'DELETE FROM wealth_values WHERE snapshot_id IN (SELECT id FROM wealth_snapshots WHERE month=?)',
-      [month.value],
-    );
-    await database.customStatement(
-      'DELETE FROM wealth_snapshots WHERE month=?',
-      [month.value],
-    );
-  });
-  @override
-  Future<WealthSnapshot> read(Month month) => database.transaction(() async {
-    final accounts = await SqliteAccountRepository(database)
-        .listForMonth(month);
-    final snapshot = await _snapshot(month);
-    final rows = await database
-        .customSelect(
-          'SELECT * FROM wealth_values WHERE snapshot_id=?',
-          variables: [Variable(snapshot ?? '')],
-        )
-        .get();
-    final byAccount = {for (final r in rows) r.read<String>('account_id'): r};
-    final values = <WealthValue>[], pending = <AccountRecord>[];
-    for (final a in accounts) {
-      final row = byAccount[a.id];
-      if (row == null) {
-        pending.add(a);
-      } else {
-        values.add(
-          WealthValue(
-            id: row.read<String>('id'),
-            account: a,
-            amountCents: row.read<int>('amount_cents'),
-          ),
+  Future<void> deleteSnapshot(Month month) =>
+      database.writeTransaction(() async {
+        await database.customStatement(
+          'DELETE FROM wealth_values WHERE snapshot_id IN (SELECT id FROM wealth_snapshots WHERE month=?)',
+          [month.value],
         );
+        await database.customStatement(
+          'DELETE FROM wealth_snapshots WHERE month=?',
+          [month.value],
+        );
+      });
+  @override
+  Future<WealthSnapshot> read(Month month) => database.writeTransaction(
+    () async {
+      final accounts = await SqliteAccountRepository(database)
+          .listForMonth(month);
+      final snapshot = await _snapshot(month);
+      final rows = await database
+          .customSelect(
+            'SELECT * FROM wealth_values WHERE snapshot_id=?',
+            variables: [Variable(snapshot ?? '')],
+          )
+          .get();
+      final byAccount = {for (final r in rows) r.read<String>('account_id'): r};
+      final values = <WealthValue>[], pending = <AccountRecord>[];
+      for (final a in accounts) {
+        final row = byAccount[a.id];
+        if (row == null) {
+          pending.add(a);
+        } else {
+          values.add(
+            WealthValue(
+              id: row.read<String>('id'),
+              account: a,
+              amountCents: row.read<int>('amount_cents'),
+            ),
+          );
+        }
       }
-    }
-    return WealthSnapshot(
-      month: month,
-      snapshotId: snapshot,
-      status: values.isEmpty
-          ? WealthSnapshotStatus.absent
-          : pending.isNotEmpty
-          ? WealthSnapshotStatus.incomplete
-          : WealthSnapshotStatus.complete,
-      values: values,
-      pending: pending,
-    );
-  });
+      return WealthSnapshot(
+        month: month,
+        snapshotId: snapshot,
+        status: values.isEmpty
+            ? WealthSnapshotStatus.absent
+            : pending.isNotEmpty
+            ? WealthSnapshotStatus.incomplete
+            : WealthSnapshotStatus.complete,
+        values: values,
+        pending: pending,
+      );
+    },
+  );
 }

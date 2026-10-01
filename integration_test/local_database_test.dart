@@ -90,12 +90,42 @@ void main() {
           contractVersion: '1',
           movements: [ImportedMovement(2, data), ImportedMovement(3, data)],
         );
-        await db.customStatement('UPDATE database_state SET revision=42');
+        final beforeWork = await db.readState();
+        await db.run(() async {
+          await categories.create(name: 'Referencia sintética');
+          await wealth.setValue(Month(2026, 2), account.id, 34567);
+        });
+        final confirmed = await db.readState();
+        expect(confirmed.revision, beforeWork.revision + 1);
+        await expectLater(
+          db.run(() async {
+            await categories.create(name: 'Referencia revertida');
+            throw StateError('fallo sintético');
+          }),
+          throwsStateError,
+        );
+        expect((await db.readState()).revision, confirmed.revision);
+        final backup = await store.createConsistentBackup();
+        expect(backup.state.revision, confirmed.revision);
+        final copied = sqlite3.open(backup.path, mode: OpenMode.readOnly);
+        try {
+          expect(
+            copied.select('PRAGMA integrity_check').single.values.single,
+            'ok',
+          );
+          expect(copied.select('PRAGMA foreign_key_check'), isEmpty);
+          expect(
+            copied.select('SELECT count(*) AS n FROM movements').single['n'],
+            2,
+          );
+        } finally {
+          copied.close();
+        }
         await store.close();
         final reopened = await store.open();
         final state = await reopened.select(reopened.databaseState).getSingle();
         expect(state.datasetId, initial.datasetId);
-        expect(state.revision, 42);
+        expect(state.revision, confirmed.revision);
         final persistedWealth = SqliteWealthRepository(reopened);
         expect(
           (await persistedWealth.read(Month(2026, 1)))
@@ -106,7 +136,7 @@ void main() {
         );
         final februaryPhoto = await persistedWealth.read(Month(2026, 2));
         expect(februaryPhoto.status, WealthSnapshotStatus.complete);
-        expect(februaryPhoto.values.single.amountCents, 23456);
+        expect(februaryPhoto.values.single.amountCents, 34567);
         expect(
           februaryPhoto.values.single.account.liquidity,
           Liquidity.illiquid,

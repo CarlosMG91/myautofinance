@@ -112,7 +112,7 @@ WHERE a.active_from<=? AND (a.active_through IS NULL OR a.active_through>=?) ORD
     required Month activeFrom,
     Month? activeThrough,
     Liquidity? liquidity,
-  }) => database.transaction(() async {
+  }) => database.writeTransaction(() async {
     _name(name);
     if ((kind == AccountKind.debt) != (liquidity == null)) {
       throw const AccountFailure(
@@ -134,88 +134,90 @@ WHERE a.active_from<=? AND (a.active_through IS NULL OR a.active_through>=?) ORD
     return (await get(id))!;
   });
   @override
-  Future<void> rename(String id, String name) => database.transaction(() async {
-    _name(name);
-    final old = await _require(id);
-    if (old.name == name) return;
-    await database.customStatement(
-      'UPDATE accounts SET name=?,updated_at=? WHERE id=?',
-      [name, _now(), id],
-    );
-  });
+  Future<void> rename(String id, String name) =>
+      database.writeTransaction(() async {
+        _name(name);
+        final old = await _require(id);
+        if (old.name == name) return;
+        await database.customStatement(
+          'UPDATE accounts SET name=?,updated_at=? WHERE id=?',
+          [name, _now(), id],
+        );
+      });
   @override
-  Future<void> close(String id, Month activeThrough) => database.transaction(
-    () async {
-      await _coverage();
-      final a = await _require(id);
-      if (a.activeThrough?.value == activeThrough.value) return;
-      if (a.activeThrough != null) {
-        throw const AccountFailure(
-          'La ficha ya está dada de baja; no puede reutilizarse.',
-        );
-      }
-      if (activeThrough.compareTo(a.activeFrom) < 0) {
-        throw const AccountFailure('La baja no puede preceder al alta.');
-      }
-      // Los repositorios futuros añaden también triggers de protección de referencias.
-      final tables =
-          (await database
-                  .customSelect(
-                    "SELECT name FROM sqlite_master WHERE type='table'",
-                  )
-                  .get())
-              .map((r) => r.read<String>('name'))
-              .toSet();
-      if (tables.contains('movements') &&
-          (await database
-                  .customSelect(
-                    "SELECT 1 FROM movements WHERE account_id=? AND substr(value_date,1,7)>? LIMIT 1",
-                    variables: [
-                      Variable(id),
-                      Variable(activeThrough.value.substring(0, 7)),
-                    ],
-                  )
-                  .get())
-              .isNotEmpty) {
-        throw const AccountFailure(
-          'La baja dejaría movimientos fuera de vigencia.',
-        );
-      }
-      if (tables.contains('wealth_values') &&
-          tables.contains('wealth_snapshots') &&
-          (await database
-                  .customSelect(
-                    'SELECT 1 FROM wealth_values v JOIN wealth_snapshots s ON s.id=v.snapshot_id WHERE v.account_id=? AND s.month>? LIMIT 1',
-                    variables: [Variable(id), Variable(activeThrough.value)],
-                  )
-                  .get())
-              .isNotEmpty) {
-        throw const AccountFailure('La baja dejaría fotos fuera de vigencia.');
-      }
-      final periods = await history(id);
-      for (final p in periods) {
-        if (p.from.compareTo(activeThrough) > 0) {
-          await database.customStatement(
-            'DELETE FROM account_liquidity_periods WHERE id=?',
-            [p.id],
-          );
-        } else if (p.until == null || p.until!.compareTo(activeThrough) > 0) {
-          await database.customStatement(
-            'UPDATE account_liquidity_periods SET until_month=?,updated_at=? WHERE id=?',
-            [activeThrough.next?.value, _now(), p.id],
+  Future<void> close(String id, Month activeThrough) =>
+      database.writeTransaction(() async {
+        await _coverage();
+        final a = await _require(id);
+        if (a.activeThrough?.value == activeThrough.value) return;
+        if (a.activeThrough != null) {
+          throw const AccountFailure(
+            'La ficha ya está dada de baja; no puede reutilizarse.',
           );
         }
-      }
-      await database.customStatement(
-        'UPDATE accounts SET active_through=?,updated_at=? WHERE id=?',
-        [activeThrough.value, _now(), id],
-      );
-      await _coverage();
-    },
-  );
+        if (activeThrough.compareTo(a.activeFrom) < 0) {
+          throw const AccountFailure('La baja no puede preceder al alta.');
+        }
+        // Los repositorios futuros añaden también triggers de protección de referencias.
+        final tables =
+            (await database
+                    .customSelect(
+                      "SELECT name FROM sqlite_master WHERE type='table'",
+                    )
+                    .get())
+                .map((r) => r.read<String>('name'))
+                .toSet();
+        if (tables.contains('movements') &&
+            (await database
+                    .customSelect(
+                      "SELECT 1 FROM movements WHERE account_id=? AND substr(value_date,1,7)>? LIMIT 1",
+                      variables: [
+                        Variable(id),
+                        Variable(activeThrough.value.substring(0, 7)),
+                      ],
+                    )
+                    .get())
+                .isNotEmpty) {
+          throw const AccountFailure(
+            'La baja dejaría movimientos fuera de vigencia.',
+          );
+        }
+        if (tables.contains('wealth_values') &&
+            tables.contains('wealth_snapshots') &&
+            (await database
+                    .customSelect(
+                      'SELECT 1 FROM wealth_values v JOIN wealth_snapshots s ON s.id=v.snapshot_id WHERE v.account_id=? AND s.month>? LIMIT 1',
+                      variables: [Variable(id), Variable(activeThrough.value)],
+                    )
+                    .get())
+                .isNotEmpty) {
+          throw const AccountFailure(
+            'La baja dejaría fotos fuera de vigencia.',
+          );
+        }
+        final periods = await history(id);
+        for (final p in periods) {
+          if (p.from.compareTo(activeThrough) > 0) {
+            await database.customStatement(
+              'DELETE FROM account_liquidity_periods WHERE id=?',
+              [p.id],
+            );
+          } else if (p.until == null || p.until!.compareTo(activeThrough) > 0) {
+            await database.customStatement(
+              'UPDATE account_liquidity_periods SET until_month=?,updated_at=? WHERE id=?',
+              [activeThrough.next?.value, _now(), p.id],
+            );
+          }
+        }
+        await database.customStatement(
+          'UPDATE accounts SET active_through=?,updated_at=? WHERE id=?',
+          [activeThrough.value, _now(), id],
+        );
+        await _coverage();
+      });
   @override
   Future<void> changeLiquidity(String id, Month from, Liquidity liquidity) =>
-      database.transaction(() async {
+      database.writeTransaction(() async {
         final periods = await history(id);
         final matching = periods.where(
           (p) =>
@@ -235,7 +237,7 @@ WHERE a.active_from<=? AND (a.active_through IS NULL OR a.active_through>=?) ORD
     Month from,
     Month? until,
     Liquidity liquidity,
-  ) => database.transaction(() => _replace(id, from, until, liquidity));
+  ) => database.writeTransaction(() => _replace(id, from, until, liquidity));
   Future<void> _replace(
     String id,
     Month from,
