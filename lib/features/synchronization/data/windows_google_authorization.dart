@@ -65,6 +65,21 @@ final class LoopbackGoogleAuthorization implements WindowsGoogleAuthorization {
         .replaceAll('=', '');
   }
 
+  static Future<void> _reply(HttpResponse response, int status) async {
+    try {
+      response
+        ..statusCode = status
+        ..headers.set(HttpHeaders.cacheControlHeader, 'no-store')
+        ..headers.set('Referrer-Policy', 'no-referrer')
+        ..headers.set('Content-Security-Policy', "default-src 'none'")
+        ..headers.contentType = ContentType.text
+        ..write('Autofinance: vuelve a la aplicación.');
+      await response.close().timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // Un navegador/socket cerrado no debe producir una excepción sin sanear.
+    }
+  }
+
   @override
   void cancel() {
     final pending = _pending;
@@ -123,7 +138,8 @@ final class LoopbackGoogleAuthorization implements WindowsGoogleAuthorization {
           final ours =
               request.method == 'GET' &&
               request.uri.path == '/' &&
-              request.headers.value(HttpHeaders.hostHeader) ==
+              request.headers[HttpHeaders.hostHeader]?.length == 1 &&
+              request.headers[HttpHeaders.hostHeader]!.single ==
                   redirect.authority &&
               query['state']?.length == 1 &&
               query['state']!.single == state &&
@@ -151,21 +167,9 @@ final class LoopbackGoogleAuthorization implements WindowsGoogleAuthorization {
               );
             }
           }
-          request.response
-            ..statusCode = status
-            ..headers.set(HttpHeaders.cacheControlHeader, 'no-store')
-            ..headers.set('Referrer-Policy', 'no-referrer')
-            ..headers.set('Content-Security-Policy', "default-src 'none'")
-            ..headers.contentType = ContentType.text
-            ..write('Autofinance: vuelve a la aplicación.');
-          try {
-            await request.response.close().timeout(const Duration(seconds: 2));
-          } catch (_) {
-            // El cierre del navegador no debe impedir liberar el receptor.
-          } finally {
-            if (callback != null && !pending.isCompleted) {
-              pending.complete(callback);
-            }
+          await _reply(request.response, status);
+          if (callback != null && !pending.isCompleted) {
+            pending.complete(callback);
           }
         },
         onError: (Object _) {

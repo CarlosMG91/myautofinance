@@ -119,9 +119,13 @@ WindowsDriveChannel::WindowsDriveChannel(flutter::BinaryMessenger* messenger) {
         return;
       }
       const auto uri = Wide(*argument);
+      if (uri.empty()) {
+        result->Error("unavailable");
+        return;
+      }
       const auto opened = reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr,
           L"open", uri.c_str(), nullptr, nullptr, SW_SHOWNORMAL));
-      if (uri.empty() || opened <= 32) result->Error("unavailable");
+      if (opened <= 32) result->Error("unavailable");
       else result->Success();
       return;
     }
