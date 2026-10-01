@@ -38,6 +38,10 @@ final class WealthFailure implements Exception {
 }
 
 abstract interface class WealthRepository {
+  /// Doce fotos independientes con fichas vigentes y liquidez efectiva.
+  /// Incluye meses ausentes o incompletos; nunca suma ni arrastra valores.
+  Future<List<WealthSnapshot>> readYear(int year);
+
   /// Crea una cabecera en preparación; no completa fichas ni copia otro mes.
   Future<void> prepare(Month month);
 

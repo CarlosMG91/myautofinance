@@ -77,6 +77,11 @@ final class BudgetRecord {
 }
 
 abstract interface class BudgetRepository {
+  /// Partidas originales de enero a diciembre, sin repartir padres ni crear
+  /// ceros. incomeOnly selecciona ramas por la marca de su raíz, no por signo.
+  /// Un mes sin registros de ingreso permite detectar ingresos incompletos.
+  Future<List<BudgetRecord>> readYear(int year, {bool incomeOnly = false});
+
   Future<BudgetRecord> create(BudgetInput data);
   Future<BudgetRecord> edit(String id, BudgetInput data);
   Future<void> delete(String id);

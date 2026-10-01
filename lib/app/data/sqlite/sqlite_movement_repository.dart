@@ -15,6 +15,59 @@ final class SqliteMovementRepository implements MovementRepository {
   static const _select =
       'SELECT m.*,r.batch_id,r.source_ordinal FROM movements m LEFT JOIN import_rows r ON r.id=m.import_row_id';
 
+  @override
+  Future<List<MovementRecord>> readMonth(
+    int year,
+    int month, {
+    String? categoryId,
+  }) {
+    final from = ValueDate(year, month, 1);
+    final until = year == 9999 && month == 12
+        ? null
+        : ValueDate(
+            month == 12 ? year + 1 : year,
+            month == 12 ? 1 : month + 1,
+            1,
+          );
+    return _readPeriod(from, until, categoryId);
+  }
+
+  @override
+  Future<List<MovementRecord>> readYear(int year, {String? categoryId}) =>
+      _readPeriod(
+        ValueDate(year, 1, 1),
+        year == 9999 ? null : ValueDate(year + 1, 1, 1),
+        categoryId,
+      );
+
+  Future<List<MovementRecord>> _readPeriod(
+    ValueDate from,
+    ValueDate? until,
+    String? categoryId,
+  ) async {
+    final args = <Variable>[Variable(from.value)];
+    final clauses = ['m.value_date>=?'];
+    if (until != null) {
+      clauses.add('m.value_date<?');
+      args.add(Variable(until.value));
+    }
+    if (categoryId != null) {
+      clauses.add('''m.category_id IN (WITH RECURSIVE branch(id) AS (
+SELECT id FROM categories WHERE id=?
+UNION ALL SELECT c.id FROM categories c JOIN branch b ON c.parent_id=b.id
+) SELECT id FROM branch)''');
+      args.add(Variable(categoryId));
+    }
+    return (await database
+            .customSelect(
+              '$_select WHERE ${clauses.join(' AND ')} ORDER BY m.value_date,m.id',
+              variables: args,
+            )
+            .get())
+        .map(_read)
+        .toList();
+  }
+
   MovementRecord _read(QueryRow r) => MovementRecord(
     id: r.read<String>('id'),
     data: MovementInput(

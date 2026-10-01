@@ -8,6 +8,19 @@ import 'sqlite_account_repository.dart';
 final class SqliteWealthRepository implements WealthRepository {
   SqliteWealthRepository(this.database);
   final LocalDatabase database;
+
+  @override
+  Future<List<WealthSnapshot>> readYear(int year) {
+    Month(year, 1); // Valida antes de abrir una transacción.
+    return database.transaction(() async {
+      final result = <WealthSnapshot>[];
+      for (var month = 1; month <= 12; month++) {
+        result.add(await read(Month(year, month)));
+      }
+      return List.unmodifiable(result);
+    });
+  }
+
   String _now() => DateTime.fromMillisecondsSinceEpoch(
     DateTime.now().millisecondsSinceEpoch,
     isUtc: true,

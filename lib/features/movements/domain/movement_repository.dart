@@ -70,6 +70,16 @@ final class MovementCursor {
 }
 
 abstract interface class MovementRepository {
+  /// Lecturas completas, sin límite de paginación. categoryId selecciona
+  /// el nodo y toda su rama; null incluye también los no clasificados.
+  /// Cada movimiento aparece una sola vez, conservando su nodo directo.
+  Future<List<MovementRecord>> readMonth(
+    int year,
+    int month, {
+    String? categoryId,
+  });
+  Future<List<MovementRecord>> readYear(int year, {String? categoryId});
+
   Future<MovementRecord> create(MovementInput data);
   Future<MovementRecord?> get(String id);
 

@@ -9,6 +9,35 @@ final class SqliteBudgetRepository implements BudgetRepository {
   final LocalDatabase database;
   static const _select =
       'SELECT b.*,r.batch_id,r.source_ordinal FROM budgets b LEFT JOIN import_rows r ON r.id=b.import_row_id';
+
+  @override
+  Future<List<BudgetRecord>> readYear(
+    int year, {
+    bool incomeOnly = false,
+  }) async {
+    final from = BudgetMonth(year, 1);
+    final args = <Variable>[Variable(from.value)];
+    var where = 'b.month>=?';
+    if (year < 9999) {
+      where += ' AND b.month<?';
+      args.add(Variable(BudgetMonth(year + 1, 1).value));
+    }
+    if (incomeOnly) {
+      where += ''' AND b.category_id IN (WITH RECURSIVE income(id) AS (
+SELECT id FROM categories WHERE parent_id IS NULL AND is_income=1
+UNION ALL SELECT c.id FROM categories c JOIN income i ON c.parent_id=i.id
+) SELECT id FROM income)''';
+    }
+    return (await database
+            .customSelect(
+              '$_select WHERE $where ORDER BY b.month,b.category_id,b.id',
+              variables: args,
+            )
+            .get())
+        .map(_read)
+        .toList();
+  }
+
   String _now() => DateTime.fromMillisecondsSinceEpoch(
     DateTime.now().millisecondsSinceEpoch,
     isUtc: true,
