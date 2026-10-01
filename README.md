@@ -122,3 +122,9 @@ con puerto simulable, paginación completa, errores tipados y creación expresa
 exclusivamente de la carpeta Autofinance. Solo opera con `drive.file`; no
 transfiere contenido ni se conecta al arranque. Se verifica mediante respuestas
 HTTP sintéticas; el acceso a una cuenta real sigue pendiente del alta OAuth.
+
+MA-TSK-047 entrega el [localizador de la carpeta visible Autofinance](docs/ep-005/carpeta-drive.md),
+con identidad por ID y `appProperties`, validación de ubicación en Mi unidad,
+persistencia segura por cuenta y creación solo por petición expresa. Señala
+carpetas movidas, inaccesibles y duplicadas sin sustituirlas silenciosamente.
+Incluye pruebas sintéticas entre instalaciones; Drive real sigue pendiente de OAuth.

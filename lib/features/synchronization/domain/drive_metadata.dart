@@ -1,6 +1,10 @@
 /// Metadatos exclusivamente; no representa contenido descargado de Drive.
 const driveFolderMimeType = 'application/vnd.google-apps.folder';
 
+/// Identidad privada del proyecto OAuth, común a Windows y Android.
+/// El nombre visible puede cambiar sin cambiar esta marca.
+const driveAutofinanceFolderProperties = {'autofinanceRole': 'backupFolderV1'};
+
 enum DriveMetadataIssue {
   credentialExpired,
   permissionDenied,
@@ -41,13 +45,16 @@ final class DriveFileMetadata {
     this.size,
     this.md5Checksum,
     this.version,
-  }) : parents = List.unmodifiable(parents);
+    Map<String, String> appProperties = const {},
+  }) : parents = List.unmodifiable(parents),
+       appProperties = Map.unmodifiable(appProperties);
 
   final String id;
   final String name;
   final String mimeType;
   final List<String> parents;
   final bool trashed;
+  final Map<String, String> appProperties;
 
   /// Campos opcionales de Drive: una carpeta no tiene tamaño ni checksum.
   final DateTime? modifiedTime;
@@ -63,6 +70,9 @@ final class DriveFileMetadata {
 /// Todas las llamadas pertenecen a una acción manual con una cuenta concreta.
 /// No autoriza, renueva sesión, crea archivos vacíos ni transfiere medios.
 abstract interface class DriveMetadataClient {
+  /// Resuelve el alias root al ID real de Mi unidad para verificar ubicación.
+  Future<String> getMyDriveRootId({required String accountId});
+
   /// Filtra trashed=false; devuelve todas las páginas o falla sin resultado
   /// parcial. Sin coincidencias devuelve una lista vacía y no crea recursos.
   Future<List<DriveFileMetadata>> listFiles({
@@ -70,6 +80,7 @@ abstract interface class DriveMetadataClient {
     String? parentId,
     String? name,
     String? mimeType,
+    Map<String, String>? appProperties,
   });
 
   /// files.get solo admite metadatos; un elemento en papelera es notFound.

@@ -18,7 +18,7 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
     this.requestTimeout = const Duration(seconds: 30),
   }) : _now = now ?? DateTime.now;
 
-  static const _folderFields = 'id,name,mimeType,parents,trashed';
+  static const _folderFields = 'id,name,mimeType,parents,trashed,appProperties';
   static const _fileFields =
       '$_folderFields,modifiedTime,size,md5Checksum,version';
   final http.Client _client;
@@ -223,6 +223,12 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
           (version is! String || !RegExp(r'^\d+$').hasMatch(version))) {
         throw const FormatException();
       }
+      final properties = value['appProperties'];
+      if (value.containsKey('appProperties') &&
+          (properties is! Map<String, dynamic> ||
+              properties.values.any((v) => v is! String))) {
+        throw const FormatException();
+      }
       return DriveFileMetadata(
         id: value['id'] as String,
         name: value['name'] as String,
@@ -233,10 +239,31 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
         modifiedTime: modifiedTime,
         md5Checksum: checksum as String?,
         version: version as String?,
+        appProperties: properties == null
+            ? const {}
+            : (properties as Map<String, dynamic>).cast<String, String>(),
       );
     } catch (_) {
       throw const DriveMetadataFailure(DriveMetadataIssue.incompleteResponse);
     }
+  }
+
+  @override
+  Future<String> getMyDriveRootId({required String accountId}) async {
+    final root = await _request(
+      accountId: accountId,
+      method: 'GET',
+      uri: Uri.https('www.googleapis.com', '/drive/v3/files/root', {
+        'fields': 'id,mimeType',
+      }),
+    );
+    final id = root['id'];
+    if (id is! String ||
+        id.trim().isEmpty ||
+        root['mimeType'] != driveFolderMimeType) {
+      throw const DriveMetadataFailure(DriveMetadataIssue.incompleteResponse);
+    }
+    return id;
   }
 
   @override
@@ -245,12 +272,15 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
     String? parentId,
     String? name,
     String? mimeType,
+    Map<String, String>? appProperties,
   }) async {
     final clauses = [
       'trashed=false',
       if (parentId != null) '${_literal(parentId)} in parents',
       if (name != null) 'name=${_literal(name)}',
       if (mimeType != null) 'mimeType=${_literal(mimeType)}',
+      for (final entry in (appProperties ?? const <String, String>{}).entries)
+        'appProperties has { key=${_literal(entry.key)} and value=${_literal(entry.value)} }',
     ];
     final files = <DriveFileMetadata>[];
     final seenTokens = <String>{};
@@ -335,6 +365,7 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
           'name': 'Autofinance',
           'mimeType': driveFolderMimeType,
           'parents': ['root'],
+          'appProperties': driveAutofinanceFolderProperties,
         },
       ),
     );
@@ -342,7 +373,10 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
     if (file.name != 'Autofinance' ||
         file.mimeType != driveFolderMimeType ||
         file.trashed ||
-        file.parents.length != 1) {
+        file.parents.length != 1 ||
+        !driveAutofinanceFolderProperties.entries.every(
+          (entry) => file.appProperties[entry.key] == entry.value,
+        )) {
       throw const DriveMetadataFailure(DriveMetadataIssue.incompleteResponse);
     }
     return file;

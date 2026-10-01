@@ -21,6 +21,7 @@ Map<String, dynamic> metadata({String id = 'folder-a', bool folder = true}) => {
   'mimeType': folder ? driveFolderMimeType : 'application/octet-stream',
   'parents': ['root-id'],
   'trashed': false,
+  if (folder) 'appProperties': driveAutofinanceFolderProperties,
   if (!folder) ...{
     'modifiedTime': '2026-10-01T10:20:30.000Z',
     'size': '4096',
@@ -60,11 +61,16 @@ class Credentials implements DriveMetadataCredentialSource {
 /// Demuestra que el puerto de dominio es simulable sin HTTP ni OAuth.
 class FakeMetadata implements DriveMetadataClient {
   @override
+  Future<String> getMyDriveRootId({required String accountId}) async =>
+      'root-id';
+
+  @override
   Future<List<DriveFileMetadata>> listFiles({
     required String accountId,
     String? parentId,
     String? name,
     String? mimeType,
+    Map<String, String>? appProperties,
   }) async => [];
 
   @override
@@ -195,7 +201,7 @@ void main() {
       expect(request.url.queryParameters['pageSize'], '1000');
       expect(
         request.url.queryParameters['fields'],
-        'nextPageToken,incompleteSearch,files(id,name,mimeType,parents,trashed,modifiedTime,size,md5Checksum,version)',
+        'nextPageToken,incompleteSearch,files(id,name,mimeType,parents,trashed,appProperties,modifiedTime,size,md5Checksum,version)',
       );
       expect(request.headers['Authorization'], 'Bearer synthetic-access');
       expect(request.followRedirects, isFalse);
@@ -235,7 +241,7 @@ void main() {
     expect(request.url.queryParameters.keys, ['fields']);
     expect(
       request.url.queryParameters['fields'],
-      'id,name,mimeType,parents,trashed,modifiedTime,size,md5Checksum,version',
+      'id,name,mimeType,parents,trashed,appProperties,modifiedTime,size,md5Checksum,version',
     );
   });
 
@@ -251,12 +257,13 @@ void main() {
         expect(request.method, 'POST');
         expect(request.url.path, '/drive/v3/files');
         expect(request.url.queryParameters, {
-          'fields': 'id,name,mimeType,parents,trashed',
+          'fields': 'id,name,mimeType,parents,trashed,appProperties',
         });
         expect(jsonDecode(request.body), {
           'name': 'Autofinance',
           'mimeType': driveFolderMimeType,
           'parents': ['root'],
+          'appProperties': driveAutofinanceFolderProperties,
         });
         expect(request.headers['Content-Type'], startsWith('application/json'));
         expect(request.headers['Authorization'], 'Bearer synthetic-access');
@@ -264,6 +271,87 @@ void main() {
       },
     );
   }
+
+  test(
+    'root resuelve el alias al ID real sin exigir parents de raíz',
+    () async {
+      respond = (_) async =>
+          json({'id': 'actual-root', 'mimeType': driveFolderMimeType});
+      expect(
+        await client.getMyDriveRootId(accountId: 'account-a'),
+        'actual-root',
+      );
+      expect(requests.single.url.path, '/drive/v3/files/root');
+      expect(requests.single.url.queryParameters, {'fields': 'id,mimeType'});
+      expect(requests.single.method, 'GET');
+    },
+  );
+
+  test('root rechaza respuestas incompletas o un tipo incorrecto', () async {
+    for (final value in [
+      {},
+      {'id': '', 'mimeType': driveFolderMimeType},
+      {'id': 'root', 'mimeType': 'application/octet-stream'},
+    ]) {
+      respond = (_) async => json(value);
+      await expectLater(
+        client.getMyDriveRootId(accountId: 'account-a'),
+        throwsA(issue(DriveMetadataIssue.incompleteResponse)),
+      );
+    }
+  });
+
+  test(
+    'filtra appProperties escapadas sin filtrar por nombre ni ubicación',
+    () async {
+      respond = (_) async => json({'files': []});
+      await client.listFiles(
+        accountId: 'account-a',
+        appProperties: {"key'\\": "value'\\"},
+      );
+      expect(
+        requests.single.url.queryParameters['q'],
+        r"trashed=false and appProperties has { key='key\'\\' and value='value\'\\' }",
+      );
+    },
+  );
+
+  test('appProperties son opcionales, tipadas e inmutables en GET', () async {
+    respond = (_) async => json(metadata());
+    final file = await get();
+    expect(file.appProperties, driveAutofinanceFolderProperties);
+    expect(() => file.appProperties.clear(), throwsUnsupportedError);
+    respond = (_) async => json(metadata()..remove('appProperties'));
+    expect((await get()).appProperties, isEmpty);
+    for (final properties in [
+      null,
+      [],
+      {'key': null},
+      {'key': 42},
+    ]) {
+      respond = (_) async => json(metadata()..['appProperties'] = properties);
+      await expectLater(
+        get(),
+        throwsA(issue(DriveMetadataIssue.incompleteResponse)),
+      );
+    }
+  });
+
+  test(
+    'create exige la marca privada de Autofinance en la respuesta',
+    () async {
+      for (final value in [
+        metadata()..remove('appProperties'),
+        metadata()..['appProperties'] = {'autofinanceRole': 'other'},
+      ]) {
+        respond = (_) async => json(value);
+        await expectLater(
+          create(),
+          throwsA(issue(DriveMetadataIssue.incompleteResponse)),
+        );
+      }
+    },
+  );
 
   final statuses = {
     401: DriveMetadataIssue.credentialExpired,

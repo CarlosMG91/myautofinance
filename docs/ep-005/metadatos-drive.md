@@ -17,9 +17,10 @@ modificado directamente el estado del tablero.
 | Método | Comportamiento |
 |---|---|
 | Constructor | No consulta credenciales, autoriza, renueva ni hace red |
-| `listFiles(accountId, parentId?, name?, mimeType?)` | GET, `trashed=false`, filtros estructurados con literales escapados; todas las páginas, incluidas las vacías con continuación |
+| `getMyDriveRootId(accountId)` | Añadido en MA-TSK-047: resuelve el ID real de la raíz con GET `fields=id,mimeType` |
+| `listFiles(accountId, parentId?, name?, mimeType?, appProperties?)` | GET, `trashed=false`, filtros estructurados con literales escapados; todas las páginas, incluidas las vacías con continuación |
 | `getFile(accountId, fileId)` | GET de metadatos, ID codificado como un segmento; comprueba identidad de la respuesta y rechaza papelera |
-| `createAutofinanceFolder(accountId)` | Única escritura: POST JSON de carpeta normal `Autofinance`, MIME de carpeta y `parents=[root]`, en Mi unidad |
+| `createAutofinanceFolder(accountId)` | Única escritura: POST JSON de carpeta normal `Autofinance`, MIME de carpeta y `parents=[root]`, en Mi unidad; MA-TSK-047 añade marca privada en el mismo POST |
 
 La creación exige que el consumidor invoque ese método tras una acción expresa.
 No se invoca desde autorización, arranque, consulta o búsqueda vacía. No hay
@@ -28,9 +29,11 @@ escritura de contenido de la base, reemplazo, fusión ni tareas en segundo plano
 
 Las listas usan `spaces=drive`, `corpora=user`,
 `includeItemsFromAllDrives=false` y `pageSize=1000`. Solicitan
-`nextPageToken,incompleteSearch,files(id,name,mimeType,parents,trashed,modifiedTime,size,md5Checksum,version)`.
+`nextPageToken,incompleteSearch,files(id,name,mimeType,parents,trashed,appProperties,modifiedTime,size,md5Checksum,version)`.
 GET individual solicita los mismos campos de archivo; crear carpeta solicita
-solo `id,name,mimeType,parents,trashed`. Los campos opcionales de archivo aportan
+solo `id,name,mimeType,parents,trashed,appProperties`. MA-TSK-047 añade
+`appProperties`, mapa opcional tipado e inmutable para verificar identidad.
+Los campos opcionales de archivo aportan
 fecha, tamaño, checksum y revisión sin descargar contenido. `version` se
 conserva como cadena para admitir el entero uint64 de Drive.
 
@@ -43,9 +46,10 @@ elementos en papelera en una lista filtrada producen `incompleteResponse`.
 Un fallo en cualquier página descarta el resultado entero; no se entregan
 resultados parciales que puedan confundirse con ausencia de copia.
 
-Una búsqueda válida sin coincidencias devuelve una lista vacía. El localizador
-de la tarea posterior decidirá `sin_copia`, comprobará/vinculará la carpeta y
-resolverá duplicados; este adaptador no interpreta un 404 como ausencia de copia.
+Una búsqueda válida sin coincidencias devuelve una lista vacía. El
+[localizador de MA-TSK-047](carpeta-drive.md) comprueba/vincula la carpeta y
+señala duplicados. La localización posterior de archivos de copia decidirá
+`sin_copia`; este adaptador no interpreta un 404 como ausencia de copia.
 
 ## Sesión y composición
 
