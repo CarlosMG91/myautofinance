@@ -55,7 +55,8 @@ final class LocalDatabaseStore {
             throw const DatabaseFailure(DatabaseFailureCode.incompatible);
           }
           if (readSchemaVersion(source) < localSchemaVersion) {
-            final backup = '${file.path}.pre-v1-${const Uuid().v4()}.sqlite';
+            final backup =
+                '${file.path}.pre-v$localSchemaVersion-${const Uuid().v4()}.sqlite';
             // VACUUM INTO captura una imagen consistente, incluido el WAL.
             // El nombre es nuevo y la copia queda conservada si falla el paso.
             source.execute('VACUUM INTO ?', [backup]);

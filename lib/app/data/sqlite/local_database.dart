@@ -11,7 +11,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => localSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -28,27 +28,34 @@ class LocalDatabase extends _$LocalDatabase {
             [const Uuid().v4()],
           );
         } else {
-          // Único paso 0 → 1: conservar linaje, añadir revisión técnica cero.
-          // Las versiones siguientes deberán añadir pasos consecutivos, con
-          // SQL/modelos del paso y respaldo previo, nunca recrear datos.
+          // Paso sintético 0 → 1, seguido del paso físico 1 → 2.
           await customStatement(
             'ALTER TABLE database_state RENAME TO previous_database_state',
           );
-          await migrator.createAll();
+          await customStatement(initialStateSchema);
           await customStatement(
             'INSERT INTO database_state(singleton, dataset_id, revision) '
             'SELECT singleton, dataset_id, 0 FROM previous_database_state',
           );
           await customStatement('DROP TABLE previous_database_state');
+          for (final sql in categorySchemaObjects) {
+            await customStatement(sql);
+          }
         }
         await customStatement('PRAGMA application_id = $localApplicationId');
         await _checkIntegrity();
       });
     },
     onUpgrade: (_, from, to) async {
-      // No hay versiones publicadas anteriores a v1. Nunca usar createAll
-      // como sustituto de una migración desconocida.
-      throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+      if (from != 1 || to != 2) {
+        throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+      }
+      await transaction(() async {
+        for (final sql in categorySchemaObjects) {
+          await customStatement(sql);
+        }
+        await _checkIntegrity();
+      });
     },
     beforeOpen: (_) async {
       final enabled = await customSelect('PRAGMA foreign_keys').getSingle();

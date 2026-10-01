@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:myautofinance/app/data/sqlite/database_failure.dart';
 import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_category_repository.dart';
+import 'package:myautofinance/features/movements/movements.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -24,12 +26,29 @@ void main() {
         final db = await store.open();
         expect(p.isWithin(support.path, store.databasePath!), isTrue);
         final initial = await db.select(db.databaseState).getSingle();
+        final categories = SqliteCategoryRepository(db);
+        final root = await categories.create(name: 'Ingresos', isIncome: true);
+        final child = await categories.create(
+          name: 'Salario',
+          parentId: root.id,
+        );
+        final leaf = await categories.create(name: 'Extra', parentId: child.id);
+        expect(leaf.isIncome, isTrue);
+        await expectLater(
+          categories.create(name: 'Cuarto nivel', parentId: leaf.id),
+          throwsA(isA<CategoryFailure>()),
+        );
+        await categories.setArchived(root.id, archived: true);
         await db.customStatement('UPDATE database_state SET revision=42');
         await store.close();
         final reopened = await store.open();
         final state = await reopened.select(reopened.databaseState).getSingle();
         expect(state.datasetId, initial.datasetId);
         expect(state.revision, 42);
+        expect(
+          (await SqliteCategoryRepository(reopened).get(leaf.id))!.archived,
+          isTrue,
+        );
         expect(
           (await reopened.customSelect('PRAGMA foreign_keys').getSingle())
               .data
