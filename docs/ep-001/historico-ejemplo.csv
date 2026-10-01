@@ -1,0 +1,59 @@
+fecha;concepto;importe_eur;tipo;categoria;subcategoria;subsubcategoria;cuenta_origen;discrecionalidad
+2026-01-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-01-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-01-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-01-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-02-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-02-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-02-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-02-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-03-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-03-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-03-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-03-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-04-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-04-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-04-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-04-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-05-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-05-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-05-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-05-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-06-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-06-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-06-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-06-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-07-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-07-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-07-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-07-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-08-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-08-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-08-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-08-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-09-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-09-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-09-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-09-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-10-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-10-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-10-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-10-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-11-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-11-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-11-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-11-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-12-01;Presupuesto salario;-3000.00;PRESUPUESTO;Ingresos;Salario;;;
+2026-12-01;Presupuesto alquiler;1000.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-12-01;Presupuesto compra;400.00;PRESUPUESTO;Alimentación;Supermercado;Compra semanal;;
+2026-12-01;Presupuesto ahorro;500.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
+2026-01-05;Nómina;3100.00;REAL;Ingresos;Salario;;Cuenta principal;
+2026-01-06;Alquiler;-1000.00;REAL;Vivienda;Alquiler;;Cuenta principal;
+2026-01-07;Compra semanal;-350.25;REAL;Alimentación;Supermercado;Compra semanal;Cuenta principal;Discrecional
+2026-01-08;Transferencia a ahorro;-500.00;REAL;Ahorro;Cuenta de ahorro;;Cuenta principal;
+2026-01-09;Café;-10.00;REAL;Ocio;;;Cuenta principal;Discrecional
+2026-01-09;Café;-10.00;REAL;Ocio;;;Cuenta principal;Discrecional
+2026-02-05;Nómina;3020.00;REAL;Ingresos;Salario;;Cuenta principal;
+2026-02-06;Alquiler;-1000.00;REAL;Vivienda;Alquiler;;Cuenta principal;
+2026-02-07;Compra semanal;-420.10;REAL;Alimentación;Supermercado;Compra semanal;Cuenta principal;Discrecional
+2026-02-08;Transferencia a ahorro;-500.00;REAL;Ahorro;Cuenta de ahorro;;Cuenta principal;
