@@ -99,3 +99,8 @@ MA-TSK-042 prepara la [configuración mínima de OAuth Google](docs/ep-005/oauth
 para Android y Windows, con inventario público y verificador local. El
 [registro de entrega](docs/ep-005/verificacion-oauth.md) documenta el bloqueo de
 acceso a Google Cloud; los clientes reales y el consentimiento siguen pendientes.
+
+MA-TSK-043 entrega el [contrato común de sesión y cuenta Drive](docs/ep-005/sesion-drive.md),
+con estados, autorización y renovación explícitas, desconexión local y carpeta
+vinculada a la cuenta. Se verifica con proveedor falso; los adaptadores OAuth
+y el almacenamiento seguro nativo se implementarán en los tickets posteriores.
