@@ -46,6 +46,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(destination.label), findsOneWidget);
+      final context = tester.element(find.text(destination.label));
+      expect(Localizations.localeOf(context), const Locale('es', 'ES'));
+      expect(MaterialLocalizations.of(context).backButtonTooltip, 'Atrás');
       expect(
         find.text('Marcador técnico · ${destination.path}'),
         findsOneWidget,
@@ -71,6 +74,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Error de navegación'), findsOneWidget);
       expect(find.text('Destino desconocido · $path'), findsOneWidget);
+      expect(
+        ModalRoute.of(tester.element(find.text('Error de navegación')))!
+            .settings
+            .name,
+        path,
+      );
       await tester.tap(find.text('Volver'));
       await tester.pumpAndSettle();
       expect(find.text('Autofinance · Base técnica'), findsOneWidget);
