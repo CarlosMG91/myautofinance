@@ -80,9 +80,10 @@ flutter test integration_test/local_database_test.dart -d <id> --no-pub --dart-d
 Flutter 3.47.0 / Dart 3.13.0 comprobados, sin actualizar SDK. Dependencias añadidas
 intencionadamente y resueltas con lockfile. Generación y exportación Drift
 completadas. check-quality.ps1 completo: formato, análisis sin incidencias,
-35 pruebas y cuatro variantes APP_ENV. git diff --check y actionlint sin errores.
+35 pruebas y cuatro variantes APP_ENV, más una prueba posterior de objeto SQL
+inesperado. git diff --check y actionlint sin errores.
 
-Las 14 pruebas nuevas usan SQLite real y fixtures sintéticos: ruta, reapertura,
+Las 15 pruebas nuevas usan SQLite real y fixtures sintéticos: ruta, reapertura,
 FK con inserciones y borrados prohibidos por conexión, aperturas concurrentes,
 cierre pendiente, CHECK, snapshot, migración, UUID conservado, respaldo con WAL
 pendiente, rollback intermedio, versión futura, bases ajenas/vacías/corruptas,

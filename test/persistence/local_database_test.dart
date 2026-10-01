@@ -320,6 +320,7 @@ void main() {
     'corrupt',
     'bad-schema',
     'bad-data',
+    'extra-object',
   ]) {
     test('Rechaza $variant sin cambiar bytes y permite recuperar apertura', () async {
       file.parent.createSync(recursive: true);
@@ -349,6 +350,12 @@ void main() {
               raw.execute(
                 "INSERT INTO database_state VALUES (1, 'invalid', -1)",
               );
+            }
+            if (variant == 'extra-object') {
+              raw.execute('INSERT INTO database_state VALUES (1, ?, 0)', [
+                dataset,
+              ]);
+              raw.execute('CREATE TABLE sqliteX_extra(id INTEGER)');
             }
           }
         } finally {

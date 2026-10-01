@@ -50,7 +50,7 @@ void validateExistingDatabase(CommonDatabase db) {
   }
   final id = db.select('PRAGMA application_id').single.values.single;
   final objects = db.select(
-    "SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'",
+    "SELECT type, name, sql FROM sqlite_master WHERE name NOT GLOB 'sqlite_*'",
   );
   if (id != localApplicationId || version < 0 || objects.length != 1) {
     throw const DatabaseFailure(DatabaseFailureCode.incompatible);
@@ -88,7 +88,7 @@ void validateIntegrity(CommonDatabase db) {
 /// Drift llama setup en cada conexión SQLite, antes de crear/migrar.
 void configureConnection(CommonDatabase db) {
   final objects = db.select(
-    "SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'",
+    "SELECT name FROM sqlite_master WHERE name NOT GLOB 'sqlite_*'",
   );
   // Una nueva conexión vacía tiene versión/id cero. Lo demás debe reconocerse.
   if (objects.isNotEmpty ||
