@@ -21,6 +21,7 @@ Desde la raíz:
 ```text
 node docs/ep-001/verificar-casos.mjs
 node docs/ep-002/prototipo/verificar.mjs
+node docs/ep-002/prototipo/verificar-integral.mjs
 node --check docs/ep-002/prototipo/app.js
 git diff --check
 ```
@@ -28,3 +29,5 @@ git diff --check
 Resultados: OK el 2026-10-01. El comprobador del prototipo ejecuta el modelo y los manejadores de interacción con DOM simulado: cifras, cinco rutas, fotos parcial/cero/completa, conflicto, propuesta, categorización, importación vacía/error/repetida y Drive divergencia/cancelación/fallos/respaldo. No demuestra renderizado, tacto, lector de pantalla, transferencia real ni persistencia. No había navegador conectado disponible (inventario vacío), por lo que queda pendiente la revisión visual interactiva en los tamaños indicados y en un dispositivo Android real. No existe módulo Flutter que analizar.
 
 Se aplica el ticket proporcionado en la conversación; no hay herramienta Epic Board para consultarlo o actualizarlo. Los contratos y wireframes anteriores permanecen como fuentes de verdad. La aprobación humana del mockup pertenece a **MA-TSK-019 y sigue pendiente**. Este prototipo no autoriza implementar pantallas Flutter.
+
+La revisión de MA-TSK-018, las correcciones, las pruebas ampliadas y la matriz visual pendiente están en [verificacion-integral.md](../verificacion-integral.md). La aceptación integral sigue pendiente de disponer de navegador para ejecutar PC/Android; las pruebas con DOM simulado no sustituyen esa revisión.
