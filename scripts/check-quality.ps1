@@ -9,7 +9,7 @@ try {
     & flutter pub get --enforce-lockfile
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron resolver las dependencias fijadas.' }
 
-    & dart format --output=none --set-exit-if-changed lib test
+    & dart format --output=none --set-exit-if-changed lib test integration_test
     if ($LASTEXITCODE -ne 0) { throw 'Formato pendiente: ejecutar dart format lib test.' }
 
     & flutter analyze --no-pub --fatal-infos --fatal-warnings

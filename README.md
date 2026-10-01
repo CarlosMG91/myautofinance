@@ -25,8 +25,9 @@ flutter run -d <id> --dart-define=APP_ENV=development
 ```
 
 `APP_ENV` admite development, test y production (valor por defecto). Son
-ajustes públicos incluidos en el binario; nunca introducir secretos. No hay
-servicios, conexiones o bases de datos asociados a estos entornos.
+ajustes públicos incluidos en el binario; nunca introducir secretos. La
+[infraestructura SQLite](docs/ep-004/persistencia-local.md) todavía no se conecta
+al arranque de los marcadores técnicos ni a repositorios de negocio.
 
 ## Verificación y compilaciones
 

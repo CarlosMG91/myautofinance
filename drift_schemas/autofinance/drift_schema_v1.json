@@ -1,0 +1,68 @@
+{
+  "_meta": {
+    "description": "This file contains a serialized version of schema entities for drift.",
+    "version": "1.3.0"
+  },
+  "options": {
+    "store_date_time_values_as_text": false
+  },
+  "entities": [
+    {
+      "id": 0,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "database_state",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "singleton",
+            "getter_name": "singleton",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (singleton = 1)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "dataset_id",
+            "getter_name": "datasetId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(dataset_id) = 36 AND substr(dataset_id, 9, 1) = '-' AND substr(dataset_id, 14, 1) = '-' AND substr(dataset_id, 19, 1) = '-' AND substr(dataset_id, 24, 1) = '-' AND length(\"replace\"(dataset_id, '-', '')) = 32 AND \"replace\"(dataset_id, '-', '') NOT GLOB '*[^0-9a-f]*')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "revision",
+            "getter_name": "revision",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (typeof(revision) = 'integer' AND revision >= 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    }
+  ],
+  "fixed_sql": [
+    {
+      "name": "database_state",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"database_state\" (\"singleton\" INTEGER NOT NULL PRIMARY KEY CHECK (singleton = 1), \"dataset_id\" TEXT NOT NULL CHECK (length(dataset_id) = 36 AND substr(dataset_id, 9, 1) = '-' AND substr(dataset_id, 14, 1) = '-' AND substr(dataset_id, 19, 1) = '-' AND substr(dataset_id, 24, 1) = '-' AND length(\"replace\"(dataset_id, '-', '')) = 32 AND \"replace\"(dataset_id, '-', '') NOT GLOB '*[^0-9a-f]*'), \"revision\" INTEGER NOT NULL CHECK (typeof(revision) = 'integer' AND revision >= 0));"
+        }
+      ]
+    }
+  ]
+}
