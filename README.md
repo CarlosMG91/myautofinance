@@ -86,3 +86,6 @@ EP-001 fue aprobado el 2026-10-01. Consultar
 [ejemplo sintético](docs/ep-001/historico-ejemplo.csv),
 [casos de referencia](docs/ep-001/casos-referencia.md) y
 [decisiones](docs/ep-001/decisiones.md) antes de implementar reglas.
+
+La evidencia local y remota de MA-TSK-029 está en
+[CI de compilaciones](docs/ep-003/ci-compilaciones.md).
