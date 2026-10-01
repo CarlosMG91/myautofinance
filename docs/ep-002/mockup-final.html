@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Autofinance · Propuesta final MA-TSK-019</title><style>:root{font-family:Segoe UI,system-ui,sans-serif;color:#17212b;background:#f5f7fa;font-size:16px}*{box-sizing:border-box}body{margin:0}aside{position:fixed;width:216px;inset:0 auto 0 0;background:white;border-right:1px solid #bbc5cf;padding:24px}h1{font-size:22px}aside p,small{color:#455468}nav{display:grid;gap:8px}button,select,input{font:inherit;border:1px solid #8996a5;border-radius:8px;padding:8px;background:white;color:#124b7a;min-height:40px}button{cursor:pointer}button:hover,button[aria-current=page]{background:#eaf3fb}button[aria-current=page]{border-left:4px solid #124b7a;font-weight:600}button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid #005fcc;outline-offset:2px}button:disabled{opacity:.55;cursor:default}main{margin-left:216px;padding:32px;max-width:1656px}.demo{color:#8a4b08;background:#fff4e5;padding:12px;border-radius:8px}header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px}.controls{display:flex;gap:12px;flex-wrap:wrap}label{display:grid;gap:6px}h2{font-size:24px}.review{margin:16px 0}summary{cursor:pointer}#notice:not(:empty){padding:16px;background:#eaf3fb;border-left:4px solid #124b7a}.summary,.card{background:white;border:1px solid #bbc5cf;border-radius:12px;padding:16px;margin:12px 0}.summary strong{font-size:24px;display:block}.scroll{overflow:auto;background:white;border:1px solid #bbc5cf;border-radius:12px;max-height:65vh}table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}th,td{padding:10px;border-bottom:1px solid #bbc5cf;text-align:right}th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:white;min-width:180px}thead th{position:sticky;top:0;background:#eaf3fb;z-index:1}thead th:first-child{z-index:2}td button{white-space:nowrap;font-size:14px;border:0;min-height:36px}.cards{display:none}.positive{color:#166534}.negative{color:#9f2733}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}dialog{border:1px solid #8996a5;border-radius:12px;max-width:760px;width:calc(100% - 32px);max-height:85vh;overflow:auto}dialog::backdrop{background:#17212b88}dialog label{margin:12px 0}dialog button{margin:4px}footer{color:#455468;margin-top:32px}p{line-height:1.5}.amount{font-variant-numeric:tabular-nums}.error{color:#9f2733} @media(max-width:839px){aside{inset:auto 0 0;width:auto;padding:8px;z-index:3;border-top:1px solid #8996a5}aside h1,aside p{display:none}nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}nav button{padding:4px;font-size:12px;overflow-wrap:anywhere;min-height:48px;min-width:0}main{margin:0;padding:16px 16px 110px}.desktop{display:none}.cards{display:block}button,select,input{min-height:48px}.card button{white-space:normal}.controls{width:100%}.controls label{flex:1;min-width:100px}dialog .scroll{max-height:40vh}h2{overflow-wrap:anywhere}}@media(forced-colors:active){button[aria-current=page]{outline:3px solid Highlight}}
+/* MA-TSK-018: limitar controles al diálogo estrecho y permitir desplazar tablas con teclado. */
+dialog input,dialog select{min-width:0;width:100%;max-width:100%}
+dialog input[type=checkbox]{width:auto;min-height:24px}
+dialog .card{overflow-wrap:anywhere}
+.scroll:focus-visible{outline:2px solid #005fcc;outline-offset:2px}
+@media(max-width:839px){summary{min-height:48px;padding:12px 0}}
+</style>
+<body><aside><h1>Autofinance</h1><p>Finanzas familiares</p><nav id="nav" aria-label="Vistas principales"></nav></aside><main><div class="demo">Prototipo · datos sintéticos · acciones simuladas · sin backend</div><header><h2 id="title"></h2><div class="controls"><label>Año <select id="year"><option>2026</option><option>2027</option></select></label><label>Mes <select id="month"></select></label><label>Gestión <select id="management"><option value="">Elegir…</option><option>Importar CSV</option><option>Categorías</option><option>Copia en Drive</option></select></label></div></header><details class="review" open><summary>Propuesta final · revisión y aprobación</summary>
+<p><strong>MA-TSK-019 · Versión 1 · 1 de octubre de 2026.</strong> Cinco destinos estables: Estado, Patrimonio, Presupuesto, Real e Indicadores. El periodo se conserva al navegar.</p>
+<p>Windows: tablas compactas con cifras alineadas y matriz anual desplazable. Android: tarjetas con etiquetas completas y navegación inferior; adaptación por debajo de 840 px. Paleta neutra y azul para acciones, signos y textos además del color, foco visible y controles móviles de 48 px.</p>
+<p>Los presupuestos y reales tienen detalles separados. Las fotos manuales incompletas muestran «sin dato»; el cero registrado se distingue de la ausencia. Drive solo ofrece operaciones explícitas y confirmaciones simuladas.</p>
+<p><strong>Para revisar:</strong> abrir las cinco vistas en enero y febrero de 2026; abrir Ocio (dos Café), completar la foto de febrero, preparar presupuesto 2027 y probar los errores de CSV y Drive desde Gestión. «Escenarios de revisión» permite restablecer los datos.</p>
+<p><strong>Limitaciones:</strong> pruebas lógicas aprobadas; revisión visual en navegador, teclado real y Android físico pendiente por falta de superficies conectadas. CSV y Drive son escenarios predefinidos, sin persistencia ni servicios reales. La gestión de categorías es una representación simplificada. Esta propuesta conserva las limitaciones anotadas en MA-TSK-018.</p>
+<p><strong>Aprobación pendiente:</strong> revisar este artefacto y aprobar explícitamente MA-TSK-019 en Epic Board, o solicitar cambios allí. La aprobación corresponde a la persona usuaria. No implementar pantallas Flutter antes de esa aprobación.</p></details><details class="review"><summary>Escenarios de revisión</summary><p>Reiniciar descarta todos los cambios de esta sesión.</p><button id="reset">Restablecer referencia</button><button id="empty">Base vacía</button><button id="pending">Cargar pendientes del caso J</button></details><p id="notice" role="status" aria-live="polite"></p><section id="content"></section><footer>MA-TSK-019 · Propuesta final v1 · aprobación humana pendiente</footer></main><dialog id="dialog" aria-labelledby="dialogTitle"><h2 id="dialogTitle"></h2><div id="dialogBody"></div><button id="cancel">Cancelar y volver</button></dialog><script>globalThis.REFERENCE = [
+  {
+    "date": "2026-01-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-01-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-01-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-01-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-02-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-02-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-02-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-02-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-03-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-03-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-03-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-03-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-04-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-04-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-04-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-04-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-05-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-05-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-05-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-05-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-06-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-06-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-06-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-06-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-07-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-07-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-07-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-07-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-08-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-08-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-08-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-08-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-09-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-09-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-09-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-09-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-10-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-10-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-10-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-10-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-11-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-11-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-11-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-11-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-12-01",
+    "concept": "Presupuesto salario",
+    "amount": 300000,
+    "type": "PRESUPUESTO",
+    "path": "Ingresos / Salario",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-12-01",
+    "concept": "Presupuesto alquiler",
+    "amount": -100000,
+    "type": "PRESUPUESTO",
+    "path": "Vivienda / Alquiler",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-12-01",
+    "concept": "Presupuesto compra",
+    "amount": -40000,
+    "type": "PRESUPUESTO",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-12-01",
+    "concept": "Presupuesto ahorro",
+    "amount": -50000,
+    "type": "PRESUPUESTO",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "",
+    "discretion": ""
+  },
+  {
+    "date": "2026-01-05",
+    "concept": "Nómina",
+    "amount": 310000,
+    "type": "REAL",
+    "path": "Ingresos / Salario",
+    "account": "Cuenta principal",
+    "discretion": ""
+  },
+  {
+    "date": "2026-01-06",
+    "concept": "Alquiler",
+    "amount": -100000,
+    "type": "REAL",
+    "path": "Vivienda / Alquiler",
+    "account": "Cuenta principal",
+    "discretion": ""
+  },
+  {
+    "date": "2026-01-07",
+    "concept": "Compra semanal",
+    "amount": -35025,
+    "type": "REAL",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "Cuenta principal",
+    "discretion": "Discrecional"
+  },
+  {
+    "date": "2026-01-08",
+    "concept": "Transferencia a ahorro",
+    "amount": -50000,
+    "type": "REAL",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "Cuenta principal",
+    "discretion": ""
+  },
+  {
+    "date": "2026-01-09",
+    "concept": "Café",
+    "amount": -1000,
+    "type": "REAL",
+    "path": "Ocio",
+    "account": "Cuenta principal",
+    "discretion": "Discrecional"
+  },
+  {
+    "date": "2026-01-09",
+    "concept": "Café",
+    "amount": -1000,
+    "type": "REAL",
+    "path": "Ocio",
+    "account": "Cuenta principal",
+    "discretion": "Discrecional"
+  },
+  {
+    "date": "2026-02-05",
+    "concept": "Nómina",
+    "amount": 302000,
+    "type": "REAL",
+    "path": "Ingresos / Salario",
+    "account": "Cuenta principal",
+    "discretion": ""
+  },
+  {
+    "date": "2026-02-06",
+    "concept": "Alquiler",
+    "amount": -100000,
+    "type": "REAL",
+    "path": "Vivienda / Alquiler",
+    "account": "Cuenta principal",
+    "discretion": ""
+  },
+  {
+    "date": "2026-02-07",
+    "concept": "Compra semanal",
+    "amount": -42010,
+    "type": "REAL",
+    "path": "Alimentación / Supermercado / Compra semanal",
+    "account": "Cuenta principal",
+    "discretion": "Discrecional"
+  },
+  {
+    "date": "2026-02-08",
+    "concept": "Transferencia a ahorro",
+    "amount": -50000,
+    "type": "REAL",
+    "path": "Ahorro / Cuenta de ahorro",
+    "account": "Cuenta principal",
+    "discretion": ""
+  }
+];
+</script><script>(function(root){
+const roots=['Ingresos','Vivienda','Alimentación','Ahorro','Ocio'];
+const names=['Cuenta principal','Cuenta de ahorro','Cartera','Deuda familiar'];
+function initial(empty=false){return {records:empty?[]:structuredClone(root.REFERENCE),imported:!empty,photos:empty?{}:{'2026-01':[600000,300000,1000000,500000]},dirty:false,known:1,remote:1,backup:null};}
+function rows(s,type,y,m,path=''){return s.records.filter(r=>r.type===type&&r.date.startsWith(String(y))&&(!m||+r.date.slice(5,7)===+m)&&(!path||r.path===path||r.path.startsWith(path+' / ')));}
+const sum=a=>a.reduce((t,r)=>t+r.amount,0);
+function photo(s,key){let v=s.photos[key];if(!v||v.every(x=>x===null))return {reason:'sin dato: falta foto patrimonial'};let missing=names.filter((_,i)=>v[i]===null);if(missing.length)return {reason:'sin dato: foto patrimonial incompleta',missing};return {liquid:v[0]+v[1],assets:v[0]+v[1]+v[2],debt:v[3],net:v[0]+v[1]+v[2]-v[3]};}
+function indicator(s,y,m){let p=photo(s,`${y}-${String(m).padStart(2,'0')}`);if(p.reason)return p;let months=Array.from({length:12},(_,i)=>rows(s,'PRESUPUESTO',y,i+1,'Ingresos'));if(months.some(a=>!a.length))return {reason:'sin dato: presupuesto anual de ingresos incompleto'};let income=sum(months.flat());if(income<=0)return {reason:income===0?'sin dato: ingresos presupuestados nulos':'sin dato: ingresos presupuestados no positivos'};return {value:p.liquid/(income/12),liquid:p.liquid,income};}
+function conflict(s,r,ignore){return s.records.some(x=>x!==ignore&&x.type==='PRESUPUESTO'&&x.date===r.date&&(x.path===r.path||x.path.startsWith(r.path+' / ')||r.path.startsWith(x.path+' / ')));}
+function proposal(s,y){return Array.from({length:12},(_,i)=>roots.map(path=>{let n=sum(rows(s,'REAL',y-1,i+1,path));return {date:`${y}-${String(i+1).padStart(2,'0')}-01`,type:'PRESUPUESTO',path,amount:Math.sign(n)*Math.ceil(Math.abs(n)/1000)*1000,concept:'Propuesta',account:'',discretion:''};})).flat();}
+root.Model={roots,names,initial,rows,sum,photo,indicator,conflict,proposal};
+})(globalThis);
+</script><script>const M=Model,$=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>(n>0?'+':n<0?'−':'')+new Intl.NumberFormat('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Math.abs(n)/100)+' €';
+const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const views=['Estado','Patrimonio','Presupuesto','Real','Indicadores'];let state=M.initial(),view='Estado',expanded=new Set(),origin;
+const y=()=>+$('year').value,m=()=>+$('month').value,key=()=>`${y()}-${String(m()).padStart(2,'0')}`;
+const btn=(text,action)=>`<button data-action="${esc(action)}">${esc(text)}</button>`;
+function notice(t){$('notice').textContent=t;}
+function focusReference(element){return {element,id:element?.id,action:element?.dataset?.action};}
+function restoreFocus(ref){if(!ref)return;const target=ref.action?[...document.querySelectorAll('[data-action]')].find(el=>el.dataset.action===ref.action):ref.id?$(ref.id):ref.element;target?.focus();}
+function modal(title,html){if(!$('dialog').open)origin=focusReference(document.activeElement);$('dialogTitle').textContent=title;$('dialogBody').innerHTML=html;$('dialog').showModal();}
+function close(){ $('dialog').close();restoreFocus(origin);}
+function changed(t){state.dirty=true;render();close();notice(t+' · Simulación guardada en memoria.');}
+$('cancel').onclick=close;$('dialog').addEventListener('close',()=>restoreFocus(origin));
+$('month').innerHTML=months.map((a,i)=>`<option value="${i+1}">${a}</option>`).join('');
+$('year').onchange=$('month').onchange=()=>{render();notice(`${months[m()-1]} ${y()}`);};
+$('management').onchange=()=>{view=$('management').value||view;$('management').value='';render();};
+function reset(empty=false){state=M.initial(empty);expanded.clear();view='Estado';$('year').value='2026';$('month').value='1';render();notice(empty?'Base vacía. Importa el ejemplo sintético para empezar.':'Referencia restablecida.');}
+$('reset').onclick=()=>reset();$('empty').onclick=()=>reset(true);$('pending').onclick=()=>{reset();const values=[['Compra general','Alimentación',-1200,'Necesario'],['Ajuste de compra','Alimentación / Supermercado',200,''],['Abono pendiente','',700,''],['Cargo pendiente','',-300,''],['Devolución de ahorro','Ahorro / Cuenta de ahorro',500,''],['Rectificación de nómina','Ingresos / Salario',-400,'']];state.records.push(...values.map(([concept,path,amount,discretion])=>({date:'2026-01-03',concept,path,amount,discretion,type:'REAL',account:'Cuenta principal'})));render();notice('Caso J cargado: total +1.224,75 €; sin clasificar +4,00 €.');};
+function paths(){return [...new Set([...M.roots,...state.records.flatMap(r=>r.path?r.path.split(' / ').map((_,i,a)=>a.slice(0,i+1).join(' / ')):[])])];}
+function displayPaths(){let all=paths();let out=[];for(let r of M.roots){out.push(r);if(expanded.has(r))out.push(...all.filter(p=>p.startsWith(r+' / ')).sort());}if(state.records.some(r=>!r.path))out.push('Sin clasificar');return out;}
+function records(type,month,path){return path==='Sin clasificar'?M.rows(state,type,y(),month).filter(r=>!r.path):M.rows(state,type,y(),month,path);}
+function cell(type,month,path){let rs=records(type,month,path);return btn(type==='PRESUPUESTO'&&!rs.length?'sin presupuesto':money(M.sum(rs)),`list|${type}|${month}|${path}`);}
+function table(headers,rows){return `<div class="scroll desktop" tabindex="0" role="region" aria-label="Tabla financiera; desplaza para consultar todas las columnas"><table><thead><tr>${headers.map(x=>`<th scope="col">${x}</th>`).join('')}</tr></thead><tbody>${rows.map(a=>`<tr>${a.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;}
+function render(){const focus=focusReference(document.activeElement); $('nav').innerHTML=views.map(v=>`<button data-action="view|${v}" ${view===v?'aria-current="page"':''}>${v}</button>`).join('');$('title').textContent=view;let html='';
+if(['Estado','Real','Presupuesto'].includes(view)){const type=view==='Presupuesto'?'PRESUPUESTO':'REAL',annual=view!=='Estado',total=M.sum(M.rows(state,type,y(),annual?null:m()));html=`<div class="summary">${annual?'Total anual '+y():'Total real · '+months[m()-1]}<strong>${money(total)}</strong>${view==='Estado'?'Previsto '+money(M.sum(M.rows(state,'PRESUPUESTO',y(),m())))+' · Diferencia '+money(total-M.sum(M.rows(state,'PRESUPUESTO',y(),m()))):''}</div><div class="actions">${btn('Nuevo movimiento','newReal')}${view==='Presupuesto'?btn('Preparar año siguiente','proposal'):''}</div>`;
+let cards=[],trs=[];for(let p of displayPaths()){let label=p.includes(' / ')?esc(p):btn((expanded.has(p)?'− ':'+ ')+p,`expand|${p}`);let real=M.sum(records('REAL',m(),p)),pre=M.sum(records('PRESUPUESTO',m(),p)),diff=real-pre;let delta=`<span class="${diff<0?'negative':'positive'}">${money(diff)} · ${diff<0?'En contra':diff>0?'A favor':'Sin diferencia'}</span>`;if(!annual){let direct=M.sum(records('REAL',m(),p).filter(r=>r.path===(p==='Sin clasificar'?'':p)));trs.push([label,cell('PRESUPUESTO',m(),p),money(direct),cell('REAL',m(),p),delta]);cards.push(`<article class="card"><h3>${label}</h3><p>Previsto: ${cell('PRESUPUESTO',m(),p)}</p><p>Real directo: ${money(direct)}</p><p>Real · Rama completa: ${cell('REAL',m(),p)}</p><p>Diferencia: ${delta}</p></article>`);}else{trs.push([label,...months.map((_,i)=>cell(type,i+1,p)),cell(type,0,p)]);cards.push(`<article class="card"><h3>${label}</h3><p>Total anual: ${cell(type,0,p)}</p><p>Mes enfocado · ${months[m()-1]}: ${cell(type,m(),p)}</p><details><summary>Ver los doce meses</summary>${months.map((n,i)=>`<p>${n}: ${cell(type,i+1,p)}</p>`).join('')}</details></article>`);}}
+html+=table(annual?['Rama completa',...months,'Total anual']:['Rama','Previsto','Real directo','Real agregado','Diferencia'],trs)+`<div class="cards">${cards.join('')}</div>`;
+}else if(view==='Patrimonio'){let p=M.photo(state,key());html=`<p>Valores del día 1 · ${months[m()-1]} ${y()}. Fotos manuales, independientes de los movimientos.</p>${btn('Registrar / editar foto','photo')}<div class="summary">${p.reason?esc(p.reason)+(p.missing?'<p>Pendientes: '+p.missing.join(', ')+'</p>':''):`Patrimonio neto<strong>${money(p.net)}</strong><p>Activos líquidos ${money(p.liquid)} · Activos totales ${money(p.assets)} · Deudas ${money(p.debt)}</p>`}</div>`;let v=state.photos[key()]||[null,null,null,null];html+=table(['Ficha','Valor de foto'],M.names.map((n,i)=>[esc(n),v[i]===null?'Pendiente':money(v[i])]))+`<div class="cards">${M.names.map((n,i)=>`<article class="card">${n}<p>${v[i]===null?'Pendiente':money(v[i])}</p></article>`).join('')}</div><details><summary>Las doce fotos de ${y()} · sin suma anual</summary>${months.map((n,i)=>`<p>${btn(n,`month|${i+1}`)}: ${M.photo(state,`${y()}-${String(i+1).padStart(2,'0')}`).reason||money(M.photo(state,`${y()}-${String(i+1).padStart(2,'0')}`).net)}</p>`).join('')}</details>`;
+}else if(view==='Indicadores'){let p=M.indicator(state,y(),m());html=`<div class="summary">Colchón de emergencia<strong>${p.reason||p.value.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' meses'}</strong>${p.value!==undefined?`<p>Activos líquidos ${money(p.liquid)} / (ingresos anuales previstos ${money(p.income)} / 12)</p>`:''}${p.missing?'<p>Pendientes: '+p.missing.join(', ')+'</p>':''}</div>${btn('Revisar foto','view|Patrimonio')}${btn('Revisar presupuesto','view|Presupuesto')}`;
+}else if(view==='Importar CSV'){html=`<p>Ejemplo histórico aprobado: 58 filas, 48 presupuestos y 10 reales. Esta simulación usa exclusivamente el ejemplo incluido; no lee archivos personales.</p><label>Escenario CSV<select id="csvScenario"><option value="valid">Ejemplo aprobado</option><option value="invalid">Fecha inválida</option><option value="unresolved">Referencias pendientes</option><option value="overlap">Otro archivo con posible solapamiento</option></select></label>${btn('Previsualizar ejemplo','importPreview')}<p>XLS: formato pendiente de EP-014; no disponible para importar.</p>`;
+}else if(view==='Categorías'){html='<p>Hasta tres niveles. La marca de ingreso pertenece a la raíz.</p>'+paths().map(p=>`<article class="card">${esc(p)} · Ingreso: ${p.startsWith('Ingresos')?'sí':'no'}</article>`).join('');
+}else if(view==='Copia en Drive'){html=`<p>Simulación local. Entrar aquí no consulta ni transfiere datos.</p><div class="card">Versión remota conocida: v${state.known} · 01/10/2026 12:00<p>Cambios locales: ${state.dirty?'sí':'no'}</p>${state.backup?'<p>Respaldo previo recuperable en memoria</p>'+btn('Recuperar respaldo','restore'):''}</div><label>Escenario<select id="driveScenario">${['Normal','Divergencia','Sin copia','Versión desconocida','Cambio durante publicación','Respuesta perdida','Sin conexión','Autenticación fallida','Descarga inválida','Respaldo fallido','Apertura fallida'].map(s=>`<option>${s}</option>`).join('')}</select></label><div class="actions">${btn('Subir copia','upload')}${btn('Descargar última copia','download')}</div>`;}
+$('content').innerHTML=html;if(!$('dialog').open)restoreFocus(focus);}
+function list(type,month,path){let rs=records(type,+month,path);modal(`${type==='REAL'?'Movimientos':'Partidas'} · ${path} · ${+month?months[+month-1]:'Año'} ${y()}`,`<p>Total ${money(M.sum(rs))} · Rama completa</p>${rs.length?rs.map(r=>`<article class="card"><strong>${esc(r.concept)} · ${money(r.amount)}</strong><p>${esc(r.date)} · ${esc(r.path||'Sin clasificar')} · ${esc(r.account)}</p><p>Discrecionalidad: ${esc(r.discretion||'vacía')}</p>${btn('Editar',`edit|${state.records.indexOf(r)}`)}</article>`).join(''):'<p>No hay registros en este periodo.</p>'}${type==='PRESUPUESTO'&&path!=='Sin clasificar'?btn('Crear partida',`newBudget|${month||m()}|${path}`):''}`);}
+function editor(index,type='REAL',month=m(),path=''){let r=index!==null?state.records[index]:{date:`${y()}-${String(month).padStart(2,'0')}-01`,concept:'',amount:0,path,account:'Cuenta principal',discretion:'',type};modal(type==='REAL'?'Editar movimiento':'Editar partida',`<form id="editForm"><label>Fecha de valor<input name="date" type="date" value="${r.date}" required></label><label>Concepto<input name="concept" value="${esc(r.concept)}" required></label><label>Importe firmado EUR<input name="amount" value="${(r.amount/100).toFixed(2)}" inputmode="decimal" required></label><label>Categoría<select name="path">${type==='REAL'?'<option value="">Sin clasificar</option>':''}${paths().map(p=>`<option ${p===r.path?'selected':''}>${esc(p)}</option>`).join('')}</select></label>${type==='REAL'?`<label>Cuenta<select name="account"><option ${r.account==='Cuenta principal'?'selected':''}>Cuenta principal</option><option ${r.account==='Cuenta de ahorro'?'selected':''}>Cuenta de ahorro</option></select></label>`:''}<label>Discrecionalidad<input name="discretion" value="${esc(r.discretion)}"></label><p id="formError" role="alert" class="error"></p><button>Guardar ${type==='REAL'?'movimiento':'partida'}</button></form>`);$('editForm').onsubmit=e=>{e.preventDefault();let f=new FormData(e.target),a=parseAmount(f.get('amount'));let next={...r,date:f.get('date'),concept:f.get('concept'),amount:a,path:f.get('path'),account:type==='REAL'?f.get('account'):'',discretion:f.get('discretion')};if(!/^\d{4}-\d{2}-\d{2}$/.test(next.date)||!Number.isFinite(Date.parse(next.date))||new Date(next.date).toISOString().slice(0,10)!==next.date||a===null||(type==='REAL'&&a===0)||(type==='PRESUPUESTO'&&!next.date.endsWith('-01'))){$('formError').textContent='Revisa importe (dos decimales; real distinto de cero) y fecha (presupuesto: día 1).';return;}if(type==='PRESUPUESTO'&&M.conflict(state,next,index===null?undefined:r)){$('formError').textContent=`Conflicto en ${next.date}: ${next.path}. No se puede presupuestar una categoría y su descendiente, ni repetir nodo y mes. Presupuesto previo intacto.`;return;}if(index===null)state.records.push(next);else state.records[index]=next;changed('Registro guardado');};}
+function parseAmount(v){let s=String(v).trim().replace(',','.');if(!/^[+-]?\d+\.\d{2}$/.test(s))return null;let cents=Math.round(Number(s)*100);return Number.isSafeInteger(cents)?cents:null;}
+function photoForm(){let v=state.photos[key()]||[null,null,null,null];modal('Foto del día 1 · '+key(),`<form id="photoForm">${M.names.map((n,i)=>`<label>${n}<input name="v${i}" inputmode="decimal" value="${v[i]===null?'':(v[i]/100).toFixed(2)}" placeholder="Pendiente; 0,00 es válido"></label>`).join('')}<p id="formError" role="alert" class="error"></p><button>Guardar foto</button></form>`);$('photoForm').onsubmit=e=>{e.preventDefault();let f=new FormData(e.target),vals=M.names.map((_,i)=>f.get('v'+i)===''?null:parseAmount(f.get('v'+i)));if(vals.some((v,i)=>f.get('v'+i)!==''&&(v===null||v<0))){$('formError').textContent='Introduce un valor con dos decimales de 0,00 € o más. Vacío significa pendiente.';return;}state.photos[key()]=vals;changed('Foto guardada');};}
+function proposal(){let target=y()+1,draft=M.proposal(state,target);modal('Propuesta editable · '+target,`<p>Real del mes equivalente de ${y()}, por raíz. Magnitud redondeada a decena superior. Meses sin reales: cero explícito.</p><form id="proposalForm">${draft.map((r,i)=>`<label>${months[+r.date.slice(5,7)-1]} · ${r.path} · real ${money(M.sum(M.rows(state,'REAL',target-1,+r.date.slice(5,7),r.path)))}<input name="p${i}" value="${(r.amount/100).toFixed(2)}" inputmode="decimal"></label>`).join('')}<label><input type="checkbox" name="split"> Desglosar Alimentación de enero en Alimentación / Supermercado (retira padre)</label><p id="formError" role="alert" class="error"></p><button>Revisar y guardar propuesta</button></form>`);$('proposalForm').onsubmit=e=>{e.preventDefault();let f=new FormData(e.target);draft.forEach((r,i)=>r.amount=parseAmount(f.get('p'+i)));if(draft.some(r=>r.amount===null)){$('formError').textContent='Todos los importes requieren dos decimales.';return;}if(f.has('split'))draft.find(r=>r.path==='Alimentación'&&r.date.endsWith('01-01')).path='Alimentación / Supermercado';const save=()=>{state.records=state.records.filter(r=>!(r.type==='PRESUPUESTO'&&r.date.startsWith(String(target)))).concat(draft);if(!$('year').querySelector(`option[value="${target}"]`))$('year').add(new Option(target,target));$('year').value=target;changed('Propuesta guardada; año anterior intacto');};modal('Confirmar propuesta',`<p>${draft.length} partidas. ${M.rows(state,'PRESUPUESTO',target).length?'Se sustituirán las partidas existentes de '+target+'.':'No cambia el presupuesto anterior.'}</p><button id="saveProposal">Guardar propuesta</button>`);$('saveProposal').onclick=save;};}
+function importPreview(){let s=$('csvScenario').value,blocked=s==='invalid'||s==='unresolved'||s==='overlap';modal('Revisión CSV sintético',`<p>${s==='invalid'?'Fila 2: fecha 2026-02-30 inexistente. Cero altas.':s==='unresolved'?'Cuenta y raíz pendientes: vincula referencias antes de confirmar. Cero altas.':s==='overlap'?'Posible duplicado de otro archivo: revisión pendiente. No se descartan filas silenciosamente.':state.imported?'Este archivo ya se importó. 0 altas.':'58 filas · 48 presupuestos · 10 reales. Referencias del ejemplo aprobadas: Cuenta principal; Ingresos (ingreso sí), otras raíces (ingreso no).'}</p><p>Salario CSV −3.000,00 → interno +3.000,00. Alquiler CSV +1.000,00 → interno −1.000,00. Dos Café legítimos: −20,00 juntos.</p><button id="confirmImport" ${blocked?'disabled':''}>Confirmar importación</button>`);$('confirmImport').onclick=()=>{if(!state.imported){state.records.push(...structuredClone(REFERENCE));state.imported=true;changed('48 partidas y 10 movimientos importados');}else{close();notice('Este archivo ya se importó. 0 altas.');}};}
+function drive(upload){let scenario=$('driveScenario').value;if(['Sin conexión','Autenticación fallida'].includes(scenario)){notice(`No se pudo ${upload?'subir':'consultar'} la copia: ${scenario}. Tus datos locales siguen disponibles. Reintenta manualmente.`);return;}if(scenario==='Sin copia'){if(!upload){notice('No hay ninguna copia en Drive. Puedes subir una copia de este dispositivo.');return;}state.remote=0;state.known=0;}
+if(upload){if(['Divergencia','Versión desconocida','Cambio durante publicación'].includes(scenario)){notice(`Hay una copia más reciente en Drive; no se ha subido tu copia local. Local conocida v${state.known}; remota v${state.remote+1}. Conserva datos locales o pulsa Descargar última copia.`);return;}if(scenario==='Respuesta perdida'){notice('No se pudo confirmar la subida. Copia remota previa utilizable. Reintenta subida manualmente para comprobar la versión.');return;}state.remote++;state.known=state.remote;state.remoteData=structuredClone({records:state.records,photos:state.photos,imported:state.imported});state.dirty=false;render();notice(`Copia subida · 01/10/2026 12:00 · versión v${state.remote} · simulación`);return;}
+const remoteVersion=['Divergencia','Versión desconocida'].includes(scenario)?state.remote+1:state.remote;modal('Descargar y sustituir',`<p>Copia remota v${remoteVersion} · 01/10/2026 12:00. Sustituirá los datos de este dispositivo. Cambios locales: ${state.dirty?'sí; dejarán de estar en la base activa':'no'}. Se guardará una copia local previa recuperable.</p><button id="confirmDownload">Descargar y sustituir</button>`);$('confirmDownload').onclick=()=>{if(['Descarga inválida','Respaldo fallido','Apertura fallida'].includes(scenario)){close();notice('No se descargó la copia; tus datos locales siguen disponibles. Motivo: '+scenario+'. Reintenta manualmente.');return;}state.backup=structuredClone({records:state.records,photos:state.photos,imported:state.imported});let remote=state.remoteData||M.initial();state.records=structuredClone(remote.records);state.photos=structuredClone(remote.photos);state.imported=remote.imported;state.remote=state.known=remoteVersion;state.dirty=false;close();render();notice(`Copia descargada · versión v${remoteVersion}. Respaldo previo recuperable en memoria. Simulación.`);};}
+document.addEventListener('click',e=>{let b=e.target.closest('[data-action]');if(!b)return;let [a,...args]=b.dataset.action.split('|');if(a==='view'){view=args[0];render();notice('');}else if(a==='expand'){expanded.has(args[0])?expanded.delete(args[0]):expanded.add(args[0]);render();[...document.querySelectorAll('[data-action]')].find(x=>x.dataset.action===b.dataset.action)?.focus();}else if(a==='list')list(...args);else if(a==='edit')editor(+args[0],state.records[+args[0]].type);else if(a==='newReal')editor(null);else if(a==='newBudget')editor(null,'PRESUPUESTO',+args[0],args[1]);else if(a==='photo')photoForm();else if(a==='proposal')proposal();else if(a==='importPreview')importPreview();else if(a==='month'){$('month').value=args[0];render();}else if(a==='upload'||a==='download')drive(a==='upload');else if(a==='restore'&&state.backup){Object.assign(state,structuredClone(state.backup));state.dirty=true;render();notice('Respaldo recuperado en memoria.');}});
+render();
+</script></body></html>
