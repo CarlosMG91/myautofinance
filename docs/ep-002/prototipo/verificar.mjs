@@ -1,0 +1,32 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const dir=new URL('./',import.meta.url);
+const handlers={};const elements=new Map();
+const element=id=>{if(!elements.has(id))elements.set(id,{value:id==='year'?'2026':id==='month'?'1':'',innerHTML:'',textContent:'',addEventListener(){},showModal(){this.open=true;},close(){this.open=false;},focus(){},querySelector(){return true;},add(){}});return elements.get(id);};
+const context=vm.createContext({console,structuredClone,Intl,Option:function(){},FormData:class{constructor(f){this.f=f;}get(n){return this.f[n]??'';}has(n){return !!this.f[n];}},document:{getElementById:element,activeElement:element('origin'),addEventListener(n,fn){handlers[n]=fn;},querySelectorAll(){return [];}}});
+for(const file of ['data.js','model.js','app.js'])vm.runInContext(fs.readFileSync(new URL(file,dir),'utf8'),context);
+const run=s=>vm.runInContext(s,context),click=action=>handlers.click({target:{closest:()=>({dataset:{action}})}});
+assert.equal(run('Model.sum(Model.rows(state,"REAL",2026,1))'),122975);
+assert.equal(run('Model.sum(Model.rows(state,"REAL",2026))'),232965);
+assert.equal(run('Model.sum(Model.rows(state,"PRESUPUESTO",2026))'),1320000);
+assert.equal(run('Model.rows(state,"REAL",2026,1,"Ocio").length'),2);
+for(const view of ['Estado','Patrimonio','Presupuesto','Real','Indicadores']){click('view|'+view);assert.ok(element('content').innerHTML.length>100);}
+assert.match(element('content').innerHTML,/3,00 meses/);
+element('month').value='2';element('month').onchange();assert.match(element('content').innerHTML,/falta foto/);
+click('photo');element('photoForm').onsubmit({preventDefault(){},target:{v0:'6200.00',v1:'',v2:'',v3:'4800.00'}});
+assert.match(element('content').innerHTML,/incompleta/);
+click('photo');element('photoForm').onsubmit({preventDefault(){},target:{v0:'6200.00',v1:'0.00',v2:'10500.00',v3:'4800.00'}});
+assert.match(element('content').innerHTML,/2,07 meses/);assert.equal(run('M.photo(state,"2026-02").net'),1190000);assert.equal(run('M.photo(state,"2026-01").net'),1400000);
+click('view|Presupuesto');click('newBudget|1|Vivienda');let count=run('state.records.length');element('editForm').onsubmit({preventDefault(){},target:{date:'2026-01-01',concept:'Conflicto',amount:'-1000.00',path:'Vivienda'}});assert.match(element('formError').textContent,/Conflicto/);assert.equal(run('state.records.length'),count);
+element('dialog').close();click('proposal');assert.match(element('dialogBody').innerHTML,/-360.00/);assert.equal(run('M.proposal(state,2027).length'),60);
+element('reset').onclick();element('pending').onclick();assert.equal(run('M.sum(M.rows(state,"REAL",2026,1))'),122475);click('list|REAL|1|Sin clasificar');assert.match(element('dialogBody').innerHTML,/Abono pendiente/);
+click('edit|60');element('editForm').onsubmit({preventDefault(){},target:{date:'2026-01-03',concept:'Abono pendiente',amount:'7.00',path:'Ocio',account:'Cuenta principal',discretion:''}});assert.equal(run('M.sum(M.rows(state,"REAL",2026,1))'),122475);
+click('view|Copia en Drive');let before=run('JSON.stringify(state.records)');element('driveScenario').value='Divergencia';click('upload');assert.match(element('notice').textContent,/más reciente/);assert.equal(run('JSON.stringify(state.records)'),before);
+click('download');element('cancel').onclick();assert.equal(run('JSON.stringify(state.records)'),before);
+for(const scenario of ['Descarga inválida','Respaldo fallido','Apertura fallida']){element('driveScenario').value=scenario;click('download');element('confirmDownload').onclick();assert.equal(run('JSON.stringify(state.records)'),before);assert.match(element('notice').textContent,/No se descargó/);}
+element('driveScenario').value='Normal';click('download');element('confirmDownload').onclick();assert.ok(run('state.backup'));click('restore');assert.equal(run('JSON.stringify(state.records)'),before);
+element('empty').onclick();click('view|Importar CSV');element('csvScenario').value='invalid';click('importPreview');assert.match(element('dialogBody').innerHTML,/disabled/);assert.equal(run('state.records.length'),0);
+element('csvScenario').value='valid';click('importPreview');element('confirmImport').onclick();assert.equal(run('state.records.length'),58);click('importPreview');element('confirmImport').onclick();assert.equal(run('state.records.length'),58);assert.match(element('notice').textContent,/0 altas/);
+const csv=fs.readFileSync(new URL('../../ep-001/historico-ejemplo.csv',dir),'utf8').trim().split(/\r?\n/).slice(1);assert.equal(csv.length,run('REFERENCE.length'));
+console.log('OK: cifras, cinco vistas, fotos parcial/cero/completa, conflicto, propuesta, categorización, CSV vacío/error/repetido, Drive divergencia/cancelación/fallos/respaldo. Prueba lógica con DOM simulado; no valida renderizado de navegador.');
