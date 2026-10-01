@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'modules.dart';
+import 'navigation/app_router.dart';
+import 'navigation/app_routes.dart';
 
 class AutofinanceApp extends StatelessWidget {
   const AutofinanceApp({super.key});
@@ -10,13 +12,10 @@ class AutofinanceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'Autofinance',
-      home: Scaffold(
-        body: SafeArea(
-          child: Center(child: Text('Autofinance · Base técnica')),
-        ),
-      ),
+      initialRoute: AppRoutes.home,
+      onGenerateRoute: AppRouter.generateRoute,
     );
   }
 }
