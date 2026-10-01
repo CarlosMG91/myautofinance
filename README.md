@@ -109,3 +109,10 @@ MA-TSK-044 implementa el [adaptador de autorización Android](docs/ep-005/autori
 con `google_sign_in`, validación de cuenta Drive y metadatos cifrados por
 instalación. Incluye pruebas sintéticas y un recorrido técnico manual; el alta
 OAuth, la firma registrada y la comprobación en dispositivo siguen pendientes.
+
+MA-TSK-045 implementa [OAuth instalado para Windows](docs/ep-005/oauth-windows.md)
+con navegador del sistema, PKCE S256, state y receptor loopback efímero.
+Credential Manager conserva la sesión local; las acciones manuales reutilizan
+o renuevan credenciales sin consentimiento repetido. Incluye pruebas sintéticas
+y un recorrido nativo preparado; el consentimiento con un cliente real sigue
+pendiente del alta Google de MA-TSK-042.

@@ -21,6 +21,8 @@ enum DriveAccessIssue {
   operationInProgress,
   secureStorageFailure,
   clientConfigurationError,
+  authorizationTimeout,
+  loopbackUnavailable,
 }
 
 final class DriveAccessFailure implements Exception {

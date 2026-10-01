@@ -90,6 +90,11 @@ jobs:
         run: |
           flutter test integration_test/local_database_test.dart -d windows --no-pub --dart-define=APP_ENV=test
           if ($LASTEXITCODE -ne 0) { throw 'Falló la integración SQLite Windows.' }
+      - name: Probar almacén seguro Drive en Windows nativo
+        if: matrix.target == 'windows'
+        run: |
+          flutter test integration_test/windows_drive_access_test.dart -d windows --no-pub --dart-define=APP_ENV=test --dart-define=WINDOWS_CREDENTIAL_TEST=true
+          if ($LASTEXITCODE -ne 0) { throw 'Falló Credential Manager Windows.' }
       - name: Habilitar KVM para la prueba Android
         if: matrix.target == 'android'
         shell: bash
