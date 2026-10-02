@@ -99,6 +99,12 @@ la confirmación duradera del coordinador de restauración. Incluye reintento de
 borrados y protección de la última copia válida; la restauración y pantalla
 pertenecen a los siguientes tickets de EP-006.
 
+MA-TSK-054 entrega la [validación de candidatas de restauración](docs/ep-006/validacion-candidatas.md)
+por ID privado, con contraste de hash/manifiesto/catálogo, validación SQLite
+integral y resultados tipados en español. Migra esquemas publicados 1–5 solo
+en staging mediante la política de EP-004 y conserva originales y activa.
+El intercambio y su recuperación pertenecen a MA-TSK-055/056.
+
 La [guía de integración SQLite](docs/ep-004/guia-integracion.md) entrega las
 API de repositorios, esquema v6, migraciones y límites para CSV, Openbank,
 informes y Drive, con el recorrido integrado automatizado de MA-TSK-040.

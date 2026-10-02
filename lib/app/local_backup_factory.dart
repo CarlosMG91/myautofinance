@@ -8,9 +8,11 @@ import '../core/persistence/unit_of_work.dart';
 import '../features/synchronization/synchronization.dart';
 import '../features/synchronization/data/local_backup_service.dart';
 import '../features/synchronization/data/local_backup_catalog_service.dart';
+import '../features/synchronization/data/local_restore_candidate_service.dart';
 import '../features/synchronization/data/native_backup_persistence.dart';
 import 'data/sqlite/local_database_store.dart';
 import 'data/sqlite/schema_policy.dart';
+import 'data/sqlite/sqlite_restore_image_policy.dart';
 
 LocalBackupCreator createLocalBackupCreator({
   required LocalDatabaseStore store,
@@ -29,6 +31,16 @@ LocalBackupCatalog createLocalBackupCatalog({
   NativeBackupPersistence? persistence,
 }) => LocalBackupCatalogService(
   validator: const SqliteLocalBackupValidator(),
+  supportDirectory: supportDirectory ?? getApplicationSupportDirectory,
+  persistence: persistence,
+);
+
+/// No requiere abrir la activa, ni siquiera para migrar una copia antigua.
+LocalRestoreCandidatePreparer createLocalRestoreCandidatePreparer({
+  SupportDirectory? supportDirectory,
+  NativeBackupPersistence? persistence,
+}) => LocalRestoreCandidateService(
+  policy: const SqliteRestoreImagePolicy(),
   supportDirectory: supportDirectory ?? getApplicationSupportDirectory,
   persistence: persistence,
 );
