@@ -128,3 +128,9 @@ con identidad por ID y `appProperties`, validación de ubicación en Mi unidad,
 persistencia segura por cuenta y creación solo por petición expresa. Señala
 carpetas movidas, inaccesibles y duplicadas sin sustituirlas silenciosamente.
 Incluye pruebas sintéticas entre instalaciones; Drive real sigue pendiente de OAuth.
+
+MA-TSK-048 entrega el [localizador de copia remota](docs/ep-005/copia-remota.md),
+con resultados presente/sin_copia/ambiguo/inaccesible, cuenta y metadatos de
+`autofinance.sqlite` por ID/marca dentro de la carpeta vinculada. Conserva la
+identidad tras renombrados y señala duplicados sin elegir una copia. Solo
+consulta metadatos; la primera copia válida corresponde a la futura subida.

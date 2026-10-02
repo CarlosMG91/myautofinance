@@ -5,6 +5,10 @@ const driveFolderMimeType = 'application/vnd.google-apps.folder';
 /// El nombre visible puede cambiar sin cambiar esta marca.
 const driveAutofinanceFolderProperties = {'autofinanceRole': 'backupFolderV1'};
 
+/// Contrato para la primera subida válida; buscar nunca crea este archivo.
+const driveAutofinanceCopyName = 'autofinance.sqlite';
+const driveAutofinanceCopyProperties = {'autofinanceRole': 'databaseCopyV1'};
+
 enum DriveMetadataIssue {
   credentialExpired,
   permissionDenied,
