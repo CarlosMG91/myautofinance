@@ -90,6 +90,11 @@ jobs:
         run: |
           flutter test integration_test/local_database_test.dart -d windows --no-pub --dart-define=APP_ENV=test
           if ($LASTEXITCODE -ne 0) { throw 'Falló la integración SQLite Windows.' }
+      - name: Probar creación de copias locales en Windows nativo
+        if: matrix.target == 'windows'
+        run: |
+          flutter test integration_test/local_backup_creation_test.dart -d windows --no-pub --dart-define=APP_ENV=test
+          if ($LASTEXITCODE -ne 0) { throw 'Falló la creación de copias locales Windows.' }
       - name: Probar almacén seguro Drive en Windows nativo
         if: matrix.target == 'windows'
         run: |
@@ -110,4 +115,6 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: flutter test integration_test/local_database_test.dart -d emulator-5554 --no-pub --dart-define=APP_ENV=test
+          script: |
+            flutter test integration_test/local_database_test.dart -d emulator-5554 --no-pub --dart-define=APP_ENV=test
+            flutter test integration_test/local_backup_creation_test.dart -d emulator-5554 --no-pub --dart-define=APP_ENV=test

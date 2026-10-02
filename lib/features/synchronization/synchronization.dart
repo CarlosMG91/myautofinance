@@ -5,5 +5,6 @@ export 'domain/drive_copy_locator.dart';
 export 'domain/drive_metadata.dart';
 export 'domain/drive_folder_locator.dart';
 export 'domain/local_backup.dart';
+export 'domain/local_backup_creation.dart';
 
 const synchronizationModule = FeatureModule(id: ModuleId.synchronization);

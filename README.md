@@ -87,6 +87,11 @@ tres respaldos automáticos previos a restauración y conservación de manuales.
 Los [casos de aceptación](docs/ep-006/casos-contrato.md) entregan las obligaciones
 para implementar EP-006 reutilizando la primitiva de MA-TSK-038, sin Drive.
 
+MA-TSK-052 implementa la [creación de copias locales verificadas](docs/ep-006/creacion-copia-local.md),
+manuales o previas a restauración, con staging privado, manifiesto SHA-256,
+catálogo en dos generaciones y exclusión entre procesos. Publica únicamente
+tras validar y confirmar el registro; no implementa pantalla, restauración o poda.
+
 La [guía de integración SQLite](docs/ep-004/guia-integracion.md) entrega las
 API de repositorios, esquema v6, migraciones y límites para CSV, Openbank,
 informes y Drive, con el recorrido integrado automatizado de MA-TSK-040.
