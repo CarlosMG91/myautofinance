@@ -340,6 +340,43 @@ DatasetState _decodeImage(Object? value) {
   return state;
 }
 
+/// Consulta para preparar descargas, sin seleccionar identidad ni guardar estado.
+extension DownloadSyncInspection on StoredInstallationSyncState {
+  Future<InstallationSyncSnapshot> inspectForDownload({
+    required String accountId,
+    required String fileId,
+  }) => _run((state) async {
+    _text(accountId);
+    _text(fileId);
+    final contrast = await contrastReader.read();
+    final current = await readDataset();
+    final matches = state.account == accountId && state.file == fileId;
+    final status = state.pending != null
+        ? SyncLocalStatus.pending
+        : !matches
+        ? SyncLocalStatus.unknown
+        : contrast.unreliable ||
+              (contrast.required &&
+                  (!state.contrasted ||
+                      state.epoch != contrast.restoreEpoch)) ||
+              (state.contrasted && state.epoch != contrast.restoreEpoch)
+        ? SyncLocalStatus.contrastRequired
+        : state.image == null
+        ? SyncLocalStatus.unknown
+        : _same(current, state.image!)
+        ? SyncLocalStatus.clean
+        : SyncLocalStatus.changed;
+    return InstallationSyncSnapshot(
+      accountId: accountId,
+      fileId: fileId,
+      localStatus: status,
+      knownRemoteVersion: matches ? state.version : null,
+      correspondingLocalState: matches ? state.image : null,
+      pending: state.pending,
+    );
+  });
+}
+
 final class _State {
   String? account, file, version, observed, epoch;
   DatasetState? image;
