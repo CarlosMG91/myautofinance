@@ -143,6 +143,10 @@ final class StoredInstallationSyncState implements InstallationSyncState {
     String? version,
   ) async {
     if (image != null) _image(image);
+    // Una descarga no puede borrar una operación viva al cambiar identidad.
+    if (kind == SyncOperationKind.download && state.pending != null) {
+      throw const SyncStateFailure(SyncStateIssue.operationInProgress);
+    }
     await _select(state, account, file);
     if (state.pending != null) {
       throw const SyncStateFailure(SyncStateIssue.operationInProgress);
@@ -274,14 +278,34 @@ final class StoredInstallationSyncState implements InstallationSyncState {
   Future<LocalRestoreResult> installDownload({
     required String operationId,
     required Future<LocalRestoreResult> Function() install,
+    DriveFileMetadata? downloadedRemote,
+    String? validatedRestoreEpoch,
   }) => _run((state) async {
     final operation = _pending(state, operationId, SyncOperationKind.download);
+    if (downloadedRemote != null &&
+        (downloadedRemote.id != state.file ||
+            downloadedRemote.version != operation.remoteVersion)) {
+      throw const SyncStateFailure(SyncStateIssue.staleOperation);
+    }
     if (operation.image == null) {
       throw const SyncStateFailure(SyncStateIssue.installationNotConfirmed);
     }
     final result = await install();
     if (result.status != LocalRestoreStatus.restored) return result;
-    final contrast = await contrastReader.read();
+    // EP-006 aún mantiene su diario y bloqueo durante este callback. El epoch
+    // confirmado por el coordinador evita interpretar su propio diario como
+    // una recuperación ajena. Fuera del callback se usa el lector normal.
+    if (validatedRestoreEpoch != null &&
+        !backupUuid.hasMatch(validatedRestoreEpoch)) {
+      throw const SyncStateFailure(SyncStateIssue.installationNotConfirmed);
+    }
+    final contrast = validatedRestoreEpoch == null
+        ? await contrastReader.read()
+        : LocalSyncContrast(
+            restoreEpoch: validatedRestoreEpoch,
+            required: true,
+            unreliable: false,
+          );
     final current = await readDataset();
     if (contrast.unreliable ||
         !_same(current, operation.image!) ||
@@ -304,6 +328,19 @@ final class StoredInstallationSyncState implements InstallationSyncState {
         state.clear();
         await state.save();
       });
+
+  /// Solo desde una nueva pulsación, bajo la exclusión SQLite de EP-006.
+  /// La recuperación de arranque ya resolvió la imagen; no deducir sincronía
+  /// por revisión coincidente ni hacer red. La siguiente descarga pide revisión.
+  Future<void> abandonInterruptedDownload() => _run((state) async {
+    if (state.pending?.kind != SyncOperationKind.download) return;
+    final contrast = await contrastReader.read();
+    if (contrast.unreliable) {
+      throw const SyncStateFailure(SyncStateIssue.installationNotConfirmed);
+    }
+    state.clear();
+    await state.save();
+  });
 }
 
 bool _same(DatasetState a, DatasetState b) =>

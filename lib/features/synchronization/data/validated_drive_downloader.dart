@@ -252,6 +252,7 @@ final class ValidatedDriveDownloader implements DriveDownloader {
         image: image,
         sha256: sha,
         localState: local,
+        localContrast: contrast,
       );
       _owned[candidate] = staging;
       status = DriveDownloadStatus.ready;

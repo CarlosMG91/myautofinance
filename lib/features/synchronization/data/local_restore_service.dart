@@ -32,10 +32,60 @@ final class LocalRestoreService implements LocalRestorer {
   final NativeBackupPersistence _persistence;
   late final _storage = BackupStorage(_persistence, DateTime.now);
 
+  /// Antes de repetir una descarga manual: resolver solo estado local con la
+  /// misma exclusión del intercambio. Nunca interrumpir una instalación viva.
+  Future<void> resolveDownloadState(Future<void> Function() resolve) async {
+    await catalog.read();
+    final support = (await supportDirectory()).absolute.path;
+    final root = p.join(support, 'sqlite');
+    final lock = p.join(root, '.local-backups.lock');
+    await _storage.safe(support, root);
+    await _storage.safe(root, lock);
+    await _persistence.exclusively(
+      lock,
+      () => active.exclusivelyForRestore(resolve),
+    );
+  }
+
   @override
   Future<LocalRestoreResult> restore(
     String backupId, {
     required bool confirmed,
+  }) => _restore(backupId, confirmed: confirmed);
+
+  /// Usa el mismo diario, respaldo y recuperación que una copia del catálogo.
+  /// Los gates se ejecutan con las escrituras drenadas; fallar revierte.
+  Future<LocalRestoreResult> restoreImage({
+    required String path,
+    required String sha256,
+    required int sizeBytes,
+    required Future<void> Function() beforePrepare,
+    required Future<void> Function() checkCancellation,
+    required Future<void> Function(String restoreEpoch) onValidated,
+  }) => _restore(
+    null,
+    confirmed: true,
+    prepare: (root) async {
+      await beforePrepare();
+      return preparer.prepareImageUnderLock(
+        root,
+        path: path,
+        expectedSha256: sha256,
+        expectedSize: sizeBytes,
+      );
+    },
+    checkCancellation: checkCancellation,
+    onValidated: onValidated,
+    requireUsablePrevious: true,
+  );
+
+  Future<LocalRestoreResult> _restore(
+    String? backupId, {
+    required bool confirmed,
+    Future<ReadyLocalRestoreCandidate> Function(String)? prepare,
+    Future<void> Function()? checkCancellation,
+    Future<void> Function(String restoreEpoch)? onValidated,
+    bool requireUsablePrevious = false,
   }) async {
     if (!confirmed) {
       return const LocalRestoreResult(LocalRestoreStatus.cancelled);
@@ -43,7 +93,11 @@ final class LocalRestoreService implements LocalRestorer {
     LocalRestoreResult result;
     String? operation;
     try {
-      if (!backupUuid.hasMatch(backupId)) invalidBackupMetadata();
+      // Primera descarga: inicializar el catálogo sin crear una copia manual.
+      if (prepare != null) await catalog.read();
+      if (backupId != null && !backupUuid.hasMatch(backupId)) {
+        invalidBackupMetadata();
+      }
       final support = (await supportDirectory()).absolute.path;
       final root = p.join(support, 'sqlite');
       await _storage.safe(support, root);
@@ -69,9 +123,18 @@ final class LocalRestoreService implements LocalRestorer {
               }
             }
           }
-          final candidate = await preparer.prepareUnderLock(root, backupId);
+          final candidate = prepare != null
+              ? await prepare(root)
+              : await preparer.prepareUnderLock(root, backupId!);
           operation = candidate.operationId;
-          return _install(root, candidate);
+          await checkCancellation?.call();
+          return _install(
+            root,
+            candidate,
+            checkCancellation: checkCancellation,
+            onValidated: onValidated,
+            requireUsablePrevious: requireUsablePrevious,
+          );
         }),
       );
     } on LocalRestoreCandidateFailure catch (e) {
@@ -94,7 +157,7 @@ final class LocalRestoreService implements LocalRestorer {
         final maintenance = await catalog.maintainAfterRestore(
           restoreOperationId: operation!,
           outcome: LocalRestoreRetentionOutcome.confirmed,
-          protectedBackupIds: {backupId},
+          protectedBackupIds: {?backupId},
         );
         return LocalRestoreResult(
           result.status,
@@ -115,8 +178,11 @@ final class LocalRestoreService implements LocalRestorer {
 
   Future<LocalRestoreResult> _install(
     String root,
-    ReadyLocalRestoreCandidate candidate,
-  ) async {
+    ReadyLocalRestoreCandidate candidate, {
+    Future<void> Function()? checkCancellation,
+    Future<void> Function(String restoreEpoch)? onValidated,
+    bool requireUsablePrevious = false,
+  }) async {
     final stage = p.join(
       root,
       'local-backups',
@@ -185,6 +251,9 @@ final class LocalRestoreService implements LocalRestorer {
     );
     try {
       usablePrevious = await active.canOpenExisting();
+      if (requireUsablePrevious && !usablePrevious) {
+        return const LocalRestoreResult(LocalRestoreStatus.rejected);
+      }
       if (usablePrevious) {
         previousBackup = await creator.capturePreRestoreUnderLock(
           root,
@@ -192,8 +261,10 @@ final class LocalRestoreService implements LocalRestorer {
         );
         backup = previousBackup.backupId;
       }
+      await checkCancellation?.call();
       await journal('protected');
       await active.close();
+      await checkCancellation?.call();
       await _checkImage(image, candidate);
       await _persistence.createDirectory(previous);
       await journal('isolating'); // Antes de mover cualquier original/sidecar.
@@ -210,9 +281,11 @@ final class LocalRestoreService implements LocalRestorer {
       }
       await journal('installing');
       await _persistence.move(image, activePath);
+      await checkCancellation?.call();
       await _checkImage(activePath, candidate);
       await journal('installed');
       final opened = await active.reopenAndValidate();
+      await checkCancellation?.call();
       if (opened.schemaVersion != candidate.image.schemaVersion ||
           opened.applicationId != candidate.image.applicationId ||
           opened.state.datasetId != candidate.image.state.datasetId ||
@@ -226,6 +299,8 @@ final class LocalRestoreService implements LocalRestorer {
       value['syncContrastRequired'] = true;
       catalogAttempted = true;
       await _storage.commitCatalog(root, value);
+      await checkCancellation?.call();
+      await onValidated?.call(newEpoch);
       await journal('completed');
     } catch (_) {
       try {

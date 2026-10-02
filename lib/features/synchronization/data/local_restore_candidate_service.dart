@@ -168,6 +168,48 @@ final class LocalRestoreCandidateService
     return _prepare(root, id);
   }
 
+  /// Copia cerrada descargada: validar hash antes de migrar solo el staging.
+  /// El llamador mantiene el bloqueo de EP-006 y acredita la ruta privada.
+  Future<ReadyLocalRestoreCandidate> prepareImageUnderLock(
+    String root, {
+    required String path,
+    required String expectedSha256,
+    required int expectedSize,
+  }) async {
+    await _requireFile(root, path);
+    await _checkBytes(path, expectedSize, expectedSha256);
+    final operation = const Uuid().v4();
+    final stage = p.join(root, 'local-backups', 'restore', operation);
+    await _storage.safe(root, stage);
+    await _persistence.createDirectory(p.dirname(stage));
+    await _persistence.createDirectory(stage);
+    final part = p.join(stage, 'autofinance.sqlite.part');
+    await File(path).copy(part);
+    await _persistence.flushFile(part);
+    await _checkBytes(part, expectedSize, expectedSha256);
+    final original = await policy.inspect(part);
+    await policy.migrate(part);
+    final image = await policy.inspect(part);
+    if (image.state.datasetId != original.state.datasetId ||
+        image.state.revision != original.state.revision) {
+      _reject(LocalRestoreCandidateIssue.invalidMetadata);
+    }
+    await _persistence.flushFile(part);
+    final size = await File(part).length();
+    final hash = await _hash(part);
+    await _checkBytes(path, expectedSize, expectedSha256);
+    await _persistence.move(part, p.join(stage, 'autofinance.sqlite'));
+    return ReadyLocalRestoreCandidate(
+      backupId: operation,
+      operationId: operation,
+      relativePath: 'local-backups/restore/$operation/autofinance.sqlite',
+      originalSchemaVersion: original.schemaVersion,
+      image: image,
+      sizeBytes: size,
+      sha256: hash,
+    );
+  }
+
   Future<void> _requireFile(String root, String path) async {
     await _storage.safe(root, path);
     final type = await FileSystemEntity.type(path, followLinks: false);

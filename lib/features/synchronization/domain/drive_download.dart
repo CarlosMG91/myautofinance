@@ -4,6 +4,7 @@ import 'drive_transfer.dart';
 import 'installation_sync_state.dart';
 import 'local_backup_creation.dart';
 import 'local_restore_candidate.dart';
+import 'local_sync_contrast.dart';
 
 enum DriveDownloadStatus {
   ready,
@@ -41,7 +42,7 @@ final class DriveDownloadReview {
 }
 
 /// Imagen cerrada de staging; no es una instalación ni un acuse de sincronía.
-/// El consumidor debe descartarla o entregarla al futuro flujo seguro de EP-006,
+/// El consumidor debe descartarla o entregarla al flujo seguro de EP-006,
 /// que volverá a comprobar versión remota, imagen y cambios locales al aplicar.
 final class ValidatedDriveDownload {
   const ValidatedDriveDownload({
@@ -52,6 +53,7 @@ final class ValidatedDriveDownload {
     required this.image,
     required this.sha256,
     required this.localState,
+    this.localContrast,
   });
   final String path;
   final DriveFileMetadata remote;
@@ -60,6 +62,7 @@ final class ValidatedDriveDownload {
   final LocalBackupImage image;
   final String sha256;
   final DatasetState localState;
+  final LocalSyncContrast? localContrast;
   @override
   String toString() => 'ValidatedDriveDownload';
 }
