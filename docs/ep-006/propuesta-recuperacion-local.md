@@ -1,7 +1,12 @@
 # MA-TSK-057 · Propuesta visual de recuperación local · v1
 
-Propuesta del 2026-10-02, **pendiente de aprobación humana explícita en Epic Board**.
-No cierra el ticket ni autoriza MA-TSK-058 o tickets posteriores.
+Propuesta del 2026-10-02, **aprobada explícitamente en Epic Board**.
+La lectura de `GET /api/data` del 2026-10-02 para MA-TSK-058 confirma
+MA-TSK-057 `done`, `approvedAt: 2026-10-02T11:53:21.943Z` y la discusión humana
+«Propuesta visual aceptada: http://localhost:4310/mockups/autofinance-ma-tsk-057-v1.html».
+MA-TSK-019 también figura aprobado y MA-TSK-020 está completado. Las menciones
+de aprobación pendiente siguientes y dentro del HTML retenido describen el
+momento de la propuesta; esta aceptación las supera sin modificar el artefacto aprobado.
 
 Mockup retenido: [mockup-recuperacion-local.html](mockup-recuperacion-local.html).
 Revisión desde Epic Board: <http://localhost:4310/mockups/autofinance-ma-tsk-057-v1.html>.

@@ -29,6 +29,7 @@ void main() {
     tester,
   ) async {
     final app = await initializeApp(
+      initializeLocal: () async => null,
       initialize: () async => const AppConfig(environment: AppEnvironment.test),
     );
     expect((app as AutofinanceApp).config.environment, AppEnvironment.test);

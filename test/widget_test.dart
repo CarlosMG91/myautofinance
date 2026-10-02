@@ -5,10 +5,10 @@ import 'package:myautofinance/main.dart' as entrypoint;
 import 'package:myautofinance/core/config/app_config.dart';
 
 void main() {
-  testWidgets('main completa el arranque y abre el índice sin servicios', (
+  testWidgets('main permite probar el arranque con almacenamiento inyectado', (
     tester,
   ) async {
-    await entrypoint.main();
+    await entrypoint.main(initializeLocal: () async => null);
     await tester.pumpAndSettle();
 
     expect(find.text('Autofinance · Base técnica'), findsOneWidget);

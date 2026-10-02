@@ -1,8 +1,9 @@
 ﻿# Autofinance
 
 Aplicación de finanzas familiares para Windows y Android, en español (es-ES)
-y EUR. La base técnica Flutter está implementada; las cinco vistas son rutas
-con marcadores técnicos, sin datos ni lógica financiera.
+y EUR. Las cinco vistas financieras siguen siendo marcadores técnicos.
+La recuperación local ya permite crear, consultar y restaurar copias SQLite
+desde Gestión → Copias locales, también si falla la apertura de la base activa.
 
 ## Preparación y arranque
 
@@ -26,8 +27,9 @@ flutter run -d <id> --dart-define=APP_ENV=development
 
 `APP_ENV` admite development, test y production (valor por defecto). Son
 ajustes públicos incluidos en el binario; nunca introducir secretos. La
-[infraestructura SQLite](docs/ep-004/persistencia-local.md) todavía no se conecta
-al arranque de los marcadores técnicos ni a repositorios de negocio.
+[infraestructura SQLite](docs/ep-004/persistencia-local.md) se abre al arrancar,
+tras resolver restauraciones interrumpidas. Un fallo ofrece recuperación local;
+los marcadores técnicos no consultan repositorios financieros.
 
 ## Verificación y compilaciones
 
@@ -74,7 +76,8 @@ Las rutas `/estado`, `/patrimonio`, `/presupuesto`, `/real` e `/indicadores`
 son vacías; `/` es un índice de desarrollo y `/error` un marcador técnico.
 EP-002 entrega el [diseño y flujos para Flutter](docs/ep-002/entrega-flutter.md),
 que registra la aprobación de MA-TSK-019. Las épicas funcionales sustituirán
-los marcadores dentro de su alcance; este ticket no implementa pantallas.
+los marcadores dentro de su alcance. MA-TSK-058 incorpora únicamente las
+pantallas secundarias de recuperación local.
 Las épicas de datos definirán esquema SQLite, migraciones y puertos en los
 módulos propietarios; importación y Drive continúan pendientes. No copiar los
 servicios simulados del prototipo ni código del proyecto MyFinance.
@@ -116,6 +119,11 @@ resuelve el diario antes de abrir SQLite, finaliza imágenes validadas o vuelve
 al respaldo anterior, incluso tras una nueva interrupción de la recuperación.
 Entrega un lector local del epoch y del contraste pendiente a sincronización,
 independiente de la revisión de la base y sin acceder a Drive.
+
+MA-TSK-058 integra las [copias y la recuperación local en la app](docs/ep-006/integracion-app.md)
+con catálogo adaptable, detalle, confirmación y progreso. Abre SQLite al
+arrancar y ofrece recuperación independiente si falla la base activa; no inicia
+conexiones remotas. Incluye pruebas de widgets y sesión real con datos sintéticos.
 
 La [guía de integración SQLite](docs/ep-004/guia-integracion.md) entrega las
 API de repositorios, esquema v6, migraciones y límites para CSV, Openbank,

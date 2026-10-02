@@ -4,7 +4,8 @@ import 'app/bootstrap.dart';
 
 export 'app/app.dart' show AutofinanceApp;
 
-Future<void> main() async {
+Future<void> main({LocalSessionInitializer? initializeLocal}) async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(await initializeApp());
+  runApp(const StartupLoadingApp());
+  runApp(await initializeApp(initializeLocal: initializeLocal));
 }

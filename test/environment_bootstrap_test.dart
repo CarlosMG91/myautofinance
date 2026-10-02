@@ -21,7 +21,7 @@ void main() {
   testWidgets('APP_ENV compilado llega a main o al fallo seguro', (
     tester,
   ) async {
-    await entrypoint.main();
+    await entrypoint.main(initializeLocal: () async => null);
     await tester.pumpAndSettle();
 
     final expected = _expected[_environment];

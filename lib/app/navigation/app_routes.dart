@@ -17,6 +17,7 @@ abstract final class AppRoutes {
   static const actualSpending = '/real';
   static const indicators = '/indicadores';
   static const error = '/error';
+  static const localBackups = '/copias-locales';
 
   static const destinations = <TechnicalDestination>[
     TechnicalDestination(
