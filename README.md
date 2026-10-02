@@ -84,6 +84,12 @@ servicios simulados del prototipo ni código del proyecto MyFinance.
 
 ## Contrato funcional
 
+MA-TSK-062 implementa el [estado de sincronización por instalación](docs/ep-007/estado-instalacion.md),
+fuera de SQLite y asociado a cuenta/archivo Drive. Persiste imagen/versión y
+operaciones pendientes, detecta ediciones durante la subida y exige contraste
+tras restaurar. La descarga solo se vincula después de instalarse y validarse;
+el cambio de cuenta o archivo invalida la comparación anterior.
+
 MA-TSK-051 define el [contrato de copias locales y catálogo](docs/ep-006/contrato-copias-locales.md)
 independiente de la base activa, con recuperación de escrituras interrumpidas,
 tres respaldos automáticos previos a restauración y conservación de manuales.

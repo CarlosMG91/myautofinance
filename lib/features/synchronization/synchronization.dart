@@ -10,5 +10,6 @@ export 'domain/local_backup_catalog.dart';
 export 'domain/local_restore_candidate.dart';
 export 'domain/local_restore.dart';
 export 'domain/local_sync_contrast.dart';
+export 'domain/installation_sync_state.dart';
 
 const synchronizationModule = FeatureModule(id: ModuleId.synchronization);

@@ -37,6 +37,7 @@ final class StoredLocalSyncContrastReader implements LocalSyncContrastReader {
           slots.damaged.isNotEmpty ||
           value == null ||
           value['syncContrastRequired'] == true,
+      unreliable: pending || slots.damaged.isNotEmpty || slots.conflict,
     );
   }
 }
