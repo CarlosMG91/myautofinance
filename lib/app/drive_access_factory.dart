@@ -7,6 +7,7 @@ import '../features/synchronization/data/android_drive_session_store.dart';
 import '../features/synchronization/data/android_google_authorization.dart';
 import '../features/synchronization/data/drive_metadata_credential.dart';
 import '../features/synchronization/data/http_drive_metadata_client.dart';
+import '../features/synchronization/data/http_drive_transfer_client.dart';
 import '../features/synchronization/data/windows_drive_session_provider.dart';
 import '../features/synchronization/data/windows_drive_session_store.dart';
 import '../features/synchronization/data/windows_google_authorization.dart';
@@ -71,11 +72,12 @@ WindowsDriveSessionProvider _windowsProvider({
 }
 
 /// Una instancia por instalación/flujo manual. Construir no realiza acciones.
-/// El llamante conserva y cierra client tras dispose; no hay SQLite ni medios.
+/// El llamante conserva y cierra client tras dispose y terminar transferencias.
 final class DriveAccessInstallation {
   DriveAccessInstallation._({
     required this.access,
     required this.metadata,
+    required this.transfers,
     required this.cancelAuthorization,
   }) : folders = DriveFolderLocator(access: access, metadata: metadata),
        copies = DriveCopyLocator(access: access, metadata: metadata);
@@ -96,10 +98,16 @@ final class DriveAccessInstallation {
       now: now,
     ),
     cancelAuthorization: cancelAuthorization,
+    transfers: HttpDriveTransferClient(
+      client: client,
+      credentials: credentials,
+      now: now,
+    ),
   );
 
   final DriveAccess access;
   final DriveMetadataClient metadata;
+  final DriveTransferClient transfers;
   final DriveFolderLocator folders;
   final DriveCopyLocator copies;
   final void Function()? cancelAuthorization;

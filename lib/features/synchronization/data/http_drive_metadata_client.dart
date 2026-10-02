@@ -37,7 +37,9 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
     return "'${value.replaceAll(r'\', r'\\').replaceAll("'", r"\'")}'";
   }
 
-  Future<String> _token(String accountId) async {
+  /// Utilidad interna de data, compartida con el transporte binario.
+  /// Lee acceso ya autorizado; no renueva ni exporta tokens al dominio.
+  Future<String> readTransferToken(String accountId) async {
     _nonEmpty(accountId);
     final DriveMetadataCredential credential;
     try {
@@ -87,7 +89,7 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
     required Uri uri,
     Map<String, dynamic>? body,
   }) async {
-    final token = await _token(accountId);
+    final token = await readTransferToken(accountId);
     final request = http.Request(method, uri)
       ..followRedirects = false
       ..headers['Authorization'] = 'Bearer $token'
@@ -108,7 +110,7 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
     }
     if (response.statusCode != 200 &&
         !(method == 'POST' && response.statusCode == 201)) {
-      throw _httpFailure(response);
+      throw classifyResponse(response);
     }
     try {
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
@@ -119,7 +121,8 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
     throw const DriveMetadataFailure(DriveMetadataIssue.incompleteResponse);
   }
 
-  DriveMetadataFailure _httpFailure(http.Response response) {
+  /// Clasificación saneada común a metadatos y contenido binario.
+  DriveMetadataFailure classifyResponse(http.Response response) {
     final reasons = <String>{};
     try {
       final errors = (jsonDecode(response.body) as Map)['error']['errors'];
@@ -183,7 +186,8 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
     );
   }
 
-  DriveFileMetadata _file(dynamic value) {
+  /// Parser común para el acuse binario y las consultas de metadatos.
+  DriveFileMetadata parseFileMetadata(dynamic value) {
     try {
       if (value is! Map<String, dynamic>) throw const FormatException();
       for (final key in ['id', 'name', 'mimeType']) {
@@ -305,7 +309,7 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
         throw const DriveMetadataFailure(DriveMetadataIssue.incompleteResponse);
       }
       for (final value in page['files'] as List) {
-        final file = _file(value);
+        final file = parseFileMetadata(value);
         if (file.trashed) {
           throw const DriveMetadataFailure(
             DriveMetadataIssue.incompleteResponse,
@@ -329,7 +333,7 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
     required String fileId,
   }) async {
     _nonEmpty(fileId);
-    final file = _file(
+    final file = parseFileMetadata(
       await _request(
         accountId: accountId,
         method: 'GET',
@@ -354,7 +358,7 @@ final class HttpDriveMetadataClient implements DriveMetadataClient {
   Future<DriveFileMetadata> createAutofinanceFolder({
     required String accountId,
   }) async {
-    final file = _file(
+    final file = parseFileMetadata(
       await _request(
         accountId: accountId,
         method: 'POST',

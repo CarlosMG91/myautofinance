@@ -84,6 +84,12 @@ servicios simulados del prototipo ni código del proyecto MyFinance.
 
 ## Contrato funcional
 
+MA-TSK-063 añade la [transferencia binaria manual](docs/ep-007/transferencia-binaria.md)
+al cliente Drive: subida reanudable por bloques con gate antes del commit,
+progreso/cancelación y descarga streaming a candidata temporal. Clasifica errores
+y acuses ambiguos sin reintentos automáticos; la validación, instalación y
+reconciliación corresponden al coordinador de sincronización.
+
 MA-TSK-062 implementa el [estado de sincronización por instalación](docs/ep-007/estado-instalacion.md),
 fuera de SQLite y asociado a cuenta/archivo Drive. Persiste imagen/versión y
 operaciones pendientes, detecta ediciones durante la subida y exige contraste
