@@ -134,3 +134,10 @@ con resultados presente/sin_copia/ambiguo/inaccesible, cuenta y metadatos de
 `autofinance.sqlite` por ID/marca dentro de la carpeta vinculada. Conserva la
 identidad tras renombrados y señala duplicados sin elegir una copia. Solo
 consulta metadatos; la primera copia válida corresponde a la futura subida.
+
+MA-TSK-049 conecta los adaptadores de sesión a metadatos/carpeta/copia en una
+composición por instalación. Entrega el [contrato a sincronización](docs/ep-005/guia-integracion.md),
+pruebas integradas con proveedores falsos y un [recorrido manual auditado](docs/ep-005/verificacion-integrada.md)
+para Windows/Android. La comprobación real sigue bloqueada por OAuth sin alta,
+Visual Studio/Android SDK ausentes y falta de dispositivo Android; no se afirma
+validación extremo a extremo, ni se crean archivos vacíos o transfieren datos.

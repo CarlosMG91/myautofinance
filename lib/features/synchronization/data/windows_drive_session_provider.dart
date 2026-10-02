@@ -5,9 +5,11 @@ import 'package:http/http.dart' as http;
 import '../domain/drive_access.dart';
 import 'windows_drive_session_store.dart';
 import 'windows_google_authorization.dart';
+import 'drive_metadata_credential.dart';
 
 /// OAuth público y metadatos Drive; no lee archivos, SQLite ni copias.
-final class WindowsDriveSessionProvider implements DriveSessionProvider {
+final class WindowsDriveSessionProvider
+    implements DriveSessionProvider, DriveMetadataCredentialSource {
   WindowsDriveSessionProvider({
     required this.clientId,
     required this._authorization,
@@ -26,6 +28,27 @@ final class WindowsDriveSessionProvider implements DriveSessionProvider {
   bool _busy = false;
 
   void cancelAuthorization() => _authorization.cancel();
+
+  /// Solo Credential Manager; no abre navegador ni usa refresh_token.
+  @override
+  Future<DriveMetadataCredential> readCredential({required String accountId}) =>
+      _exclusive(() async {
+        final credential = await _read();
+        if (credential == null ||
+            !credential.session.validUntil.isAfter(_now()) ||
+            credential.accessToken == null) {
+          throw const DriveAccessFailure(DriveAccessIssue.credentialExpired);
+        }
+        if (credential.session.account.permissionId != accountId) {
+          throw const DriveAccessFailure(
+            DriveAccessIssue.accountChangeRequired,
+          );
+        }
+        return DriveMetadataCredential(
+          session: credential.session,
+          accessToken: credential.accessToken!,
+        );
+      });
 
   Future<T> _exclusive<T>(Future<T> Function() action) async {
     if (_busy) {

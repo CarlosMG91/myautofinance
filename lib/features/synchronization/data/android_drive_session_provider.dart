@@ -5,9 +5,11 @@ import 'package:http/http.dart' as http;
 import '../domain/drive_access.dart';
 import 'android_drive_session_store.dart';
 import 'android_google_authorization.dart';
+import 'drive_metadata_credential.dart';
 
 /// Solo identidad y validación OAuth: no opera sobre archivos ni SQLite.
-final class AndroidDriveSessionProvider implements DriveSessionProvider {
+final class AndroidDriveSessionProvider
+    implements DriveSessionProvider, DriveMetadataCredentialSource {
   AndroidDriveSessionProvider({
     required this._authorization,
     required this._store,
@@ -20,6 +22,33 @@ final class AndroidDriveSessionProvider implements DriveSessionProvider {
   final http.Client _client;
   final DateTime Function() _now;
   bool _busy = false;
+  DriveMetadataCredential? _credential;
+
+  /// Lectura local de un token ya verificado; nunca llama al SDK ni renueva.
+  /// Tras reiniciar, requestAccess/renewAccess debe obtenerlo expresamente.
+  @override
+  Future<DriveMetadataCredential> readCredential({required String accountId}) =>
+      _exclusive(() async {
+        final session = await _read();
+        final credential = _credential;
+        if (session == null || !session.validUntil.isAfter(_now())) {
+          throw const DriveAccessFailure(DriveAccessIssue.credentialExpired);
+        }
+        if (session.account.permissionId != accountId) {
+          throw const DriveAccessFailure(
+            DriveAccessIssue.accountChangeRequired,
+          );
+        }
+        if (credential == null ||
+            credential.session.account.permissionId != accountId ||
+            credential.session.validUntil != session.validUntil) {
+          throw const DriveAccessFailure(DriveAccessIssue.unavailable);
+        }
+        return DriveMetadataCredential(
+          session: session,
+          accessToken: credential.accessToken,
+        );
+      });
 
   Future<T> _exclusive<T>(Future<T> Function() action) async {
     if (_busy) {
@@ -89,6 +118,7 @@ final class AndroidDriveSessionProvider implements DriveSessionProvider {
     required String? expectedAccountId,
     required DriveSession? previous,
   }) async {
+    _credential = null;
     final token = await _authorization.accessToken(
       interactive: interactive,
       selectAccount: selectAccount,
@@ -144,6 +174,7 @@ final class AndroidDriveSessionProvider implements DriveSessionProvider {
           : null,
     );
     await _write(session);
+    _credential = DriveMetadataCredential(session: session, accessToken: token);
     return session;
   }
 
@@ -212,6 +243,7 @@ final class AndroidDriveSessionProvider implements DriveSessionProvider {
 
   @override
   Future<void> clearLocalSession() => _exclusive(() async {
+    _credential = null;
     _authorization.forget();
     try {
       await _store.clear();
