@@ -11,9 +11,16 @@ import '../features/synchronization/data/local_backup_catalog_service.dart';
 import '../features/synchronization/data/local_restore_candidate_service.dart';
 import '../features/synchronization/data/local_restore_service.dart';
 import '../features/synchronization/data/native_backup_persistence.dart';
+import '../features/synchronization/data/local_sync_contrast_reader.dart';
 import 'data/sqlite/local_database_store.dart';
 import 'data/sqlite/schema_policy.dart';
 import 'data/sqlite/sqlite_restore_image_policy.dart';
+
+LocalSyncContrastReader createLocalSyncContrastReader({
+  SupportDirectory? supportDirectory,
+}) => StoredLocalSyncContrastReader(
+  supportDirectory: supportDirectory ?? getApplicationSupportDirectory,
+);
 
 LocalBackupCreator createLocalBackupCreator({
   required LocalDatabaseStore store,

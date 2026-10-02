@@ -109,8 +109,13 @@ MA-TSK-055 implementa la [restauración segura local](docs/ep-006/restauracion-s
 con confirmación explícita, bloqueo y drenaje de escrituras, respaldo consistente,
 aislamiento de originales dañados, diario de fases, intercambio y validación tras
 reapertura. Revierte ante fallo y confirma epoch/contraste antes del éxito; pide
-retención únicamente después. MA-TSK-056 resolverá el diario tras interrupción;
-hasta entonces la apertura normal queda bloqueada si hay uno pendiente.
+retención únicamente después.
+
+MA-TSK-056 añade la [recuperación al arrancar](docs/ep-006/recuperacion-interrumpida.md):
+resuelve el diario antes de abrir SQLite, finaliza imágenes validadas o vuelve
+al respaldo anterior, incluso tras una nueva interrupción de la recuperación.
+Entrega un lector local del epoch y del contraste pendiente a sincronización,
+independiente de la revisión de la base y sin acceder a Drive.
 
 La [guía de integración SQLite](docs/ep-004/guia-integracion.md) entrega las
 API de repositorios, esquema v6, migraciones y límites para CSV, Openbank,

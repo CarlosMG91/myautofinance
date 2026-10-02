@@ -12,6 +12,7 @@ import 'package:myautofinance/features/synchronization/data/backup_storage.dart'
 import 'package:myautofinance/features/synchronization/data/local_backup_service.dart';
 import 'package:myautofinance/features/synchronization/data/local_restore_candidate_service.dart';
 import 'package:myautofinance/features/synchronization/data/local_restore_service.dart';
+import 'package:myautofinance/features/synchronization/data/local_restore_recovery.dart';
 import 'package:myautofinance/features/synchronization/data/native_backup_persistence.dart';
 import 'package:myautofinance/features/synchronization/synchronization.dart';
 import 'package:path/path.dart' as p;
@@ -435,9 +436,221 @@ void main() {
       true,
     );
     final restarted = LocalDatabaseStore(supportDirectory: () async => support);
-    await expectLater(restarted.open(), throwsA(isA<DatabaseFailure>()));
-    expect(await File(activePath()).exists(), false);
+    expect((await (await restarted.open()).readState()).revision, 42);
+    expect(await File(activePath()).exists(), true);
     await restarted.close();
+  });
+
+  for (final point in [
+    'staging',
+    'protected',
+    'closed',
+    'isolated',
+    'installed',
+    'reopened',
+    'catalog',
+    'completed',
+    'rollback',
+    'recover-marker',
+    'recover-isolate',
+    'recover-install',
+    'recover-catalog',
+    'recover-archive',
+    'damaged-protected',
+    'damaged-isolated',
+    'damaged-installed',
+    'corrupt-journal',
+  ]) {
+    test('reinicio desde $point conserva base y copias', () async {
+      final snapshot = await Directory.systemTemp.createTemp(
+        'restore-restart-',
+      );
+      var captured = false;
+      final oldEpoch = (await storage().loadSlots(root()))
+          .latest!['localRestoreEpoch'];
+      if (point.startsWith('damaged-')) {
+        await store.close();
+        await File(activePath()).writeAsBytes([1, 2, 3]);
+      }
+      persistence.after = (source, target) async {
+        if (captured) return;
+        final name = p.basename(target);
+        final hit = switch (point) {
+          'staging' =>
+            name == 'autofinance.sqlite' &&
+                p.basename(p.dirname(target)) != 'previous' &&
+                target.contains('${p.separator}restore${p.separator}'),
+          'protected' || 'damaged-protected' => name == 'journal-000.json',
+          'closed' => name == 'journal-001.json',
+          'isolated' ||
+          'damaged-isolated' => p.basename(p.dirname(target)) == 'previous',
+          'installed' ||
+          'damaged-installed' ||
+          'corrupt-journal' => name == 'journal-003.json',
+          'recover-marker' ||
+          'recover-isolate' ||
+          'recover-install' ||
+          'recover-catalog' ||
+          'recover-archive' => name == 'journal-003.json',
+          'reopened' => name == 'journal-004.json',
+          'catalog' =>
+            name.startsWith('catalog-') &&
+                name.endsWith('.json') &&
+                decodeBackupEnvelope(
+                      await File(target).readAsBytes(),
+                    )['localRestoreEpoch'] !=
+                    oldEpoch,
+          'completed' => name == 'journal-005.json',
+          'rollback' =>
+            name.startsWith('journal-') &&
+                name.endsWith('.json') &&
+                decodeBackupEnvelope(
+                      await File(target).readAsBytes(),
+                    )['phase'] ==
+                    'rollingBack',
+          _ => false,
+        };
+        if (!hit) return;
+        captured = true;
+        await for (final entity in support.list(
+          recursive: true,
+          followLinks: false,
+        )) {
+          final path = p.join(
+            snapshot.path,
+            p.relative(entity.path, from: support.path),
+          );
+          if (entity is Directory) {
+            await Directory(path).create(recursive: true);
+          }
+          if (entity is File) {
+            await Directory(p.dirname(path)).create(recursive: true);
+            await entity.copy(path);
+          }
+        }
+      };
+      active.failFirstReopen = point == 'rollback';
+      await service.restore(selected.backupId, confirmed: true);
+      expect(captured, true);
+      await store.close();
+      if (point == 'corrupt-journal') {
+        final journal =
+            await Directory(
+                  p.join(snapshot.path, 'sqlite', 'local-backups', 'restore'),
+                )
+                .list(recursive: true)
+                .firstWhere((e) => p.basename(e.path) == 'journal-003.json');
+        await File(journal.path).writeAsBytes([1, 2, 3]);
+      }
+      if (point.startsWith('recover-')) {
+        final interrupted = _Faults();
+        var fired = false;
+        interrupted.after = (source, target) async {
+          if (fired) return;
+          final hit = switch (point) {
+            'recover-marker' => p.basename(target) == 'journal-900.json',
+            'recover-isolate' =>
+              p.basename(p.dirname(target)).startsWith('recovery-'),
+            'recover-install' =>
+              target == p.join(snapshot.path, 'sqlite', 'autofinance.sqlite'),
+            'recover-catalog' =>
+              p.basename(target).startsWith('catalog-') &&
+                  target.endsWith('.json'),
+            'recover-archive' => p.basename(p.dirname(target)) == 'diagnostics',
+            _ => false,
+          };
+          if (hit) {
+            fired = true;
+            throw const FileSystemException('interrupted recovery');
+          }
+        };
+        final recovery = LocalRestoreRecovery(
+          preparer: LocalRestoreCandidateService(
+            policy: const SqliteRestoreImagePolicy(),
+            supportDirectory: () async => snapshot,
+            persistence: interrupted,
+          ),
+          validateActive: const SqliteLocalBackupValidator().validate,
+          persistence: interrupted,
+        );
+        await expectLater(
+          recovery.recover(p.join(snapshot.path, 'sqlite')),
+          throwsA(isA<FileSystemException>()),
+        );
+        expect(fired, true);
+      }
+      final restarted = LocalDatabaseStore(
+        supportDirectory: () async => snapshot,
+      );
+      try {
+        if (point == 'corrupt-journal') {
+          final main = File(
+            p.join(snapshot.path, 'sqlite', 'autofinance.sqlite'),
+          );
+          final bytes = await main.readAsBytes();
+          await expectLater(restarted.open(), throwsA(isA<DatabaseFailure>()));
+          expect(await main.readAsBytes(), bytes);
+          return;
+        }
+        final finished =
+            ['reopened', 'catalog', 'completed'].contains(point) ||
+            point.startsWith('damaged-');
+        expect(
+          (await (await restarted.open()).readState()).revision,
+          finished ? 0 : 42,
+        );
+        final signal = await createLocalSyncContrastReader(
+          supportDirectory: () async => snapshot,
+        ).read();
+        expect(signal.required, finished);
+        expect(signal.restoreEpoch, finished ? isNot(oldEpoch) : oldEpoch);
+        final listing = await createLocalBackupCatalog(
+          supportDirectory: () async => snapshot,
+        ).read();
+        expect(
+          listing.entries.any((e) => e.backupId == selected.backupId),
+          true,
+        );
+        if (point != 'staging') {
+          expect(
+            listing.entries
+                .where((e) => e.origin == LocalBackupOrigin.preRestore)
+                .length,
+            point.startsWith('damaged-') ? 0 : 1,
+          );
+        }
+        await restarted.close();
+        final again = LocalDatabaseStore(
+          supportDirectory: () async => snapshot,
+        );
+        expect(
+          (await (await again.open()).readState()).revision,
+          finished ? 0 : 42,
+        );
+        await again.close();
+      } finally {
+        await restarted.close();
+        await snapshot.delete(recursive: true);
+      }
+    });
+  }
+
+  test('igual revisión también exige contraste local', () async {
+    final db = await store.open();
+    await db.customStatement('UPDATE database_state SET revision=0');
+    final before = await createLocalSyncContrastReader(
+      supportDirectory: () async => support,
+    ).read();
+    expect(before.required, false);
+    expect(
+      (await service.restore(selected.backupId, confirmed: true)).status,
+      LocalRestoreStatus.restored,
+    );
+    final after = await createLocalSyncContrastReader(
+      supportDirectory: () async => support,
+    ).read();
+    expect(after.required, true);
+    expect(after.restoreEpoch, isNot(before.restoreEpoch));
   });
 
   test('bloqueo nativo compartido rechaza una segunda operación', () async {

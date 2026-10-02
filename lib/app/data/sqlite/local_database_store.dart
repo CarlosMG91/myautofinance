@@ -12,6 +12,9 @@ import 'local_database.dart';
 import 'schema_policy.dart';
 import '../../../core/persistence/unit_of_work.dart';
 import '../../../features/synchronization/synchronization.dart';
+import '../../../features/synchronization/data/local_restore_recovery.dart';
+import '../../../features/synchronization/data/local_restore_candidate_service.dart';
+import 'sqlite_restore_image_policy.dart';
 
 typedef SupportDirectory = Future<Directory> Function();
 
@@ -152,21 +155,17 @@ final class LocalDatabaseStore
       final support = await _supportDirectory();
       final directory = Directory(p.join(support.path, 'sqlite'));
       final file = File(p.join(directory.path, 'autofinance.sqlite'));
-      // MA-TSK-056 resolverá el diario antes de permitir una apertura normal.
-      // Hasta entonces nunca crear una base vacía en medio de un intercambio.
       if (Zone.current[_restoreKey] != true) {
-        final restore = Directory(
-          p.join(directory.path, 'local-backups', 'restore'),
-        );
-        if (await restore.exists()) {
-          await for (final item in restore.list(
-            recursive: true,
-            followLinks: false,
-          )) {
-            if (p.basename(item.path).startsWith('journal-')) {
-              throw const DatabaseFailure(DatabaseFailureCode.restoring);
-            }
-          }
+        try {
+          await LocalRestoreRecovery(
+            preparer: LocalRestoreCandidateService(
+              policy: const SqliteRestoreImagePolicy(),
+              supportDirectory: _supportDirectory,
+            ),
+            validateActive: _validateRecoveryImage,
+          ).recover(directory.path);
+        } catch (_) {
+          throw const DatabaseFailure(DatabaseFailureCode.restoring);
         }
       }
       _databasePath = file.path;
@@ -229,6 +228,29 @@ final class LocalDatabaseStore
         throw const DatabaseFailure(DatabaseFailureCode.incompatible);
       }
       throw const DatabaseFailure(DatabaseFailureCode.open);
+    }
+  }
+
+  Future<LocalBackupImage> _validateRecoveryImage(String path) async {
+    if (!await File(path).exists()) {
+      throw const DatabaseFailure(DatabaseFailureCode.restoring);
+    }
+    final check = sqlite3.open(path);
+    try {
+      validateExistingDatabase(check);
+      final row = check
+          .select('SELECT dataset_id,revision FROM database_state')
+          .single;
+      return LocalBackupImage(
+        state: DatasetState(
+          datasetId: row['dataset_id'] as String,
+          revision: row['revision'] as int,
+        ),
+        schemaVersion: readSchemaVersion(check),
+        applicationId: localApplicationId,
+      );
+    } finally {
+      check.close();
     }
   }
 

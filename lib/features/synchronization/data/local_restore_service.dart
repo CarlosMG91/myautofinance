@@ -229,6 +229,7 @@ final class LocalRestoreService implements LocalRestorer {
       await journal('completed');
     } catch (_) {
       try {
+        await journal('rollingBack');
         if (exchangeStarted) {
           await active.close();
           await _persistence.createDirectory(failed);
