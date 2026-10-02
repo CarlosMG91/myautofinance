@@ -125,6 +125,12 @@ con catálogo adaptable, detalle, confirmación y progreso. Abre SQLite al
 arrancar y ofrece recuperación independiente si falla la base activa; no inicia
 conexiones remotas. Incluye pruebas de widgets y sesión real con datos sintéticos.
 
+MA-TSK-059 añade el [recorrido completo y fallos de recuperación](docs/ep-006/verificacion-recuperacion.md)
+con datos EP-001, comparación de todas las tablas tras reinicios, recuperación
+de la versión anterior, retención, errores de disco e interrupción real de
+procesos. El informe distingue la evidencia automatizada del recorrido manual
+nativo pendiente por falta de herramientas Windows/Android.
+
 La [guía de integración SQLite](docs/ep-004/guia-integracion.md) entrega las
 API de repositorios, esquema v6, migraciones y límites para CSV, Openbank,
 informes y Drive, con el recorrido integrado automatizado de MA-TSK-040.
