@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'app_routes.dart';
+import '../../features/synchronization/presentation/drive_controller.dart';
+import '../../features/synchronization/presentation/drive_screen.dart';
 import '../../features/synchronization/presentation/local_backup_controller.dart';
 import '../../features/synchronization/presentation/local_backup_screen.dart';
 
@@ -10,10 +12,13 @@ abstract final class AppRouter {
   static Route<void> generateRoute(
     RouteSettings settings, {
     LocalBackupController? localBackups,
+    DriveController? drive,
   }) {
     Widget page;
     final uri = Uri.tryParse(settings.name ?? '');
-    if (uri?.path == AppRoutes.localBackups ||
+    if (uri?.path == AppRoutes.drive && drive != null) {
+      page = _BackupRoute(settings: settings, drive: drive);
+    } else if (uri?.path == AppRoutes.localBackups ||
         uri?.path.startsWith('${AppRoutes.localBackups}/') == true) {
       page = localBackups == null
           ? const _TechnicalPlaceholder(
@@ -22,7 +27,9 @@ abstract final class AppRouter {
             )
           : _BackupRoute(settings: settings, controller: localBackups);
     } else if (settings.name == AppRoutes.home) {
-      page = _TechnicalIndex(showManagement: localBackups != null);
+      page = _TechnicalIndex(
+        showManagement: localBackups != null || drive != null,
+      );
     } else {
       TechnicalDestination? destination;
       for (final candidate in AppRoutes.destinations) {
@@ -32,7 +39,7 @@ abstract final class AppRouter {
         }
       }
       page = _TechnicalPlaceholder(
-        showManagement: localBackups != null,
+        showManagement: localBackups != null || drive != null,
         title: destination?.label ?? 'Error de navegación',
         message: destination == null
             ? 'Destino desconocido · ${settings.name ?? "(sin ruta)"}'
@@ -86,13 +93,14 @@ class _BackupOrigin {
 }
 
 class _BackupRoute extends StatelessWidget {
-  const _BackupRoute({required this.settings, required this.controller});
+  const _BackupRoute({required this.settings, this.controller, this.drive});
   final RouteSettings settings;
-  final LocalBackupController controller;
+  final LocalBackupController? controller;
+  final DriveController? drive;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: controller,
+    listenable: drive ?? controller!,
     builder: (context, _) {
       final uri = Uri.tryParse(settings.name ?? '');
       final id = uri != null && uri.pathSegments.length == 2
@@ -127,9 +135,10 @@ class _BackupRoute extends StatelessWidget {
                   ? const BorderSide(color: Color(0xff124b7a), width: 2)
                   : null,
             ),
-            onPressed: () =>
-                Navigator.of(context)
-                    .pushNamedAndRemoveUntil(destination.path, (_) => false),
+            onPressed: drive?.busy == true
+                ? null
+                : () => Navigator.of(context)
+                      .pushNamedAndRemoveUntil(destination.path, (_) => false),
             child: Text(
               _shortLabel(destination.path),
               textAlign: TextAlign.center,
@@ -172,8 +181,40 @@ class _BackupRoute extends StatelessWidget {
         );
       }
 
+      final allowed = drive != null ? true : controller!.activeAvailable;
+      final sidebar = allowed && width >= 840
+          ? Container(
+              width: width >= 1200 ? 216 : 200,
+              color: Colors.white,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [const Text('Autofinance'), navigation(true)],
+              ),
+            )
+          : null;
+      final bottom = allowed && width < 840
+          ? SafeArea(
+              child: Container(
+                color: Colors.white,
+                constraints: const BoxConstraints(minHeight: 64),
+                child: navigation(false),
+              ),
+            )
+          : null;
+      if (drive != null) {
+        return DriveScreen(
+          controller: drive!,
+          onReturn: returnToOrigin,
+          returnLabel: 'Volver a ${origin.label}',
+          onOpenBackups: () =>
+              Navigator.of(context)
+                  .pushNamed(AppRoutes.localBackups, arguments: origin),
+          navigation: sidebar,
+          bottomNavigation: bottom,
+        );
+      }
       return LocalBackupScreen(
-        controller: controller,
+        controller: controller!,
         backupId: id,
         onOpenDetail: (id) =>
             Navigator.of(context)
@@ -182,7 +223,7 @@ class _BackupRoute extends StatelessWidget {
         returnLabel: id == null
             ? 'Volver a ${origin.label}'
             : 'Volver a Copias locales',
-        navigation: controller.activeAvailable && width >= 840
+        navigation: controller!.activeAvailable && width >= 840
             ? Container(
                 width: width >= 1200 ? 216 : 200,
                 color: Colors.white,
@@ -192,7 +233,7 @@ class _BackupRoute extends StatelessWidget {
                 ),
               )
             : null,
-        bottomNavigation: controller.activeAvailable && width < 840
+        bottomNavigation: controller!.activeAvailable && width < 840
             ? SafeArea(
                 child: Container(
                   color: Colors.white,
@@ -292,13 +333,17 @@ class _ManagementMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     tooltip: 'Gestión',
-    onSelected: (_) => Navigator.of(context).pushNamed(
-      AppRoutes.localBackups,
+    onSelected: (value) => Navigator.of(context).pushNamed(
+      value == 'drive' ? AppRoutes.drive : AppRoutes.localBackups,
       arguments: _BackupOrigin(
         ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
       ),
     ),
     itemBuilder: (_) => const [
+      PopupMenuItem(enabled: false, child: Text('Importar CSV')),
+      PopupMenuItem(enabled: false, child: Text('Categorías')),
+      PopupMenuItem(enabled: false, child: Text('Fichas')),
+      PopupMenuItem(value: 'drive', child: Text('Copia en Drive')),
       PopupMenuItem(value: 'local', child: Text('Copias locales')),
     ],
     child: const Padding(padding: EdgeInsets.all(12), child: Text('Gestión')),

@@ -31,6 +31,7 @@ final class SafeDriveDownloadApplication implements DriveDownloadApplication {
     required DriveTransferCancellation cancellation,
     required Future<bool> Function(DriveDownloadReview) review,
     void Function(DriveTransferProgress)? onProgress,
+    void Function()? onApplying,
   }) async {
     if (_busy) {
       return const DriveDownloadApplicationResult(
@@ -67,6 +68,7 @@ final class SafeDriveDownloadApplication implements DriveDownloadApplication {
             : DriveDownloadApplicationStatus.downloadRejected;
       } else {
         final image = candidate;
+        onApplying?.call();
         restored = await restorer.restoreImage(
           path: image.path,
           sha256: image.sha256,

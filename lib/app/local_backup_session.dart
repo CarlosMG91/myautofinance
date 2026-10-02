@@ -2,6 +2,8 @@ import '../features/synchronization/presentation/local_backup_controller.dart';
 import 'data/sqlite/database_failure.dart';
 import 'data/sqlite/local_database_store.dart';
 import 'local_backup_factory.dart';
+import 'drive_ui_factory.dart';
+import '../features/synchronization/presentation/drive_controller.dart';
 
 /// Una sola conexión y los servicios locales de la instalación, sin OAuth.
 class LocalBackupSession {
@@ -23,6 +25,10 @@ class LocalBackupSession {
   }
 
   final LocalDatabaseStore store;
+  late final DriveController drive = createDriveUi(
+    store: store,
+    onRecoveryRequired: controller.retryOpen,
+  );
   late final LocalBackupController controller;
 
   Future<bool> open() async {

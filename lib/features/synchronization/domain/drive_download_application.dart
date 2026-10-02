@@ -46,5 +46,8 @@ abstract interface class DriveDownloadApplication {
     required DriveTransferCancellation cancellation,
     required Future<bool> Function(DriveDownloadReview) review,
     void Function(DriveTransferProgress)? onProgress,
+
+    /// Imagen validada; comienza respaldo, sustitución y apertura segura.
+    void Function()? onApplying,
   });
 }

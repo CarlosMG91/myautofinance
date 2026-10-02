@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/config/app_config.dart';
 import 'regional.dart';
+import '../features/synchronization/presentation/drive_controller.dart';
 
 import 'modules.dart';
 import 'navigation/app_router.dart';
@@ -16,6 +17,7 @@ class AutofinanceApp extends StatelessWidget {
     this.config = const AppConfig(environment: AppEnvironment.production),
     this.localSession,
     this.localBackups,
+    this.drive,
   });
 
   final AppConfig config;
@@ -23,6 +25,7 @@ class AutofinanceApp extends StatelessWidget {
 
   /// Permite probar navegación sin abrir archivos ni servicios nativos.
   final LocalBackupController? localBackups;
+  final DriveController? drive;
 
   /// Entradas técnicas disponibles para conectar las futuras funcionalidades.
   static const modules = applicationModules;
@@ -30,6 +33,7 @@ class AutofinanceApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final backups = localBackups ?? localSession?.controller;
+    final driveController = drive ?? localSession?.drive;
     return MaterialApp(
       title: 'Autofinance',
       locale: AppRegional.locale,
@@ -86,10 +90,14 @@ class AutofinanceApp extends StatelessWidget {
                 : AppRoutes.home,
           ),
           localBackups: backups,
+          drive: driveController,
         ),
       ],
-      onGenerateRoute: (settings) =>
-          AppRouter.generateRoute(settings, localBackups: backups),
+      onGenerateRoute: (settings) => AppRouter.generateRoute(
+        settings,
+        localBackups: backups,
+        drive: driveController,
+      ),
     );
   }
 }
