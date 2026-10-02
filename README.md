@@ -81,6 +81,12 @@ servicios simulados del prototipo ni código del proyecto MyFinance.
 
 ## Contrato funcional
 
+MA-TSK-051 define el [contrato de copias locales y catálogo](docs/ep-006/contrato-copias-locales.md)
+independiente de la base activa, con recuperación de escrituras interrumpidas,
+tres respaldos automáticos previos a restauración y conservación de manuales.
+Los [casos de aceptación](docs/ep-006/casos-contrato.md) entregan las obligaciones
+para implementar EP-006 reutilizando la primitiva de MA-TSK-038, sin Drive.
+
 La [guía de integración SQLite](docs/ep-004/guia-integracion.md) entrega las
 API de repositorios, esquema v6, migraciones y límites para CSV, Openbank,
 informes y Drive, con el recorrido integrado automatizado de MA-TSK-040.
