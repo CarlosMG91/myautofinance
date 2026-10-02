@@ -92,6 +92,13 @@ manuales o previas a restauración, con staging privado, manifiesto SHA-256,
 catálogo en dos generaciones y exclusión entre procesos. Publica únicamente
 tras validar y confirmar el registro; no implementa pantalla, restauración o poda.
 
+MA-TSK-053 añade el [listado y mantenimiento del catálogo local](docs/ep-006/catalogo-retencion.md),
+con recuperación independiente de la activa, incidencias separadas y bajas duraderas.
+Conserva manuales y poda automáticas hasta tres válidas únicamente tras recibir
+la confirmación duradera del coordinador de restauración. Incluye reintento de
+borrados y protección de la última copia válida; la restauración y pantalla
+pertenecen a los siguientes tickets de EP-006.
+
 La [guía de integración SQLite](docs/ep-004/guia-integracion.md) entrega las
 API de repositorios, esquema v6, migraciones y límites para CSV, Openbank,
 informes y Drive, con el recorrido integrado automatizado de MA-TSK-040.

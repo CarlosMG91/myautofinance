@@ -7,6 +7,7 @@ import 'package:sqlite3/sqlite3.dart';
 import '../core/persistence/unit_of_work.dart';
 import '../features/synchronization/synchronization.dart';
 import '../features/synchronization/data/local_backup_service.dart';
+import '../features/synchronization/data/local_backup_catalog_service.dart';
 import '../features/synchronization/data/native_backup_persistence.dart';
 import 'data/sqlite/local_database_store.dart';
 import 'data/sqlite/schema_policy.dart';
@@ -17,6 +18,16 @@ LocalBackupCreator createLocalBackupCreator({
   NativeBackupPersistence? persistence,
 }) => LocalBackupService(
   source: store,
+  validator: const SqliteLocalBackupValidator(),
+  supportDirectory: supportDirectory ?? getApplicationSupportDirectory,
+  persistence: persistence,
+);
+
+/// Disponible antes de abrir el store, incluso con una activa dañada.
+LocalBackupCatalog createLocalBackupCatalog({
+  SupportDirectory? supportDirectory,
+  NativeBackupPersistence? persistence,
+}) => LocalBackupCatalogService(
   validator: const SqliteLocalBackupValidator(),
   supportDirectory: supportDirectory ?? getApplicationSupportDirectory,
   persistence: persistence,

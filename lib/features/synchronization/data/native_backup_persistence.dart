@@ -54,6 +54,18 @@ class NativeBackupPersistence {
     await move(temporary, path);
   }
 
+  /// Nunca recursivo. La baja duradera evita resurrección aunque una eliminación
+  /// no alcance el disco antes de una interrupción.
+  Future<void> deleteFile(String path) async {
+    await File(path).delete();
+    if (!Platform.isWindows) _native.syncDirectory(p.dirname(path));
+  }
+
+  Future<void> deleteEmptyDirectory(String path) async {
+    await Directory(path).delete();
+    if (!Platform.isWindows) _native.syncDirectory(p.dirname(path));
+  }
+
   Future<T> exclusively<T>(String lockPath, Future<T> Function() action) async {
     if (!Platform.isWindows) {
       final fd = _native.acquire(lockPath);

@@ -186,3 +186,28 @@ void checkBackupCatalog(Map<String, dynamic> value) {
     checkBackupValidation(entry['validation']);
   }
 }
+
+void checkBackupDeletion(Map<String, dynamic> value, String id) {
+  backupObject(value, {
+    'kind',
+    'formatVersion',
+    'backupId',
+    'creationOrder',
+    'deletedAtUtc',
+    'reason',
+    'restoreOperationId',
+  });
+  checkBackupFormat(value, 'autofinance.localBackupDeletion');
+  if (value['backupId'] != id || !backupUuid.hasMatch(id)) {
+    invalidBackupMetadata();
+  }
+  backupCounter(value['creationOrder']);
+  checkBackupUtc(value['deletedAtUtc']);
+  if (!(value['reason'] == 'explicitUser' &&
+          value['restoreOperationId'] == null ||
+      value['reason'] == 'retention' &&
+          value['restoreOperationId'] is String &&
+          backupUuid.hasMatch(value['restoreOperationId']))) {
+    invalidBackupMetadata();
+  }
+}

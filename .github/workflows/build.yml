@@ -100,6 +100,11 @@ jobs:
         run: |
           flutter test integration_test/windows_drive_access_test.dart -d windows --no-pub --dart-define=APP_ENV=test --dart-define=WINDOWS_CREDENTIAL_TEST=true
           if ($LASTEXITCODE -ne 0) { throw 'Falló Credential Manager Windows.' }
+      - name: Probar catálogo y retención local en Windows nativo
+        if: matrix.target == 'windows'
+        run: |
+          flutter test integration_test/local_backup_catalog_test.dart -d windows --no-pub --dart-define=APP_ENV=test
+          if ($LASTEXITCODE -ne 0) { throw 'Falló el catálogo de copias locales Windows.' }
       - name: Habilitar KVM para la prueba Android
         if: matrix.target == 'android'
         shell: bash
@@ -118,3 +123,4 @@ jobs:
           script: |
             flutter test integration_test/local_database_test.dart -d emulator-5554 --no-pub --dart-define=APP_ENV=test
             flutter test integration_test/local_backup_creation_test.dart -d emulator-5554 --no-pub --dart-define=APP_ENV=test
+            flutter test integration_test/local_backup_catalog_test.dart -d emulator-5554 --no-pub --dart-define=APP_ENV=test

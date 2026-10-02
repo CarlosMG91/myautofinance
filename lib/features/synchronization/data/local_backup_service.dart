@@ -10,6 +10,7 @@ import '../domain/local_backup_creation.dart';
 import 'backup_catalog.dart';
 import 'backup_json.dart';
 import 'native_backup_persistence.dart';
+import 'backup_storage.dart';
 
 /// Creación explícita; no abre la activa al construirlo ni ejecuta retención.
 final class LocalBackupService implements LocalBackupCreator {
@@ -27,6 +28,7 @@ final class LocalBackupService implements LocalBackupCreator {
   final Future<Directory> Function() supportDirectory;
   final NativeBackupPersistence _persistence;
   final DateTime Function() _clock;
+  late final _storage = BackupStorage(_persistence, _clock);
 
   @override
   Future<CreatedLocalBackup> createManual() =>
@@ -351,61 +353,12 @@ final class LocalBackupService implements LocalBackupCreator {
     String root,
     Map<String, dynamic> catalog, {
     bool initial = false,
-  }) async {
-    final generation = backupCounter(catalog['generation']);
-    if (!initial && generation == maxBackupCounter) {
-      throw const LocalBackupFailure(LocalBackupFailureCode.counterExhausted);
-    }
-    if (!initial) catalog['generation'] = '${generation + 1}';
-    catalog['writtenAtUtc'] = backupUtc(_clock());
-    checkBackupCatalog(catalog);
-    final base = p.join(root, 'local-backups');
-    final pending = p.join(base, 'catalog-${const Uuid().v4()}.next');
-    await _writeEnvelope(root, pending, catalog);
-    final a = p.join(base, 'catalog-a.json');
-    final b = p.join(base, 'catalog-b.json');
-    await _safe(root, a);
-    await _safe(root, b);
-    String target;
-    if (!await File(a).exists()) {
-      target = a;
-    } else if (!await File(b).exists()) {
-      target = b;
-    } else {
-      final ga = backupCounter(
-        decodeBackupEnvelope(await File(a).readAsBytes())['generation'],
-      );
-      final gb = backupCounter(
-        decodeBackupEnvelope(await File(b).readAsBytes())['generation'],
-      );
-      target = ga <= gb ? a : b;
-    }
-    await _persistence.move(pending, target, replace: true);
-    final confirmed = decodeBackupEnvelope(await File(target).readAsBytes());
-    checkBackupCatalog(confirmed);
-    if (jsonEncode(confirmed) != jsonEncode(catalog)) invalidBackupMetadata();
-  }
-
+  }) => _storage.commitCatalog(root, catalog, initial: initial);
   Future<void> _writeEnvelope(
     String root,
     String path,
     Map<String, dynamic> payload,
-  ) async {
-    await _safe(root, path);
-    if (await FileSystemEntity.type(path, followLinks: false) !=
-        FileSystemEntityType.notFound) {
-      invalidBackupMetadata();
-    }
-    final temporary = '$path.${const Uuid().v4()}.next';
-    await File(temporary)
-        .writeAsBytes(encodeBackupEnvelope(payload), flush: true);
-    await _persistence.flushFile(temporary);
-    final checked = decodeBackupEnvelope(await File(temporary).readAsBytes());
-    if (jsonEncode(checked) != jsonEncode(payload)) invalidBackupMetadata();
-    // Rename the complete file through the native persistence adapter, also
-    // confirming its directory entry (the destination is always new).
-    await _persistence.move(temporary, path);
-  }
+  ) => _storage.writeEnvelope(root, path, payload);
 
   Future<String> _hash(String path) async =>
       (await sha256.bind(File(path).openRead()).first).toString();
@@ -416,26 +369,5 @@ final class LocalBackupService implements LocalBackupCreator {
     }
   }
 
-  Future<void> _safe(String root, String path) async {
-    final normalizedRoot = p.normalize(p.absolute(root));
-    final normalized = p.normalize(p.absolute(path));
-    if (!p.equals(normalizedRoot, normalized) &&
-        !p.isWithin(normalizedRoot, normalized)) {
-      invalidBackupMetadata();
-    }
-    var current = p.rootPrefix(normalized);
-    for (final segment in p.split(normalized).skip(1)) {
-      current = p.join(current, segment);
-      final type = await FileSystemEntity.type(current, followLinks: false);
-      if (type == FileSystemEntityType.link) invalidBackupMetadata();
-      if (type != FileSystemEntityType.notFound) {
-        final resolved = type == FileSystemEntityType.directory
-            ? await Directory(current).resolveSymbolicLinks()
-            : await File(current).resolveSymbolicLinks();
-        if (!p.equals(p.normalize(resolved), p.normalize(current))) {
-          invalidBackupMetadata();
-        }
-      }
-    }
-  }
+  Future<void> _safe(String root, String path) => _storage.safe(root, path);
 }
