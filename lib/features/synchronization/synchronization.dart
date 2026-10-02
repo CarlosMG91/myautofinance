@@ -8,5 +8,6 @@ export 'domain/local_backup.dart';
 export 'domain/local_backup_creation.dart';
 export 'domain/local_backup_catalog.dart';
 export 'domain/local_restore_candidate.dart';
+export 'domain/local_restore.dart';
 
 const synchronizationModule = FeatureModule(id: ModuleId.synchronization);

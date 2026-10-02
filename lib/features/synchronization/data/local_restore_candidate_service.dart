@@ -162,6 +162,12 @@ final class LocalRestoreCandidateService
     );
   }
 
+  /// Mantiene el bloqueo del coordinador durante preparación e intercambio.
+  Future<ReadyLocalRestoreCandidate> prepareUnderLock(String root, String id) {
+    if (!backupUuid.hasMatch(id)) invalidBackupMetadata();
+    return _prepare(root, id);
+  }
+
   Future<void> _requireFile(String root, String path) async {
     await _storage.safe(root, path);
     final type = await FileSystemEntity.type(path, followLinks: false);

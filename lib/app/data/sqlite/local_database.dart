@@ -15,6 +15,19 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
 
   final Object _workKey = Object();
   bool get inUnitOfWork => Zone.current[_workKey] == true;
+  bool _writesBlocked = false;
+  int _pendingWrites = 0;
+  Completer<void>? _writesDrained;
+
+  /// Cierra la admisión antes de esperar a las transacciones ya admitidas.
+  Future<void> blockWritesForRestore() async {
+    _writesBlocked = true;
+    if (_pendingWrites > 0) {
+      await (_writesDrained ??= Completer<void>()).future;
+    }
+  }
+
+  void resumeWritesAfterRestore() => _writesBlocked = false;
 
   @override
   Future<DatasetState> readState() async {
@@ -33,6 +46,10 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
 
   Future<T> writeTransaction<T>(Future<T> Function() operation) {
     if (inUnitOfWork) return transaction(operation, requireNew: true);
+    if (_writesBlocked) {
+      return Future.error(const DatabaseFailure(DatabaseFailureCode.restoring));
+    }
+    _pendingWrites++;
     return transaction(
       () => runZoned(() async {
         await customStatement('UPDATE local_mutation SET dirty=0');
@@ -43,7 +60,12 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
         );
         return result;
       }, zoneValues: {_workKey: true}),
-    );
+    ).whenComplete(() {
+      if (--_pendingWrites == 0) {
+        _writesDrained?.complete();
+        _writesDrained = null;
+      }
+    });
   }
 
   // TEMP objects stay on this connection, are rolled back with savepoints and

@@ -1,4 +1,11 @@
-enum DatabaseFailureCode { futureVersion, incompatible, open, close, backup }
+enum DatabaseFailureCode {
+  futureVersion,
+  incompatible,
+  open,
+  close,
+  backup,
+  restoring,
+}
 
 /// Mensaje público controlado; no incluye rutas privadas ni SQL del usuario.
 final class DatabaseFailure implements Exception {
@@ -7,6 +14,8 @@ final class DatabaseFailure implements Exception {
   final DatabaseFailureCode code;
 
   String get message => switch (code) {
+    DatabaseFailureCode.restoring =>
+      'La base está bloqueada por una restauración o recuperación pendiente.',
     DatabaseFailureCode.backup => 'No se pudo crear una copia local válida. Los datos locales siguen disponibles.',
     DatabaseFailureCode.futureVersion =>
       'La base pertenece a una versión más reciente de Autofinance. '

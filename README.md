@@ -105,6 +105,13 @@ integral y resultados tipados en español. Migra esquemas publicados 1–5 solo
 en staging mediante la política de EP-004 y conserva originales y activa.
 El intercambio y su recuperación pertenecen a MA-TSK-055/056.
 
+MA-TSK-055 implementa la [restauración segura local](docs/ep-006/restauracion-segura.md)
+con confirmación explícita, bloqueo y drenaje de escrituras, respaldo consistente,
+aislamiento de originales dañados, diario de fases, intercambio y validación tras
+reapertura. Revierte ante fallo y confirma epoch/contraste antes del éxito; pide
+retención únicamente después. MA-TSK-056 resolverá el diario tras interrupción;
+hasta entonces la apertura normal queda bloqueada si hay uno pendiente.
+
 La [guía de integración SQLite](docs/ep-004/guia-integracion.md) entrega las
 API de repositorios, esquema v6, migraciones y límites para CSV, Openbank,
 informes y Drive, con el recorrido integrado automatizado de MA-TSK-040.

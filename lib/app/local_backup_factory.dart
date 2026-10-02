@@ -9,6 +9,7 @@ import '../features/synchronization/synchronization.dart';
 import '../features/synchronization/data/local_backup_service.dart';
 import '../features/synchronization/data/local_backup_catalog_service.dart';
 import '../features/synchronization/data/local_restore_candidate_service.dart';
+import '../features/synchronization/data/local_restore_service.dart';
 import '../features/synchronization/data/native_backup_persistence.dart';
 import 'data/sqlite/local_database_store.dart';
 import 'data/sqlite/schema_policy.dart';
@@ -44,6 +45,35 @@ LocalRestoreCandidatePreparer createLocalRestoreCandidatePreparer({
   supportDirectory: supportDirectory ?? getApplicationSupportDirectory,
   persistence: persistence,
 );
+
+LocalRestorer createLocalRestorer({
+  required LocalDatabaseStore store,
+  SupportDirectory? supportDirectory,
+  NativeBackupPersistence? persistence,
+}) {
+  final directory = supportDirectory ?? getApplicationSupportDirectory;
+  final durable = persistence ?? NativeBackupPersistence();
+  return LocalRestoreService(
+    active: store,
+    creator: LocalBackupService(
+      source: store,
+      validator: const SqliteLocalBackupValidator(),
+      supportDirectory: directory,
+      persistence: durable,
+    ),
+    preparer: LocalRestoreCandidateService(
+      policy: const SqliteRestoreImagePolicy(),
+      supportDirectory: directory,
+      persistence: durable,
+    ),
+    catalog: createLocalBackupCatalog(
+      supportDirectory: directory,
+      persistence: durable,
+    ),
+    supportDirectory: directory,
+    persistence: durable,
+  );
+}
 
 /// Reutiliza la validación integral publicada; nunca migra ni escribe la imagen.
 final class SqliteLocalBackupValidator implements LocalBackupImageValidator {

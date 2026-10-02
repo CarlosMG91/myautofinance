@@ -233,6 +233,15 @@ final class LocalBackupService implements LocalBackupCreator {
     );
   }
 
+  /// Solo el coordinador que ya posee .local-backups.lock puede usarlo.
+  Future<CreatedLocalBackup> capturePreRestoreUnderLock(
+    String root,
+    String operationId,
+  ) {
+    if (!backupUuid.hasMatch(operationId)) invalidBackupMetadata();
+    return _capture(root, LocalBackupOrigin.preRestore, operationId);
+  }
+
   Future<Map<String, dynamic>> _loadCatalog(String root) async {
     final valid = <Map<String, dynamic>>[];
     var existing = false;
