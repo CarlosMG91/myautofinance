@@ -31,6 +31,27 @@
 | Archivo activo e historial Drive | Un único `autofinance.sqlite`, actualizado sobre el mismo ID, con historial nativo sujeto a purga; sin retención indefinida. | Usuario, MA-EPIC-060/MA-TSK-061, 2026-10-02 |
 | Carrera entre subidas | Detener divergencias observables antes de subir. Si Drive v3 permite condición atómica binaria comprobada, usarla obligatoriamente; si no la ofrece, aceptar que dos escritores basados en la misma versión completen y la última escritura quede activa. La comparación previa no garantiza exclusión atómica. | Excepción expresamente aprobada por el usuario en MA-EPIC-060/MA-TSK-061, 2026-10-02 |
 
+## Evolución aprobada del árbol · EP-008 / MA-TSK-079 · 2026-10-03
+
+Origen: criterios del ticket y de MA-EPIC-078 facilitados por el usuario.
+Se mantiene máximo tres niveles, ingreso heredado de raíz, nombres duplicados
+permitidos y Sin clasificar como categoría nula. El histórico sigue el UUID
+y la rama actual al trasladar, incluso entre raíces Ingreso/Salida; conserva
+signos, importes, fechas, meses, cuentas, discrecionalidad y procedencia.
+Promover a raíz conserva la marca efectiva anterior. Cambiar directamente el
+tipo de una raíz usada (referencias en ella o su descendencia) sigue bloqueado.
+Archivo/reactivación afecta la rama completa y conserva referencias.
+
+Se sustituye expresamente el bloqueo de cualquier traslado con historia que
+EP-004 había concretado como protección conservadora. Los traslados válidos
+se permiten con datos; los que creen presupuestos padre/descendiente en un
+mismo mes se rechazan atómicamente, sin cambiar árbol, datos ni revisión.
+No se modifica el indicador: consume la clasificación actual con la misma
+fórmula y estados. Véanse [especificación §2.1](especificacion.md),
+[casos L–O](casos-referencia.md) y [traspaso EP-008](../ep-008/arbol-categorias.md).
+MA-TSK-079 registra el contrato; la adaptación del código y sus migraciones
+pertenece a la implementación posterior de EP-008.
+
 ## Dudas de cálculo y asuntos diferidos
 
 **MA-TSK-061 · 2026-10-02:** se corrige §7.1 para eliminar la promesa incondicional de bloqueo atómico entre consulta y guardado. El [informe EP-007](../ep-007/control-versiones-drive.md) registra las fuentes oficiales, peticiones del ensayo con dos escritores, clasificación y bloqueo real por falta de OAuth. No se ha demostrado que Drive ignore `If-Match` ni que lo aplique al contenido binario; las pruebas con servidor falso verifican el ejecutor, no Google. La decisión técnica provisional es no atribuir protección atómica a `version`, `headRevisionId`, una marca de operación o una consulta previa, y exigir la condición si el ensayo real la acredita en el commit de la modalidad utilizada. MA-TSK-063/064/066/069 deben consumir este resultado; MA-TSK-062 conserva versiones conocidas fuera de SQLite sin interpretarlas como un bloqueo remoto. El caso I sigue exigiendo detener la divergencia secuencial. No cambian las reglas financieras ni las garantías de descarga, respaldo y recuperación.

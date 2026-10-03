@@ -67,6 +67,25 @@ al usuario. Consultar las declaraciones de los puertos para firmas completas.
   de reemplazo, respaldo previo y recuperación siguen pendientes; no hay fusión
   automática ni sincronización en segundo plano.
 
+## Traspaso a EP-008 · MA-TSK-079
+
+Reutilizar `CategoryRepository`, `CategoryNode`, `SqliteCategoryRepository` y
+`categories`; no crear otro catálogo ni regenerar UUID. Las reglas vigentes
+están en [EP-001 §2.1](../ep-001/especificacion.md#21-gestión-del-árbol--ep-008--ma-tsk-079)
+y los casos L–O en [casos de referencia](../ep-001/casos-referencia.md).
+El [contrato EP-008](../ep-008/arbol-categorias.md) identifica las protecciones
+de EP-004 que deberán adaptarse: bloqueo general de cambio de padre en el
+repositorio y trigger de historia, validación de presupuestos contra el árbol
+resultante y política de reconocimiento/migraciones. Esta entrega documental
+no modifica el esquema v6, los snapshots ni el comportamiento del adaptador.
+
+Las lecturas de MA-TSK-039 ya entregan UUID y árbol actual, y `incomeOnly` usa
+la raíz sin filtrar por signo ni archivo. Al implementar traslados, verificar
+que el histórico sale de la rama anterior y aparece una sola vez en la nueva;
+los totales generales firmados y las fotos patrimoniales se conservan.
+La revisión aumenta una vez por transacción de negocio efectiva y permanece
+intacta ante rechazo o no-op. No alterar la fórmula del indicador.
+
 ## Esquema y migraciones
 
 La versión física vigente es **6**, `application_id = 0x41464e43`. Los pasos son

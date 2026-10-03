@@ -13,8 +13,13 @@ y procedencia al editar; el borrado explícito conserva fila de origen y lote.
 La validación de repositorio y los triggers SQLite rechazan duplicados y
 ancestros/descendientes en un mismo mes, también en ediciones. Hermanos y
 meses independientes se permiten. La categoría archivada admite corrección
-de partidas existentes, pero no nuevas asignaciones. Cambiar padre o marca
-de ingreso de una rama con presupuestos se rechaza para conservar historia.
+de partidas existentes, pero no nuevas asignaciones. La entrega original
+rechaza cambiar padre o marca de ingreso de una rama con presupuestos.
+EP-008 / MA-TSK-079 sustituye ese bloqueo de padre por traslado que conserva
+referencias y signos, hereda la nueva raíz y rechaza atómicamente solapamientos
+padre/descendiente en cualquier mes afectado. El cambio directo de marca de una
+raíz usada sigue bloqueado. Véase el [traspaso](../ep-008/arbol-categorias.md);
+este ticket documental no modifica los triggers ni el repositorio entregados.
 
 `SqliteImportBatchRepository.create` admite presupuestos solos o combinados
 con movimientos. Comparte transacción, huella y unicidad de ordinal entre

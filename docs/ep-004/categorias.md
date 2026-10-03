@@ -27,6 +27,18 @@ Se rechaza crear bajo un padre archivado y reactivar bajo un padre todavía
 archivado. No existe operación de borrado ni una fila especial Sin clasificar.
 La clasificación pendiente seguirá siendo category_id nulo en movimientos.
 
+## Evolución del contrato para EP-008 · MA-TSK-079
+
+El [contrato del árbol](../ep-008/arbol-categorias.md) sustituye la prohibición
+general de mover ramas usadas por traslado con UUID e historia conservados,
+marca de la nueva raíz y comprobación atómica de solapamientos mensuales.
+La promoción conserva la marca efectiva anterior; el cambio directo de marca
+en una raíz usada sigue bloqueado. Archivo/reactivación de rama, nombres
+duplicados y referencia nula de Sin clasificar se mantienen.
+
+El párrafo siguiente describe la entrega original de MA-TSK-033, no una regla
+vigente de EP-008 ni una capacidad ya adaptada por MA-TSK-079:
+
 Las tablas de movimientos y presupuesto todavía pertenecen a otros tickets.
 Las pruebas usan tablas sintéticas con sus FK para demostrar conservación de
 referencias al archivar. El adaptador impide cambiar padre o ingreso si esas

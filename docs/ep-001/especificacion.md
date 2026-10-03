@@ -28,9 +28,54 @@ Cada movimiento categorizado apunta a un solo nodo del árbol, sea raíz, subcat
 
 La cuenta de un movimiento real identifica dónde se registró el flujo, incluso si el concepto menciona otra cuenta propia. Si se introducen manualmente las dos piernas de una transferencia, cada una conserva su cuenta, categoría y signo, y ambas participan en los totales firmados; no se compensan ni se excluyen automáticamente. Una transferencia registrada en una sola cuenta aporta solo esa pierna. Discrecionalidad se conserva asociada al movimiento, también al importarlo o editar otros campos, y se muestra en su detalle; no cambia signo, categoría, agregación ni selección de informes.
 
+### 2.1 Gestión del árbol · EP-008 / MA-TSK-079
+
+Las categorías persistentes se identifican por UUID, nunca por nombre o ruta.
+Se permiten nombres duplicados, incluso entre hermanas. Renombrar o trasladar
+una rama conserva los UUID de todos sus nodos y las referencias de movimientos
+y partidas. El histórico se consulta bajo la **rama actual**, también para
+meses anteriores al traslado; no se conserva un árbol por fecha. No cambian
+signos, importes, fechas de valor, meses, cuentas, conceptos, discrecionalidad
+ni procedencia de los registros.
+
+El tipo visible Ingreso/Salida es la marca de ingreso de la raíz, heredada por
+toda la rama e independiente del signo. Cambiar directamente esa marca en una
+raíz usada está bloqueado: se considera usada si ella o algún descendiente
+tiene movimientos o presupuestos, incluidos los históricos y archivados.
+Una raíz sin esas referencias puede cambiar de tipo. En cambio, se permite
+mover una rama con datos bajo otra raíz, aun de distinto tipo: todo su histórico
+adopta la marca de la nueva raíz. Al convertir una categoría en raíz se guarda
+la marca efectiva que tenía inmediatamente antes de la promoción; no se elige
+un tipo distinto aprovechando esa operación.
+
+Todo traslado valida ciclos y la profundidad resultante de **todos** los
+descendientes (máximo tres niveles), además de los presupuestos de todos los
+meses y años afectados. Si el nuevo árbol dejaría un padre y un descendiente
+presupuestados en el mismo mes, se rechaza íntegramente, sin modificar árbol,
+registros ni revisión local. No se borran, fusionan ni redistribuyen partidas
+para resolver el conflicto. Hermanas y meses distintos siguen siendo válidos.
+
+Archivar o reactivar actúa sobre toda la rama en una sola transacción y conserva
+UUID, referencias y marca. El archivo no elimina el histórico de los informes;
+impide nuevas asignaciones hasta reactivar, pero permite corregir registros
+existentes. No se crea ni mueve bajo un padre archivado ni se reactiva una rama
+cuyo padre siga archivado. «Sin clasificar» sigue siendo una referencia nula,
+no una categoría que pueda trasladarse o archivarse.
+
+Esta decisión sustituye el bloqueo general de traslados con historia de EP-004.
+El [traspaso EP-008](../ep-008/arbol-categorias.md) distingue el contrato nuevo
+de la implementación entregada por EP-004. Las lecturas de ingresos usan la
+raíz actual: pueden cambiar los datos de entrada del colchón tras un traslado,
+pero se mantienen su fórmula y sus estados de ausencia de §6.1.
+
 ## 3. Presupuestos
 
 El presupuesto es una entidad distinta del movimiento real. Cada partida tiene mes, categoría e importe EUR con dos decimales; no tiene cuenta. Internamente usa el mismo signo: ingreso previsto positivo y salida prevista negativa. En el CSV histórico, `PRESUPUESTO` usa el signo contrario y se invierte al importar. Para un mismo mes no se admiten partidas simultáneas en un nodo padre y en cualquiera de sus descendientes, tanto al crear como al editar, importar o guardar una propuesta; se rechaza la operación sin alterar las partidas existentes. La restricción se evalúa por mes: en meses distintos pueden usarse niveles diferentes. Sí se pueden presupuestar dos ramas hermanas. Una categoría padre agrega sus movimientos directos y los de sus descendientes; una partida definida en el padre **no se reparte** entre hijos para mostrar comparaciones ficticias.
+
+La marca categorial no impone el signo de una partida: un impuesto previsto
+negativo en `INGRESOS / SALARIO / IMPUESTOS` reduce la suma firmada de esa
+rama de ingreso. Trasladar la categoría no vuelve a normalizar el importe;
+la inversión de signo del CSV ocurre únicamente al importar.
 
 Al preparar el año siguiente, la aplicación propone para cada mes **ingresos y salidas** reales del mes equivalente del año anterior, agregados por categoría raíz para evitar solapamientos. Redondea la magnitud de cada total a la decena de euros superior o igual y conserva su signo: `+3.021,00 → +3.030,00`; `−350,25 → −360,00`; un múltiplo exacto de diez no cambia. El total se calcula con la suma algebraica de todos los reales de la raíz antes de redondear. En meses sin reales de una raíz activa propone cero explícito. Una raíz de ingreso con total negativo, o una raíz de salida con total positivo, queda marcada para revisión antes de guardar. Cada importe propuesto puede editarse y desglosarse en subcategorías; para guardar el desglose se retira la partida del padre de ese mes. Guardar vuelve a validar la regla padre/descendiente. La propuesta no sustituye partidas ya guardadas sin confirmación.
 

@@ -78,16 +78,22 @@ transacción; se rechaza y revierte completa si falla cualquier condición.
 
 1. Categories: triggers BEFORE INSERT/UPDATE parent_id impiden ciclos, padre
    propio y profundidad mayor que tres usando CTE recursiva. Comprobar también
-   la profundidad de todo el subárbol al moverlo. No se permite mover ramas ni
-   cambiar la marca de ingreso cuando la rama tenga movimientos o presupuestos;
-   crear una rama nueva evita reinterpretar datos históricos. Renombrar conserva
-   identidad y referencias. No imponer UNIQUE por nombre: las coincidencias
+   la profundidad de todo el subárbol al moverlo. EP-008 / MA-TSK-079 sustituye
+   el bloqueo original de traslados con historia: mover conserva UUID y referencias
+   y aplica al histórico la marca de la nueva raíz, sin cambiar los registros.
+   Solo se bloquea el cambio directo de marca en raíces con movimientos o
+   presupuestos en ellas o sus descendientes. Promover a raíz conserva la marca
+   efectiva anterior. Véase el [traspaso EP-008](../ep-008/arbol-categorias.md):
+   la adaptación de repositorio, triggers y migración queda para implementación.
+   Renombrar conserva identidad y referencias. No imponer UNIQUE por nombre: las coincidencias
    ambiguas del CSV se resuelven explícitamente; NOCASE no sustituye comparación
    Unicode sin distinción de mayúsculas y trim en el importador.
 2. Budgets: triggers BEFORE INSERT/UPDATE de mes o categoría rechazan cualquier
    ancestro/descendiente ya presupuestado en ese mes, excluyendo la propia fila
    en UPDATE. Las hermanas son válidas. Mover categoría debe comprobar también
-   conflictos resultantes si aún no hay referencias (regla anterior). Desglosar
+   los conflictos resultantes en todos los meses/años con partidas, incluidas
+   referencias históricas y archivadas, contra el árbol propuesto. Un conflicto
+   revierte árbol, datos y revisión; no elimina ni fusiona partidas. Desglosar
    padre requiere retirarlo y escribir hijos dentro de la misma transacción.
 3. Liquidez: triggers BEFORE INSERT/UPDATE rechazan deuda, inicio anterior al alta,
    fin posterior al mes siguiente de baja y solape del mismo activo (excluir

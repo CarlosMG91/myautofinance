@@ -104,4 +104,30 @@ assert.equal(februaryAssets - cents('4800.00'), cents('11900.00'));
 assert.equal((februaryAssets * 12 / annualIncome).toFixed(2), '5.57');
 assert.equal((februaryAccounts * 12 / annualIncome).toFixed(2), '2.07');
 
-console.log('EP-001: 48 presupuestos, 10 reales; enero +1.229,75 €, real anual +2.329,65 €, presupuesto anual +13.200,00 €; liquidez histórica enero 3,00 y febrero 5,57 meses. OK');
+// L/M (EP-008): referencia numérica independiente, no prueba de traslados SQL.
+// Reales directos de SALARIO y su descendiente IMPUESTOS; partidas hermanas
+// de NÓMINA e IMPUESTOS. El tipo de raíz no determina ni cambia sus signos.
+const salaryActual = cents('3000.00');
+const taxActual = cents('-600.00');
+const branchActual = salaryActual + taxActual;
+const branchMonthlyBudget = cents('3000.00') + cents('-600.00');
+const branchAnnualBudget = branchMonthlyBudget * 12;
+assert.equal(branchActual, cents('2400.00'));
+assert.equal(branchMonthlyBudget, cents('2400.00'));
+assert.equal(branchActual - branchMonthlyBudget, 0);
+assert.equal(branchAnnualBudget, cents('28800.00'));
+assert.equal(branchAnnualBudget / 12, cents('2400.00'));
+// Contribuciones esperadas a incomeOnly según la marca actual de la raíz.
+// Traslado bajo Salida: cero partidas de ingreso, no doce ceros explícitos.
+const contributions = [
+  { label: 'INGRESOS/SALARIO', income: true, count: 24, amount: 2880000 },
+  { label: 'GASTOS/SALARIO', income: false, count: 0, amount: 0 },
+  { label: 'SALARIO promovida desde INGRESOS', income: true, count: 24, amount: 2880000 },
+  { label: 'SALARIO promovida desde GASTOS', income: false, count: 0, amount: 0 },
+];
+for (const variant of contributions) {
+  assert.equal(variant.income ? 24 : 0, variant.count, variant.label);
+  assert.equal(variant.income ? branchAnnualBudget : 0, variant.amount, variant.label);
+}
+
+console.log('EP-001: 48 presupuestos, 10 reales; enero +1.229,75 €, real anual +2.329,65 €, presupuesto anual +13.200,00 €; liquidez histórica enero 3,00 y febrero 5,57 meses. EP-008 L/M: salario e impuestos +2.400,00 €/mes, +28.800,00 €/año, signos conservados. OK');

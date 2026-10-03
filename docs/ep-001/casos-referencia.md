@@ -8,6 +8,11 @@ Desde la raíz del repositorio, ejecutar `node docs/ep-001/verificar-casos.mjs`.
 
 Los casos A–H describen además operaciones de la futura aplicación que necesitan una base y vistas implementadas. El caso I es una prueba manual entre Windows y Android con Drive: comprobar versiones visibles, divergencia y conservación de ambas bases ante los fallos descritos. La verificación del CSV por sí sola no demuestra esos comportamientos.
 
+Los casos L–O fijan las reglas de EP-008 / MA-TSK-079 en bases sintéticas
+independientes del CSV, según [§2.1](especificacion.md) y el
+[traspaso del árbol](../ep-008/arbol-categorias.md). El comprobador verifica
+la aritmética de L/M; no acredita operaciones persistentes ni interfaz de EP-008.
+
 ## Preparación del caso
 
 Crear la cuenta `Cuenta principal`; marcar `Ingresos` como raíz de ingreso y `Vivienda`, `Alimentación`, `Ahorro` y `Ocio` como raíces de salida. Mantener las subcategorías y la subsubcategoría `Alimentación / Supermercado / Compra semanal` del archivo. Confirmar la importación completa: **48 partidas presupuestarias y 10 movimientos reales**. Las dos filas idénticas «Café» son dos movimientos, no un duplicado de importación.
@@ -148,3 +153,98 @@ Ejecutar estas comprobaciones en una copia del estado importado, sin alterar los
 ## Caso K · Transferencia entre cuentas propias
 
 En otra copia del estado importado, crear una entrada manual `+500,00` en `Cuenta de ahorro`, con categoría `Ahorro / Cuenta de ahorro`, para representar la segunda pierna de la transferencia de enero. La salida `−500,00` de `Cuenta principal` ya existe y no genera esa entrada por sí sola. El detalle presenta dos movimientos y sus cuentas respectivas; `Ahorro` suma `−500,00 + 500,00 = 0,00` en enero y el total firmado del mes sube de `+1.229,75` a `+1.729,75`. Si se elimina solo la entrada añadida, reaparecen `−500,00` en `Ahorro` y `+1.229,75` en el total. Ninguna de estas operaciones modifica las fotos patrimoniales.
+
+## Caso L · INGRESOS / SALARIO / IMPUESTOS y signos
+
+Usar una base sintética independiente, cuenta `Cuenta de prueba` y estos UUID
+estables. Todos los nodos están activos; Ingreso equivale a `is_income = 1`
+en raíz y Salida a `0`. Los descendientes persisten `NULL` y heredan la raíz.
+
+| Alias | UUID | Padre | Nombre | Tipo efectivo |
+|---|---|---|---|---|
+| I | `80000000-0000-4000-8000-000000000001` | ninguno | INGRESOS | Ingreso |
+| S | `80000000-0000-4000-8000-000000000002` | I | SALARIO | Ingreso |
+| T | `80000000-0000-4000-8000-000000000003` | S | IMPUESTOS | Ingreso |
+| N | `80000000-0000-4000-8000-000000000004` | S | NÓMINA | Ingreso |
+| G | `80000000-0000-4000-8000-000000000005` | ninguno | GASTOS | Salida |
+
+Registrar dos reales en la cuenta de prueba: S, fecha de valor `2026-01-05`,
+concepto `Salario bruto`, `+3.000,00`, discrecionalidad vacía; T, fecha de valor
+`2026-01-06`, concepto `Retención`, `−600,00`, discrecionalidad `Necesario`.
+Registrar en cada uno de los doce meses de 2026 dos partidas hermanas: N por
+`+3.000,00` y T por `−600,00`. No presupuestar I ni S.
+
+T es ingreso categorial aunque su real y su presupuesto sean negativos.
+S e I agregan real de enero `+2.400,00`; S tiene real directo `+3.000,00`
+y T `−600,00`. El previsto mensual agregado es `+2.400,00`, la diferencia
+de enero `0,00` y el presupuesto anual de ingreso `+28.800,00`.
+El promedio mensual del indicador sería `2.400,00`, sin redefinir su fórmula;
+sin foto completa sigue mostrando `foto_ausente`. Crear un hijo de T debe
+rechazarse por cuarto nivel sin cambiar datos ni revisión.
+
+## Caso M · Traslado entre tipos, promoción y raíz usada
+
+Cada variante parte de una copia nueva del caso L. Comparar todos los UUID
+y campos de movimientos/partidas antes y después; solo cambia el árbol y
+su marca efectiva. Consultar enero y el año completo después de guardar.
+
+| Operación | Resultado esperado |
+|---|---|
+| Cambiar directamente I de Ingreso a Salida | Rechazado, aunque I no tiene referencias directas: sus descendientes sí. Datos, marca, padres y revisión intactos. |
+| Cambiar G de Salida a Ingreso, sin referencias en su rama | Permitido; no modifica I ni sus datos. |
+| Mover S bajo G (Salida) | Permitido con datos: S nivel 2, T/N nivel 3, todos Salida. I deja de agregar esos registros; G agrega real enero y previsto mensual `+2.400,00`, presupuesto anual `+28.800,00`. Referencias siguen en S/T/N, con signos originales. |
+| Mover S de nuevo bajo I, tras el traslado anterior | Permitido: vuelve a Ingreso, sin invertir signos ni duplicar registros. |
+| Convertir S en raíz desde el estado original | Permitido; S persiste Ingreso y T/N lo heredan. S agrega los mismos importes. Elegir Salida en esa promoción se rechaza. |
+| Convertir S en raíz después de moverla bajo G | Conserva Salida, aun con salario positivo y datos históricos. Cambiar directamente esa nueva raíz usada a Ingreso se rechaza. |
+| Mover I bajo T, o S bajo S | Rechazado por ciclo/padre propio; no cambia revisión. |
+| Mover una raíz usada sin descendientes bajo I, en una variante independiente | Permitido; pasa a nivel 2 y hereda Ingreso aunque tenga datos. El uso no bloquea el cambio de padre por sí solo. |
+| Mover S bajo una categoría de nivel 2 | Rechazado: T/N quedarían en nivel 4, aunque S por sí sola quepa en nivel 3. |
+
+En el traslado bajo G el total general firmado permanece: enero real y previsto
+`+2.400,00`, anual real `+2.400,00` y anual previsto `+28.800,00`.
+La consulta `incomeOnly` deja de devolver las 24 partidas porque están bajo
+Salida; el colchón pasa a `ingresos_incompletos` si se añade una foto completa,
+con los doce meses pendientes. Sin foto prevalece `foto_ausente`. No se altera
+la foto ni el contrato del indicador. Después de mover S bajo G, intentar
+trasladar G completa bajo I se rechaza: G pasaría a nivel 2, S a 3 y T/N a 4.
+
+## Caso N · Archivo, reactivación, duplicados y referencia nula
+
+Partir de L. Archivar S archiva S/T/N en una sola transacción; conserva los
+dos reales y las 24 partidas, sus referencias y los agregados de L. No admite
+nuevos reales/partidas asignados a esos nodos ni nuevos hijos bajo ellos;
+las correcciones de registros existentes siguen permitidas. Reactivar S
+reactiva S/T/N y conserva UUID y tipo. Archivar I y luego intentar reactivar
+S se rechaza porque I sigue archivado; reactivar I reactiva toda la rama,
+incluido un descendiente que estuviera archivado antes. Trasladar o crear
+bajo un padre archivado se rechaza. Cada rechazo conserva revisión y datos;
+cada cambio efectivo de rama incrementa revisión una sola vez.
+
+Crear otra hermana llamada `IMPUESTOS` bajo S: válido, UUID nuevo y ningún
+registro reasignado por nombre. Renombrar T también conserva su UUID y datos.
+Registrar un real `+7,00` con `category_id = NULL`: aparece en Sin clasificar,
+fuera de las ramas de ingreso, y el real total de enero es `+2.407,00`.
+Archivar o trasladar S no lo cambia; no se crea un UUID para Sin clasificar.
+
+## Caso O · Conflictos mensuales al trasladar y rollback
+
+Usar copias independientes del caso L, retirando todas sus partidas para cada
+variante y guardando solo las indicadas. Los reales de L se mantienen. Antes
+de intentar cada traslado capturar árbol completo, registros, procedencia,
+`dataset_id` y `revision`; compararlos tras el rechazo y tras reabrir la base.
+
+| Partidas antes del traslado | Operación | Resultado esperado |
+|---|---|---|
+| T enero `−600,00`; G enero `−1.000,00` | Mover S bajo G | Rechazo: G sería ancestro de T en enero. No cambia padre ni marca de S/T/N ni ninguna partida/real/revisión. |
+| T enero `−600,00`; G febrero `−1.000,00` | Mover S bajo G | Permitido: meses distintos. Enero agregado G `−600,00`; febrero `−1.000,00`. |
+| T enero `−600,00`; nuevo hijo de G enero `−100,00` | Mover T bajo G | Permitido: ambas partidas quedarían en hermanas. Enero previsto G `−700,00`; real T sigue `−600,00`. |
+| T febrero `−600,00`; G febrero `0,00`, sin partidas en enero | Mover S bajo G | Rechazo en febrero, aunque enero no tenga conflicto y la partida de G sea cero. |
+| T enero de 2025 `−600,00`; G enero de 2025 `−1.000,00` | Mover S bajo G consultando 2026 | Rechazo: validar también años fuera del periodo visible. |
+| T enero `−600,00` archivada con S; G enero `−1.000,00` activa | Mover S archivada bajo G | Rechazo por solapamiento; el archivo no elimina las partidas del control. |
+
+Repetir el primer conflicto mediante escritura SQL directa y dentro de una
+unidad de trabajo que haya renombrado S antes del intento: debe revertir
+también el renombrado y conservar revisión. No convertir los importes en
+otro signo ni borrar/fusionar partidas para permitir el traslado. Este caso
+es una exigencia para la implementación posterior, no una garantía probada
+por el comprobador numérico del CSV.
