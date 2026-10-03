@@ -4692,9 +4692,25 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     'CREATE TRIGGER budgets_update BEFORE UPDATE ON budgets BEGIN SELECT RAISE (ABORT, \'budget_overlap\') WHERE EXISTS (WITH RECURSIVE ancestors (id, parent_id) AS (SELECT id, parent_id FROM categories WHERE id = NEW.category_id UNION ALL SELECT c.id, c.parent_id FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id), descendants (id) AS (SELECT NEW.category_id UNION ALL SELECT c.id FROM categories AS c JOIN descendants AS d ON c.parent_id = d.id) SELECT 1 FROM budgets AS b WHERE b.month = NEW.month AND b.id <> NEW.id AND(b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id FROM descendants)));SELECT RAISE (ABORT, \'budget_origin_immutable\') WHERE NEW.import_row_id IS NOT OLD.import_row_id;END',
     'budgets_update',
   );
-  late final Trigger categoriesBudgetHistory = Trigger(
-    'CREATE TRIGGER categories_budget_history BEFORE UPDATE OF parent_id, is_income ON categories WHEN NEW.parent_id IS NOT OLD.parent_id OR NEW.is_income IS NOT OLD.is_income BEGIN SELECT RAISE (ABORT, \'budget_category_history\') WHERE EXISTS (WITH RECURSIVE branch (id) AS (SELECT OLD.id UNION ALL SELECT c.id FROM categories AS c JOIN branch AS b ON c.parent_id = b.id) SELECT 1 FROM budgets WHERE category_id IN (SELECT id FROM branch));END',
-    'categories_budget_history',
+  late final Trigger categoriesRootHistory = Trigger(
+    'CREATE TRIGGER categories_root_history BEFORE UPDATE OF is_income ON categories WHEN OLD.parent_id IS NULL AND NEW.parent_id IS NULL AND NEW.is_income IS NOT OLD.is_income BEGIN SELECT RAISE (ABORT, \'category_root_history\') WHERE EXISTS (WITH RECURSIVE branch (id) AS (SELECT OLD.id UNION SELECT c.id FROM categories AS c JOIN branch AS b ON c.parent_id = b.id) SELECT 1 FROM budgets WHERE category_id IN (SELECT id FROM branch) UNION ALL SELECT 1 FROM movements WHERE category_id IN (SELECT id FROM branch));END',
+    'categories_root_history',
+  );
+  late final Trigger categoriesPromotion = Trigger(
+    'CREATE TRIGGER categories_promotion BEFORE UPDATE OF parent_id, is_income ON categories WHEN OLD.parent_id IS NOT NULL AND NEW.parent_id IS NULL BEGIN SELECT RAISE (ABORT, \'category_promotion_type\') WHERE NEW.is_income IS NOT (WITH RECURSIVE ancestors (id, parent_id, is_income) AS (SELECT id, parent_id, is_income FROM categories WHERE id = OLD.parent_id UNION SELECT c.id, c.parent_id, c.is_income FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id) SELECT is_income FROM ancestors WHERE parent_id IS NULL);END',
+    'categories_promotion',
+  );
+  late final Trigger categoriesDestinationInsert = Trigger(
+    'CREATE TRIGGER categories_destination_insert BEFORE INSERT ON categories WHEN NEW.parent_id IS NOT NULL BEGIN SELECT RAISE (ABORT, \'category_destination\') WHERE NOT EXISTS (SELECT 1 FROM categories WHERE id = NEW.parent_id AND archived = 0);END',
+    'categories_destination_insert',
+  );
+  late final Trigger categoriesDestinationUpdate = Trigger(
+    'CREATE TRIGGER categories_destination_update BEFORE UPDATE OF parent_id ON categories WHEN NEW.parent_id IS NOT NULL AND NEW.parent_id IS NOT OLD.parent_id BEGIN SELECT RAISE (ABORT, \'category_destination\') WHERE NOT EXISTS (SELECT 1 FROM categories WHERE id = NEW.parent_id AND archived = 0);END',
+    'categories_destination_update',
+  );
+  late final Trigger categoriesBudgetOverlap = Trigger(
+    'CREATE TRIGGER categories_budget_overlap AFTER UPDATE OF parent_id ON categories WHEN NEW.parent_id IS NOT OLD.parent_id BEGIN SELECT RAISE (ABORT, \'category_budget_overlap\') WHERE EXISTS (WITH RECURSIVE ancestry (id, ancestor) AS (SELECT id, parent_id FROM categories WHERE parent_id IS NOT NULL UNION SELECT a.id, c.parent_id FROM ancestry AS a JOIN categories AS c ON c.id = a.ancestor WHERE c.parent_id IS NOT NULL) SELECT 1 FROM budgets AS b JOIN ancestry AS a ON a.id = b.category_id JOIN budgets AS p ON p.category_id = a.ancestor AND p.month = b.month);END',
+    'categories_budget_overlap',
   );
   late final WealthSnapshots wealthSnapshots = WealthSnapshots(this);
   late final WealthValues wealthValues = WealthValues(this);
@@ -4751,7 +4767,11 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     budgetsCategoryMonth,
     budgetsInsert,
     budgetsUpdate,
-    categoriesBudgetHistory,
+    categoriesRootHistory,
+    categoriesPromotion,
+    categoriesDestinationInsert,
+    categoriesDestinationUpdate,
+    categoriesBudgetOverlap,
     wealthSnapshots,
     wealthValues,
     wealthValuesAccountSnapshot,
@@ -4863,6 +4883,34 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'budgets',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.insert,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
         limitUpdateKind: UpdateKind.update,
       ),
       result: [],

@@ -73,11 +73,11 @@ Reutilizar `CategoryRepository`, `CategoryNode`, `SqliteCategoryRepository` y
 `categories`; no crear otro catálogo ni regenerar UUID. Las reglas vigentes
 están en [EP-001 §2.1](../ep-001/especificacion.md#21-gestión-del-árbol--ep-008--ma-tsk-079)
 y los casos L–O en [casos de referencia](../ep-001/casos-referencia.md).
-El [contrato EP-008](../ep-008/arbol-categorias.md) identifica las protecciones
-de EP-004 que deberán adaptarse: bloqueo general de cambio de padre en el
-repositorio y trigger de historia, validación de presupuestos contra el árbol
-resultante y política de reconocimiento/migraciones. Esta entrega documental
-no modifica el esquema v6, los snapshots ni el comportamiento del adaptador.
+El [contrato EP-008](../ep-008/arbol-categorias.md) se implementa en
+[MA-TSK-080](../ep-008/reorganizacion-atomica.md): traslados con histórico,
+promoción conservando tipo y conflictos mensuales tipados. El esquema v7
+sustituye el bloqueo general por protecciones de tipo de raíz, promoción,
+destino y solapamiento. Los snapshots v1–v6 permanecen intactos.
 
 Las lecturas de MA-TSK-039 ya entregan UUID y árbol actual, y `incomeOnly` usa
 la raíz sin filtrar por signo ni archivo. Al implementar traslados, verificar
@@ -88,9 +88,10 @@ intacta ante rechazo o no-op. No alterar la fórmula del indicador.
 
 ## Esquema y migraciones
 
-La versión física vigente es **6**, `application_id = 0x41464e43`. Los pasos son
+La versión física vigente es **7**, `application_id = 0x41464e43`. Los pasos son
 0 sintética → 1 metadatos → 2 categorías → 3 cuentas/liquidez → 4 movimientos/lotes
-→ 5 presupuestos → 6 fotos. La v0 nunca fue publicada y solo se reconoce su
+→ 5 presupuestos → 6 fotos → 7 reorganización de categorías.
+La v0 nunca fue publicada y solo se reconoce su
 estructura sintética exacta. Los snapshots versionados están en
 `drift_schemas/autofinance/`; `schema_policy.dart` reconoce estructuras y valida
 integridad, FK y relaciones financieras. La documentación de MA-TSK-032 describe
@@ -99,7 +100,10 @@ el estado inicial v1, no el estado completo actual.
 Para cambiar esquema: incrementar versión, mantener snapshots publicados,
 añadir pasos SQL consecutivos explícitos en la infraestructura y actualizar la
 política de reconocimiento. Exportar con `dart run build_runner build` y
-`dart run drift_dev make-migrations`. Probar creación limpia y cada versión
+`dart run drift_dev schema dump lib/app/data/sqlite/local_database.dart drift_schemas/autofinance/drift_schema_v7.json`
+(usar el nombre de la nueva versión, sin sobrescribir las publicadas).
+La exportación con nombre explícito admite el getter de versión que remite a
+`localSchemaVersion`; `make-migrations` no logra inferirlo. Probar creación limpia y cada versión
 soportada, conservación de datos/linaje/revisión, copia previa y rollback del
 fallo intermedio. El store valida antes de escribir y conserva un respaldo
 `pre-v<destino>-<uuid>`; una migración técnica no aumenta revisión financiera.

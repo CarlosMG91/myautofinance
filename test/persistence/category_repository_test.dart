@@ -118,7 +118,7 @@ void main() {
     expect((await repo.list()).length, 4);
   });
 
-  test('Archivo conserva referencias históricas; edición estructural con historia rechazada', () async {
+  test('Archivo conserva referencias históricas', () async {
     final root = await repo.create(name: 'Ingresos', isIncome: true);
     final leaf = await repo.create(name: 'Nómina', parentId: root.id);
     await repo.database.customStatement(
@@ -189,7 +189,7 @@ void main() {
       expect(readSchemaVersion(backup), 1);
       backup.close();
       final snapshot = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v6.json')
+        File('drift_schemas/autofinance/drift_schema_v7.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();

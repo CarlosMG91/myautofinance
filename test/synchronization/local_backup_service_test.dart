@@ -9,6 +9,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:myautofinance/app/local_backup_factory.dart';
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
 import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
+import 'package:myautofinance/app/data/sqlite/schema_policy.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_category_repository.dart';
 import 'package:myautofinance/core/persistence/unit_of_work.dart';
 import 'package:myautofinance/features/synchronization/synchronization.dart';
@@ -173,7 +174,7 @@ void main() {
       );
       expect(manifest['revision'], '${before.revision}');
       expect(manifest['datasetId'], before.datasetId);
-      expect(manifest['schemaVersion'], 6);
+      expect(manifest['schemaVersion'], localSchemaVersion);
       expect(
         manifest['databaseSha256'],
         sha256.convert(await file.readAsBytes()).toString(),
@@ -399,7 +400,7 @@ void main() {
             case 'revision':
               image.execute('UPDATE database_state SET revision=revision+1');
             case 'schema':
-              image.execute('PRAGMA user_version=7');
+              image.execute('PRAGMA user_version=99');
             case 'foreign':
               image.execute('PRAGMA application_id=123');
             case 'financial':
@@ -409,9 +410,18 @@ void main() {
               );
             case 'foreignKey':
               image.execute('PRAGMA foreign_keys=OFF');
+              final guard =
+                  image
+                          .select(
+                            "SELECT sql FROM sqlite_master WHERE name='categories_destination_insert'",
+                          )
+                          .single['sql']
+                      as String;
+              image.execute('DROP TRIGGER categories_destination_insert');
               image.execute(
                 "INSERT INTO categories (id,parent_id,name,is_income,archived,created_at,updated_at) VALUES ('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','Sintética',NULL,0,'x','x')",
               );
+              image.execute(guard);
           }
         } finally {
           image.close();

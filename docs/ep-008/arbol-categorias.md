@@ -5,6 +5,10 @@ por el usuario el 2026-10-03. Autoridad financiera: [EP-001 §2.1](../ep-001/esp
 Resultados esperados: [casos L–O](../ep-001/casos-referencia.md). Todos los
 ejemplos son sintéticos. Este ticket no implementa pantallas ni modifica SQL.
 
+**Implementación posterior:** [MA-TSK-080](reorganizacion-atomica.md) entrega
+el adaptador y las protecciones SQL con esquema v7. Las referencias siguientes
+al trabajo pendiente describen el punto de partida documental de MA-TSK-079.
+
 ## Operaciones y referencias
 
 | Operación | Regla y efecto sobre la historia |

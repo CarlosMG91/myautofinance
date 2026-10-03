@@ -82,6 +82,12 @@ void main() {
       ]) {
         db.execute(sql);
       }
+      if (version >= 7) {
+        db.execute('DROP TRIGGER categories_budget_history');
+        for (final sql in categoryReorganizationObjects) {
+          db.execute(sql);
+        }
+      }
       db.execute('PRAGMA application_id=$localApplicationId');
       db.execute('PRAGMA user_version=$version');
       db.execute('INSERT INTO database_state VALUES(1,?,?)', [
@@ -122,7 +128,10 @@ void main() {
     }
   }
 
-  Future<void> writeMetadata({int version = 6, bool withCatalog = true}) async {
+  Future<void> writeMetadata({
+    int version = localSchemaVersion,
+    bool withCatalog = true,
+  }) async {
     descriptor = {
       'kind': 'autofinance.localBackup',
       'formatVersion': 1,
@@ -219,7 +228,7 @@ void main() {
     await image.parent.create(recursive: true);
     manifest = File(p.join(image.parent.path, 'manifest.json'));
     catalog = File(p.join(base(), 'catalog-a.json'));
-    createImage(6);
+    createImage(localSchemaVersion);
     await writeMetadata();
     service = createLocalRestoreCandidatePreparer(
       supportDirectory: () async => support,
@@ -254,9 +263,9 @@ void main() {
     },
   );
 
-  for (final version in [1, 2, 3, 4, 5]) {
+  for (final version in [1, 2, 3, 4, 5, 6]) {
     test(
-      'migración publicada v$version → v6 solo en staging, conserva datos y revisión',
+      'migración publicada v$version → vigente solo en staging, conserva datos y revisión',
       () async {
         createImage(version);
         await writeMetadata(version: version);
@@ -400,8 +409,8 @@ void main() {
     await reject(LocalRestoreCandidateIssue.schemaMismatch);
   });
   test('esquema futuro', () async {
-    modify((db) => db.execute('PRAGMA user_version=7'));
-    await writeMetadata(version: 7);
+    modify((db) => db.execute('PRAGMA user_version=99'));
+    await writeMetadata(version: 99);
     await reject(LocalRestoreCandidateIssue.futureSchema);
   });
   test('v0 sintética no publicada', () async {

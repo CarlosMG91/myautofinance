@@ -301,11 +301,11 @@ void main() {
           );
         } else {
           final db = sqlite3.open(image.path);
-          db.execute('PRAGMA user_version=7');
+          db.execute('PRAGMA user_version=99');
           db.close();
           final manifest = File(p.join(p.dirname(image.path), 'manifest.json'));
           final metadata = decodeBackupEnvelope(await manifest.readAsBytes());
-          metadata['schemaVersion'] = 7;
+          metadata['schemaVersion'] = 99;
           metadata['databaseSha256'] = sha256
               .convert(await image.readAsBytes())
               .toString();

@@ -87,8 +87,9 @@ WITH RECURSIVE tree(id,parent_id,name,income,archived,depth) AS (
     }
     final old = nodes[id];
     if (old != null &&
-        (old.parentId != parentId ||
-            (parentId == null && old.isIncome != income))) {
+        old.parentId == null &&
+        parentId == null &&
+        old.isIncome != income) {
       final branch = <String>{id};
       for (var i = 0; i < 3; i++) {
         branch.addAll(
@@ -98,23 +99,66 @@ WITH RECURSIVE tree(id,parent_id,name,income,archived,depth) AS (
               .toList(),
         );
       }
-      // Las tablas se incorporan en sus tickets. Nunca reinterpretar referencias.
-      final tables = await database
-          .customSelect("SELECT name FROM sqlite_master WHERE type='table'")
-          .get();
       for (final table in ['movements', 'budgets']) {
-        if (tables.any((r) => r.read<String>('name') == table)) {
-          final refs = await database
-              .customSelect(
-                'SELECT category_id FROM $table WHERE category_id IS NOT NULL',
-              )
-              .get();
-          if (refs.any((r) => branch.contains(r.read<String>('category_id')))) {
-            throw const CategoryFailure(
-              'Una rama con historia no puede cambiar de padre ni de ingreso.',
-            );
+        final refs = await database
+            .customSelect(
+              'SELECT category_id FROM $table WHERE category_id IS NOT NULL',
+            )
+            .get();
+        if (refs.any((r) => branch.contains(r.read<String>('category_id')))) {
+          throw const CategoryFailure(
+            'Una raíz con historia no puede cambiar directamente de tipo.',
+          );
+        }
+      }
+    }
+    if (old != null && old.parentId != parentId) {
+      String path(String nodeId) {
+        final names = <String>[];
+        String? current = nodeId;
+        while (current != null) {
+          names.add(current == id ? name : nodes[current]!.name);
+          current = parents[current];
+        }
+        return names.reversed.join(' / ');
+      }
+
+      final rows = await database
+          .customSelect(
+            'SELECT month,category_id FROM budgets ORDER BY month,category_id',
+          )
+          .get();
+      final byMonth = <String, Set<String>>{};
+      for (final row in rows) {
+        (byMonth[row.read<String>('month')] ??= <String>{}).add(
+          row.read<String>('category_id'),
+        );
+      }
+      final conflicts = <CategoryBudgetConflict>[];
+      for (final entry in byMonth.entries) {
+        for (final descendant in entry.value) {
+          var ancestor = parents[descendant];
+          while (ancestor != null) {
+            if (entry.value.contains(ancestor)) {
+              conflicts.add(
+                CategoryBudgetConflict(
+                  month: entry.key,
+                  ancestorId: ancestor,
+                  ancestorPath: path(ancestor),
+                  descendantId: descendant,
+                  descendantPath: path(descendant),
+                ),
+              );
+            }
+            ancestor = parents[ancestor];
           }
         }
+      }
+      if (conflicts.isNotEmpty) {
+        throw CategoryFailure(
+          'El traslado solapa presupuestos de padres y descendientes.',
+          budgetConflicts: List.unmodifiable(conflicts),
+        );
       }
     }
   }
@@ -156,10 +200,17 @@ WITH RECURSIVE tree(id,parent_id,name,income,archived,depth) AS (
   }) => database.writeTransaction(() async {
     final old = await get(id);
     if (old == null) throw const CategoryFailure('La categoría no existe.');
-    await _validate(id, name, parentId, isIncome);
+    final promoting = old.parentId != null && parentId == null;
+    if (promoting && isIncome != null && isIncome != old.isIncome) {
+      throw const CategoryFailure(
+        'La promoción debe conservar el tipo heredado.',
+      );
+    }
+    final income = promoting ? old.isIncome : isIncome;
+    await _validate(id, name, parentId, income);
     if (old.name == name &&
         old.parentId == parentId &&
-        (parentId != null || old.isIncome == isIncome)) {
+        (parentId != null || old.isIncome == income)) {
       return old;
     }
     await database.customStatement(
@@ -167,7 +218,7 @@ WITH RECURSIVE tree(id,parent_id,name,income,archived,depth) AS (
       [
         name,
         parentId,
-        isIncome == null ? null : (isIncome ? 1 : 0),
+        income == null ? null : (income ? 1 : 0),
         _timestamp(),
         id,
       ],

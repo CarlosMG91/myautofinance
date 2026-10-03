@@ -17,10 +17,29 @@ final class CategoryNode {
 }
 
 final class CategoryFailure implements Exception {
-  const CategoryFailure(this.message);
+  const CategoryFailure(this.message, {this.budgetConflicts = const []});
   final String message;
+  final List<CategoryBudgetConflict> budgetConflicts;
   @override
   String toString() => message;
+}
+
+/// Solapamiento en el árbol propuesto, incluidos meses y nodos archivados.
+final class CategoryBudgetConflict {
+  const CategoryBudgetConflict({
+    required this.month,
+    required this.ancestorId,
+    required this.ancestorPath,
+    required this.descendantId,
+    required this.descendantPath,
+  });
+
+  /// Mes ISO YYYY-MM-01; no depende del periodo visible en pantalla.
+  final String month;
+  final String ancestorId;
+  final String ancestorPath;
+  final String descendantId;
+  final String descendantPath;
 }
 
 abstract interface class CategoryRepository {
@@ -33,6 +52,8 @@ abstract interface class CategoryRepository {
   });
 
   /// Edición completa: en descendientes isIncome debe ser null.
+  /// Al promover, null conserva el tipo heredado; un tipo distinto se rechaza.
+  /// El traslado conserva referencias y valida todos los meses presupuestados.
   Future<CategoryNode> edit(
     String id, {
     required String name,

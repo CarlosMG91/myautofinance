@@ -133,7 +133,7 @@ final class LocalBackupCatalogService implements LocalBackupCatalog {
   Map<String, dynamic> _validation(String status, String? issue) => {
     'state': status,
     'checkedAtUtc': backupUtc(_clock()),
-    'policySchemaVersion': 6,
+    'policySchemaVersion': 7,
     'issue': issue,
   };
   Map<String, dynamic> get _pending => {
@@ -537,10 +537,10 @@ final class LocalBackupCatalogService implements LocalBackupCatalog {
     );
     try {
       await _checkArtifact(root, e);
-      if (d['schemaVersion'] != 6) {
+      if (d['schemaVersion'] < 1 || d['schemaVersion'] > 7) {
         e['validation'] = _validation(
           'incompatible',
-          d['schemaVersion'] > 6 ? 'futureSchema' : 'unsupportedSchema',
+          d['schemaVersion'] > 7 ? 'futureSchema' : 'unsupportedSchema',
         );
         return false;
       }

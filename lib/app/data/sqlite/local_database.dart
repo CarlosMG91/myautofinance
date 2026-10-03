@@ -156,11 +156,12 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
             in legacy.isNotEmpty ? wealthSchemaObjects : <String>[]) {
           await customStatement(sql);
         }
+        if (legacy.isNotEmpty) await _migrateCategoryReorganization();
         await _checkIntegrity();
       });
     },
     onUpgrade: (_, from, to) async {
-      if (from < 1 || from > 5 || to != 6) {
+      if (from < 1 || from > 6 || to != 7) {
         throw const DatabaseFailure(DatabaseFailureCode.incompatible);
       }
       await transaction(() async {
@@ -178,9 +179,10 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
         for (final sql in from < 5 ? budgetSchemaObjects : <String>[]) {
           await customStatement(sql);
         }
-        for (final sql in wealthSchemaObjects) {
+        for (final sql in from < 6 ? wealthSchemaObjects : <String>[]) {
           await customStatement(sql);
         }
+        await _migrateCategoryReorganization();
         await _checkIntegrity();
       });
     },
@@ -194,12 +196,20 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
     },
   );
 
+  Future<void> _migrateCategoryReorganization() async {
+    await customStatement('DROP TRIGGER categories_budget_history');
+    for (final sql in categoryReorganizationObjects) {
+      await customStatement(sql);
+    }
+  }
+
   Future<void> _checkIntegrity() async {
     final integrity = await customSelect('PRAGMA integrity_check').get();
     final foreignKeys = await customSelect('PRAGMA foreign_key_check').get();
     if (integrity.length != 1 ||
         integrity.single.data.values.single != 'ok' ||
         foreignKeys.isNotEmpty ||
+        (await customSelect(categoryIntegrityErrors).get()).isNotEmpty ||
         (await customSelect(wealthIntegrityErrors).get()).isNotEmpty ||
         (await customSelect(budgetIntegrityErrors).get()).isNotEmpty ||
         (await customSelect(movementIntegrityErrors).get()).isNotEmpty ||

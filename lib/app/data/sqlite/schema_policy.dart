@@ -2,7 +2,7 @@ import 'package:sqlite3/common.dart';
 
 import 'database_failure.dart';
 
-const localSchemaVersion = 6;
+const localSchemaVersion = 7;
 // ASCII AFNC: identifica este formato, independientemente del dataset_id.
 const localApplicationId = 0x41464e43;
 
@@ -63,7 +63,10 @@ void validateExistingDatabase(CommonDatabase db) {
                     accountSchemaObjects.length +
                     (version >= 4 ? movementSchemaObjects.length : 0) +
                     (version >= 5 ? budgetSchemaObjects.length : 0) +
-                    (version >= 6 ? wealthSchemaObjects.length : 0))) {
+                    (version >= 6 ? wealthSchemaObjects.length : 0) +
+                    (version >= 7
+                        ? categoryReorganizationObjects.length - 1
+                        : 0))) {
     throw const DatabaseFailure(DatabaseFailureCode.incompatible);
   }
   final object = objects.singleWhere(
@@ -71,6 +74,11 @@ void validateExistingDatabase(CommonDatabase db) {
     orElse: () => throw const DatabaseFailure(DatabaseFailureCode.incompatible),
   );
   if (version >= 2) {
+    // Antes de las consultas recursivas de presupuestos: incluso una imagen
+    // manipulada con ciclos debe rechazarse sin recursión ilimitada.
+    if (db.select(categoryIntegrityErrors).isNotEmpty) {
+      throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+    }
     for (final sql in categorySchemaObjects) {
       if (!objects.any(
         (o) => normalizeSchema(o['sql'] as String) == normalizeSchema(sql),
@@ -104,7 +112,12 @@ void validateExistingDatabase(CommonDatabase db) {
     }
   }
   if (version >= 5) {
-    for (final sql in budgetSchemaObjects) {
+    for (final sql
+        in version >= 7
+            ? budgetSchemaObjects.where(
+                (s) => !s.contains('categories_budget_history'),
+              )
+            : budgetSchemaObjects) {
       if (!objects.any(
         (o) => normalizeSchema(o['sql'] as String) == normalizeSchema(sql),
       )) {
@@ -113,6 +126,15 @@ void validateExistingDatabase(CommonDatabase db) {
     }
     if (db.select(budgetIntegrityErrors).isNotEmpty) {
       throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+    }
+  }
+  if (version >= 7) {
+    for (final sql in categoryReorganizationObjects) {
+      if (!objects.any(
+        (o) => normalizeSchema(o['sql'] as String) == normalizeSchema(sql),
+      )) {
+        throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+      }
     }
   }
   if (version >= 6) {
@@ -134,18 +156,6 @@ void validateExistingDatabase(CommonDatabase db) {
     throw const DatabaseFailure(DatabaseFailureCode.incompatible);
   }
   validateIntegrity(db);
-  if (version >= 2) {
-    final valid = db.select('''
-WITH RECURSIVE tree(id,depth) AS (
- SELECT id,1 FROM categories WHERE parent_id IS NULL
- UNION ALL SELECT c.id,t.depth+1 FROM categories c JOIN tree t
- ON c.parent_id=t.id WHERE t.depth<3
-) SELECT (SELECT count(*) FROM tree) = (SELECT count(*) FROM categories) AS valid
-''').single['valid'];
-    if (valid != 1) {
-      throw const DatabaseFailure(DatabaseFailureCode.incompatible);
-    }
-  }
   final states = db.select('SELECT * FROM database_state');
   if (states.length != 1 ||
       states.single['singleton'] != 1 ||
@@ -184,6 +194,14 @@ void configureConnection(CommonDatabase db) {
     throw const DatabaseFailure(DatabaseFailureCode.open);
   }
 }
+
+const categoryIntegrityErrors = '''
+WITH RECURSIVE tree(id,depth) AS (
+ SELECT id,1 FROM categories WHERE parent_id IS NULL
+ UNION ALL SELECT c.id,t.depth+1 FROM categories c JOIN tree t
+ ON c.parent_id=t.id WHERE t.depth<3
+) SELECT id FROM categories WHERE id NOT IN (SELECT id FROM tree)
+''';
 
 const categorySchemaObjects = <String>[
   '''CREATE TABLE "categories" ("id" TEXT NOT NULL PRIMARY KEY CHECK (length(id) = 36 AND substr(id, 9, 1) = '-' AND substr(id, 14, 1) = '-' AND substr(id, 19, 1) = '-' AND substr(id, 24, 1) = '-' AND length("replace"(id, '-', '')) = 32 AND "replace"(id, '-', '') NOT GLOB '*[^0-9a-f]*'), "parent_id" TEXT REFERENCES categories(id)ON UPDATE RESTRICT ON DELETE RESTRICT, "name" TEXT NOT NULL CHECK (length(trim(name)) > 0), "is_income" INTEGER CHECK (is_income IN (0, 1)), "archived" INTEGER NOT NULL DEFAULT 0 CHECK (archived IN (0, 1)), "created_at" TEXT NOT NULL, "updated_at" TEXT NOT NULL, CHECK((parent_id IS NULL AND is_income IS NOT NULL)OR(parent_id IS NOT NULL AND is_income IS NULL)));''',
@@ -271,4 +289,13 @@ const wealthSchemaObjects = <String>[
   '''CREATE TRIGGER wealth_values_update BEFORE UPDATE ON wealth_values BEGIN SELECT RAISE (ABORT, 'wealth_bounds') WHERE NOT EXISTS (SELECT 1 FROM accounts AS a JOIN wealth_snapshots AS s ON s.id = NEW.snapshot_id WHERE a.id = NEW.account_id AND a.active_from <= s.month AND(a.active_through IS NULL OR a.active_through >= s.month));END''',
   '''CREATE TRIGGER wealth_month_immutable BEFORE UPDATE OF month ON wealth_snapshots WHEN NEW.month <> OLD.month AND EXISTS (SELECT 1 FROM wealth_values WHERE snapshot_id = OLD.id) BEGIN SELECT RAISE (ABORT, 'wealth_month_immutable');END''',
   '''CREATE TRIGGER accounts_wealth_bounds BEFORE UPDATE OF active_from, active_through ON accounts BEGIN SELECT RAISE (ABORT, 'wealth_bounds') WHERE EXISTS (SELECT 1 FROM wealth_values AS v JOIN wealth_snapshots AS s ON s.id = v.snapshot_id WHERE v.account_id = NEW.id AND(s.month < NEW.active_from OR(NEW.active_through IS NOT NULL AND s.month > NEW.active_through)));END''',
+];
+
+// Objetos nuevos de v7; las definiciones v1-v6 permanecen publicadas.
+const categoryReorganizationObjects = <String>[
+  '''CREATE TRIGGER categories_root_history BEFORE UPDATE OF is_income ON categories WHEN OLD.parent_id IS NULL AND NEW.parent_id IS NULL AND NEW.is_income IS NOT OLD.is_income BEGIN SELECT RAISE (ABORT, 'category_root_history') WHERE EXISTS (WITH RECURSIVE branch (id) AS (SELECT OLD.id UNION SELECT c.id FROM categories AS c JOIN branch AS b ON c.parent_id = b.id) SELECT 1 FROM budgets WHERE category_id IN (SELECT id FROM branch) UNION ALL SELECT 1 FROM movements WHERE category_id IN (SELECT id FROM branch));END''',
+  '''CREATE TRIGGER categories_promotion BEFORE UPDATE OF parent_id, is_income ON categories WHEN OLD.parent_id IS NOT NULL AND NEW.parent_id IS NULL BEGIN SELECT RAISE (ABORT, 'category_promotion_type') WHERE NEW.is_income IS NOT (WITH RECURSIVE ancestors (id, parent_id, is_income) AS (SELECT id, parent_id, is_income FROM categories WHERE id = OLD.parent_id UNION SELECT c.id, c.parent_id, c.is_income FROM categories AS c JOIN ancestors AS a ON c.id = a.parent_id) SELECT is_income FROM ancestors WHERE parent_id IS NULL);END''',
+  '''CREATE TRIGGER categories_destination_insert BEFORE INSERT ON categories WHEN NEW.parent_id IS NOT NULL BEGIN SELECT RAISE (ABORT, 'category_destination') WHERE NOT EXISTS (SELECT 1 FROM categories WHERE id = NEW.parent_id AND archived = 0);END''',
+  '''CREATE TRIGGER categories_destination_update BEFORE UPDATE OF parent_id ON categories WHEN NEW.parent_id IS NOT NULL AND NEW.parent_id IS NOT OLD.parent_id BEGIN SELECT RAISE (ABORT, 'category_destination') WHERE NOT EXISTS (SELECT 1 FROM categories WHERE id = NEW.parent_id AND archived = 0);END''',
+  '''CREATE TRIGGER categories_budget_overlap AFTER UPDATE OF parent_id ON categories WHEN NEW.parent_id IS NOT OLD.parent_id BEGIN SELECT RAISE (ABORT, 'category_budget_overlap') WHERE EXISTS (WITH RECURSIVE ancestry (id, ancestor) AS (SELECT id, parent_id FROM categories WHERE parent_id IS NOT NULL UNION SELECT a.id, c.parent_id FROM ancestry AS a JOIN categories AS c ON c.id = a.ancestor WHERE c.parent_id IS NOT NULL) SELECT 1 FROM budgets AS b JOIN ancestry AS a ON a.id = b.category_id JOIN budgets AS p ON p.category_id = a.ancestor AND p.month = b.month);END''',
 ];

@@ -101,7 +101,9 @@ final class SqliteLocalBackupValidator implements LocalBackupImageValidator {
       final db = sqlite3.open(path, mode: OpenMode.readOnly);
       try {
         validateExistingDatabase(db);
-        if (readSchemaVersion(db) != localSchemaVersion) {
+        // El catálogo conserva copias publicadas anteriores sin migrarlas.
+        // validateExistingDatabase ya rechaza versiones futuras o alteradas.
+        if (readSchemaVersion(db) < 1) {
           throw const LocalBackupFailure(
             LocalBackupFailureCode.invalidSnapshot,
           );

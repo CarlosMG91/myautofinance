@@ -136,7 +136,7 @@ final class LocalBackupService implements LocalBackupCreator {
     }
     final hash = await _hash(imagePart);
     final image = await validator.validate(imagePart);
-    if (image.schemaVersion != 6 ||
+    if (image.schemaVersion != 7 ||
         image.applicationId != 1095126595 ||
         image.state.datasetId != snapshot.state.datasetId ||
         image.state.revision != snapshot.state.revision) {
@@ -149,7 +149,7 @@ final class LocalBackupService implements LocalBackupCreator {
     final validation = <String, dynamic>{
       'state': 'valid',
       'checkedAtUtc': backupUtc(_clock()),
-      'policySchemaVersion': 6,
+      'policySchemaVersion': 7,
       'issue': null,
     };
     final descriptor = <String, dynamic>{

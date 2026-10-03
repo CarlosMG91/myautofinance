@@ -1,3 +1,5 @@
+import 'published_schema_fixture.dart';
+
 import 'dart:io';
 import 'dart:convert';
 
@@ -198,6 +200,7 @@ void main() {
     await store.close();
     final file = File(store.databasePath!);
     final raw = sqlite3.open(file.path);
+    usePublishedV6CategoryTriggers(raw);
     for (final sql in [
       ...movementSchemaObjects,
       ...budgetSchemaObjects,
@@ -219,7 +222,7 @@ void main() {
     expect((await db.select(db.databaseState).getSingle()).revision, 17);
     expect((await SqliteAccountRepository(db).get(accountId))!.id, accountId);
     final snapshot = jsonDecode(
-      File('drift_schemas/autofinance/drift_schema_v6.json').readAsStringSync(),
+      File('drift_schemas/autofinance/drift_schema_v7.json').readAsStringSync(),
     ) as Map<String, dynamic>;
     final expected = sqlite3.openInMemory();
     for (final group in snapshot['fixed_sql'] as List) {

@@ -1,3 +1,5 @@
+import 'published_schema_fixture.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -244,57 +246,62 @@ void main() {
     );
     await expectLater(repo.read(jan), throwsA(isA<AccountFailure>()));
   });
-  test('v5 migra sin inventar fotos; respaldo y esquema exacto v6', () async {
-    final a = await account('Histórica');
-    await store.close();
-    final raw = sqlite3.open(store.databasePath!);
-    for (final sql in wealthSchemaObjects.reversed) {
-      final m = RegExp(r'CREATE (TABLE|INDEX|TRIGGER)\s+"?([a-z_]+)')
-          .firstMatch(sql)!;
-      raw.execute('DROP ${m[1]} "${m[2]}"');
-    }
-    raw.execute('UPDATE database_state SET revision=37');
-    raw.execute('PRAGMA user_version=5');
-    raw.close();
-    repo = SqliteWealthRepository(await store.open());
-    expect((await repo.read(jan)).status, WealthSnapshotStatus.absent);
-    expect((await repo.read(jan)).pending.single.id, a.id);
-    expect(
-      (await repo.database.select(repo.database.databaseState).getSingle())
-          .revision,
-      37,
-    );
-    final backup = sqlite3.open(store.migrationBackupPath!);
-    validateExistingDatabase(backup);
-    expect(readSchemaVersion(backup), 5);
-    backup.close();
-    final expected = sqlite3.openInMemory();
-    final snap = jsonDecode(
-      File('drift_schemas/autofinance/drift_schema_v6.json').readAsStringSync(),
-    ) as Map<String, dynamic>;
-    for (final group in snap['fixed_sql'] as List) {
-      for (final item in group['sql'] as List) {
-        expected.execute(item['sql'] as String);
+  test(
+    'v5 migra sin inventar fotos; respaldo y esquema exacto vigente',
+    () async {
+      final a = await account('Histórica');
+      await store.close();
+      final raw = sqlite3.open(store.databasePath!);
+      usePublishedV6CategoryTriggers(raw);
+      for (final sql in wealthSchemaObjects.reversed) {
+        final m = RegExp(r'CREATE (TABLE|INDEX|TRIGGER)\s+"?([a-z_]+)')
+            .firstMatch(sql)!;
+        raw.execute('DROP ${m[1]} "${m[2]}"');
       }
-    }
-    final actual = await repo.database
-        .customSelect(
-          "SELECT sql FROM sqlite_master WHERE name NOT GLOB 'sqlite_*' ORDER BY name",
-        )
-        .get();
-    expect(
-      actual.map((r) => normalizeSchema(r.read<String>('sql'))),
-      expected
-          .select(
+      raw.execute('UPDATE database_state SET revision=37');
+      raw.execute('PRAGMA user_version=5');
+      raw.close();
+      repo = SqliteWealthRepository(await store.open());
+      expect((await repo.read(jan)).status, WealthSnapshotStatus.absent);
+      expect((await repo.read(jan)).pending.single.id, a.id);
+      expect(
+        (await repo.database.select(repo.database.databaseState).getSingle())
+            .revision,
+        37,
+      );
+      final backup = sqlite3.open(store.migrationBackupPath!);
+      validateExistingDatabase(backup);
+      expect(readSchemaVersion(backup), 5);
+      backup.close();
+      final expected = sqlite3.openInMemory();
+      final snap = jsonDecode(
+        File('drift_schemas/autofinance/drift_schema_v7.json')
+            .readAsStringSync(),
+      ) as Map<String, dynamic>;
+      for (final group in snap['fixed_sql'] as List) {
+        for (final item in group['sql'] as List) {
+          expected.execute(item['sql'] as String);
+        }
+      }
+      final actual = await repo.database
+          .customSelect(
             "SELECT sql FROM sqlite_master WHERE name NOT GLOB 'sqlite_*' ORDER BY name",
           )
-          .map((r) => normalizeSchema(r['sql'] as String)),
-    );
-    expected.close();
-    await store.close();
-    final current = sqlite3.open(store.databasePath!);
-    validateExistingDatabase(current);
-    expect(readSchemaVersion(current), 6);
-    current.close();
-  });
+          .get();
+      expect(
+        actual.map((r) => normalizeSchema(r.read<String>('sql'))),
+        expected
+            .select(
+              "SELECT sql FROM sqlite_master WHERE name NOT GLOB 'sqlite_*' ORDER BY name",
+            )
+            .map((r) => normalizeSchema(r['sql'] as String)),
+      );
+      expected.close();
+      await store.close();
+      final current = sqlite3.open(store.databasePath!);
+      validateExistingDatabase(current);
+      expect(readSchemaVersion(current), localSchemaVersion);
+      current.close();
+    },
+  );
 }

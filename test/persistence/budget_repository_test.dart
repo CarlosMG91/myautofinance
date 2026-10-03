@@ -1,3 +1,5 @@
+import 'published_schema_fixture.dart';
+
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -269,6 +271,7 @@ void main() {
   test('v4 migra a la esquema vigente preservando categorías, revisión y esquema validado', () async {
     await store.close();
     final raw = sqlite3.open(store.databasePath!);
+    usePublishedV6CategoryTriggers(raw);
     for (final sql in [
       ...budgetSchemaObjects,
       ...wealthSchemaObjects,

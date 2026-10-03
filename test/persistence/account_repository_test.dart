@@ -1,3 +1,5 @@
+import 'published_schema_fixture.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -274,6 +276,7 @@ void main() {
       final path = store.databasePath!;
       await store.close();
       final previous = sqlite3.open(path);
+      usePublishedV6CategoryTriggers(previous);
       for (final sql in [
         ...movementSchemaObjects,
         ...budgetSchemaObjects,
@@ -331,7 +334,7 @@ void main() {
       expect(readSchemaVersion(backup), 2);
       backup.close();
       final snap = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v6.json')
+        File('drift_schemas/autofinance/drift_schema_v7.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();

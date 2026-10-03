@@ -47,8 +47,13 @@ final class SqliteRestoreImagePolicy implements LocalRestoreImagePolicy {
           if (version >= 2) ...categorySchemaObjects,
           if (version >= 3) ...accountSchemaObjects,
           if (version >= 4) ...movementSchemaObjects,
-          if (version >= 5) ...budgetSchemaObjects,
+          if (version >= 5)
+            ...budgetSchemaObjects.where(
+              (sql) =>
+                  version < 7 || !sql.contains('categories_budget_history'),
+            ),
           if (version >= 6) ...wealthSchemaObjects,
+          if (version >= 7) ...categoryReorganizationObjects,
         ];
         final objects = db.select(
           "SELECT sql FROM sqlite_master WHERE name NOT GLOB 'sqlite_*'",
