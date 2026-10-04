@@ -43,6 +43,14 @@ final class SqliteAccountRepository implements AccountRepository {
 
   Future<AccountRecord> _require(String id) async =>
       await get(id) ?? (throw const AccountFailure('La ficha no existe.'));
+
+  @override
+  Future<List<AccountRecord>> list() async => List.unmodifiable(
+    (await database
+            .customSelect('SELECT * FROM accounts ORDER BY name,id')
+            .get())
+        .map(_record),
+  );
   Future<void> _coverage() async {
     if ((await database.customSelect(accountCoverageErrors).get()).isNotEmpty) {
       throw const AccountFailure(

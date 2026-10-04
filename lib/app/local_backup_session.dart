@@ -6,6 +6,8 @@ import 'drive_ui_factory.dart';
 import '../features/synchronization/presentation/drive_controller.dart';
 import '../features/movements/movements.dart';
 import 'category_management_factory.dart';
+import '../features/wealth/wealth.dart';
+import 'wealth_management_factory.dart';
 
 /// Una sola conexión y los servicios locales de la instalación, sin OAuth.
 class LocalBackupSession {
@@ -35,6 +37,10 @@ class LocalBackupSession {
   );
   late final LocalBackupController controller;
   final categoryInvalidation = CategoryReadInvalidation();
+
+  // Resolver por visita: una restauración puede sustituir la conexión activa.
+  Future<WealthManagement> wealth() async =>
+      createWealthManagement(database: await store.open());
 
   Future<CategoryManagement> categories() async => createCategoryManagement(
     database: await store.open(),

@@ -13,6 +13,9 @@ abstract final class AppRoutes {
   static const home = '/';
   static const monthlyStatus = '/estado';
   static const wealth = '/patrimonio';
+  static const wealthPhoto = '/patrimonio/foto';
+  static const accounts = '/patrimonio/fichas';
+  static const newAccount = '/patrimonio/fichas/nueva';
   static const budget = '/presupuesto';
   static const actualSpending = '/real';
   static const indicators = '/indicadores';

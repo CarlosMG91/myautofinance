@@ -79,6 +79,10 @@ abstract interface class AccountRepository {
     Liquidity? liquidity,
   });
   Future<AccountRecord?> get(String id);
+
+  /// Catálogo completo, incluidas altas futuras y fichas dadas de baja.
+  /// No asigna una liquidez actual: consultar history o listForMonth.
+  Future<List<AccountRecord>> list();
   Future<List<AccountRecord>> listForMonth(Month month);
   Future<List<LiquidityPeriod>> history(String id);
   Future<void> rename(String id, String name);

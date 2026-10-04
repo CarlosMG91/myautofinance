@@ -9,6 +9,8 @@ import '../../features/synchronization/presentation/local_backup_screen.dart';
 import '../../features/movements/movements.dart';
 import '../../features/movements/presentation/category_tree_screen.dart';
 import '../../features/movements/presentation/category_form_screen.dart';
+import '../../features/wealth/wealth.dart';
+import 'wealth_route.dart';
 
 /// El selector conserva su propio borrador y recibe solo el alta confirmada.
 /// La pila mantiene filtros, scroll y foco del origen, sin guardarlo.
@@ -25,10 +27,15 @@ abstract final class AppRouter {
     LocalBackupController? localBackups,
     DriveController? drive,
     CategoryManagementLoader? categories,
+    WealthManagementLoader? wealth,
   }) {
     Widget page;
     final uri = Uri.tryParse(settings.name ?? '');
-    if (uri?.path == AppRoutes.categories ||
+    if (wealth != null &&
+        (uri?.path == AppRoutes.wealth ||
+            uri?.path.startsWith('${AppRoutes.wealth}/') == true)) {
+      page = _WealthRoute(settings: settings, loadManagement: wealth);
+    } else if (uri?.path == AppRoutes.categories ||
         uri?.path.startsWith('${AppRoutes.categories}/') == true) {
       page = categories == null
           ? const _TechnicalPlaceholder(
@@ -49,8 +56,12 @@ abstract final class AppRouter {
     } else if (settings.name == AppRoutes.home) {
       page = _TechnicalIndex(
         showManagement:
-            localBackups != null || drive != null || categories != null,
+            localBackups != null ||
+            drive != null ||
+            categories != null ||
+            wealth != null,
         categoriesAvailable: categories != null,
+        wealthAvailable: wealth != null,
       );
     } else {
       TechnicalDestination? destination;
@@ -62,8 +73,12 @@ abstract final class AppRouter {
       }
       page = _TechnicalPlaceholder(
         showManagement:
-            localBackups != null || drive != null || categories != null,
+            localBackups != null ||
+            drive != null ||
+            categories != null ||
+            wealth != null,
         categoriesAvailable: categories != null,
+        wealthAvailable: wealth != null,
         title: destination?.label ?? 'Error de navegación',
         message: destination == null
             ? 'Destino desconocido · ${settings.name ?? "(sin ruta)"}'
@@ -90,6 +105,104 @@ abstract final class AppRouter {
       },
     );
   }
+}
+
+/// Host de composición de MA-TSK-071; los formularios y la vista financiera
+/// completa pertenecen a los siguientes tickets de EP-009.
+class _WealthRoute extends StatefulWidget {
+  const _WealthRoute({required this.settings, required this.loadManagement});
+  final RouteSettings settings;
+  final WealthManagementLoader loadManagement;
+
+  @override
+  State<_WealthRoute> createState() => _WealthRouteState();
+}
+
+class _WealthRouteState extends State<_WealthRoute> {
+  late final Future<Object?> data = _load();
+
+  Future<Object?> _load() async {
+    final route = WealthRoute.parse(
+      widget.settings.name!,
+      defaultMonth: madridMonth(DateTime.now()),
+    );
+    return route.load(WealthController(loadManagement: widget.loadManagement));
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Patrimonio')),
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: FutureBuilder<Object?>(
+          future: data,
+          builder: (context, snapshot) {
+            void back() {
+              final navigator = Navigator.of(context);
+              if (navigator.canPop()) {
+                navigator.pop();
+              } else {
+                final origin = widget.settings.arguments;
+                final month = madridMonth(DateTime.now()).value;
+                navigator.pushReplacementNamed(
+                  origin is _BackupOrigin
+                      ? origin.route
+                      : '${AppRoutes.monthlyStatus}?a=${month.substring(0, 4)}&m=${month.substring(5, 7)}',
+                );
+              }
+            }
+
+            final value = snapshot.data;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (snapshot.connectionState != ConnectionState.done)
+                  const LinearProgressIndicator()
+                else if (snapshot.hasError)
+                  const Text('No se pudo abrir este detalle')
+                else ...[
+                  const Text('Consulta de Patrimonio'),
+                  if (value is List<AccountRecord>)
+                    for (final account in value)
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pushNamed(
+                          '${AppRoutes.accounts}/${Uri.encodeComponent(account.id)}',
+                          arguments: widget.settings.arguments,
+                        ),
+                        child: Text(account.name),
+                      ),
+                  if (value is AccountDetails) ...[
+                    Text(value.account.name),
+                    Text('Alta: ${value.account.activeFrom.value}'),
+                    if (value.account.activeThrough != null)
+                      Text('Baja: ${value.account.activeThrough!.value}'),
+                    Text('Periodos de liquidez: ${value.history.length}'),
+                  ],
+                  if (value is WealthSnapshot) ...[
+                    Text('Foto del día 1 · ${value.month.value}'),
+                    Text(switch (value.status) {
+                      WealthSnapshotStatus.absent =>
+                        'Sin dato: falta foto patrimonial',
+                      WealthSnapshotStatus.incomplete =>
+                        'Sin dato: foto patrimonial incompleta',
+                      WealthSnapshotStatus.complete => 'Foto completa',
+                    }),
+                    for (final account in value.pending)
+                      Text('Pendiente: ${account.name}'),
+                  ],
+                ],
+                TextButton(
+                  onPressed: back,
+                  child: const Text('Volver al origen'),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    ),
+  );
 }
 
 /// La ruta original queda en la pila: conserva periodo, scroll y foco.
@@ -357,9 +470,11 @@ class _TechnicalIndex extends StatelessWidget {
   const _TechnicalIndex({
     this.showManagement = false,
     this.categoriesAvailable = false,
+    this.wealthAvailable = false,
   });
   final bool showManagement;
   final bool categoriesAvailable;
+  final bool wealthAvailable;
 
   @override
   Widget build(BuildContext context) {
@@ -368,7 +483,10 @@ class _TechnicalIndex extends StatelessWidget {
         title: const Text('Autofinance · Base técnica'),
         actions: [
           if (showManagement)
-            _ManagementMenu(categoriesAvailable: categoriesAvailable),
+            _ManagementMenu(
+              categoriesAvailable: categoriesAvailable,
+              wealthAvailable: wealthAvailable,
+            ),
         ],
       ),
       body: SafeArea(
@@ -397,9 +515,11 @@ class _TechnicalPlaceholder extends StatelessWidget {
     required this.message,
     this.showManagement = false,
     this.categoriesAvailable = false,
+    this.wealthAvailable = false,
   });
   final bool showManagement;
   final bool categoriesAvailable;
+  final bool wealthAvailable;
 
   final String title;
   final String message;
@@ -411,7 +531,10 @@ class _TechnicalPlaceholder extends StatelessWidget {
         title: Text(title),
         actions: [
           if (showManagement)
-            _ManagementMenu(categoriesAvailable: categoriesAvailable),
+            _ManagementMenu(
+              categoriesAvailable: categoriesAvailable,
+              wealthAvailable: wealthAvailable,
+            ),
         ],
       ),
       body: SafeArea(
@@ -439,14 +562,20 @@ class _TechnicalPlaceholder extends StatelessWidget {
 }
 
 class _ManagementMenu extends StatelessWidget {
-  const _ManagementMenu({this.categoriesAvailable = false});
+  const _ManagementMenu({
+    this.categoriesAvailable = false,
+    this.wealthAvailable = false,
+  });
   final bool categoriesAvailable;
+  final bool wealthAvailable;
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     tooltip: 'Gestión',
     onSelected: (value) => Navigator.of(context).pushNamed(
       value == 'categories'
           ? AppRoutes.categories
+          : value == 'accounts'
+          ? AppRoutes.accounts
           : value == 'drive'
           ? AppRoutes.drive
           : AppRoutes.localBackups,
@@ -461,7 +590,11 @@ class _ManagementMenu extends StatelessWidget {
         enabled: categoriesAvailable,
         child: const Text('Categorías'),
       ),
-      const PopupMenuItem(enabled: false, child: Text('Fichas')),
+      PopupMenuItem(
+        value: 'accounts',
+        enabled: wealthAvailable,
+        child: const Text('Fichas'),
+      ),
       const PopupMenuItem(value: 'drive', child: Text('Copia en Drive')),
       const PopupMenuItem(value: 'local', child: Text('Copias locales')),
     ],

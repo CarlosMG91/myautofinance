@@ -11,6 +11,7 @@ import 'navigation/app_routes.dart';
 import 'local_backup_session.dart';
 import '../features/synchronization/presentation/local_backup_controller.dart';
 import '../features/movements/presentation/category_tree_screen.dart';
+import '../features/wealth/wealth.dart';
 
 class AutofinanceApp extends StatelessWidget {
   const AutofinanceApp({
@@ -20,6 +21,7 @@ class AutofinanceApp extends StatelessWidget {
     this.localBackups,
     this.drive,
     this.categories,
+    this.wealth,
   });
 
   final AppConfig config;
@@ -29,6 +31,7 @@ class AutofinanceApp extends StatelessWidget {
   final LocalBackupController? localBackups;
   final DriveController? drive;
   final CategoryManagementLoader? categories;
+  final WealthManagementLoader? wealth;
 
   /// Entradas técnicas disponibles para conectar las futuras funcionalidades.
   static const modules = applicationModules;
@@ -38,6 +41,7 @@ class AutofinanceApp extends StatelessWidget {
     final backups = localBackups ?? localSession?.controller;
     final driveController = drive ?? localSession?.drive;
     final categoryLoader = categories ?? localSession?.categories;
+    final wealthLoader = wealth ?? localSession?.wealth;
     return MaterialApp(
       title: 'Autofinance',
       locale: AppRegional.locale,
@@ -96,6 +100,7 @@ class AutofinanceApp extends StatelessWidget {
           localBackups: backups,
           drive: driveController,
           categories: categoryLoader,
+          wealth: wealthLoader,
         ),
       ],
       onGenerateRoute: (settings) => AppRouter.generateRoute(
@@ -103,6 +108,7 @@ class AutofinanceApp extends StatelessWidget {
         localBackups: backups,
         drive: driveController,
         categories: categoryLoader,
+        wealth: wealthLoader,
       ),
     );
   }
