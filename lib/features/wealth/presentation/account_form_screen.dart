@@ -13,6 +13,7 @@ class AccountFormScreen extends StatefulWidget {
     required this.loadManagement,
     required this.initialMonth,
     required this.onReturn,
+    this.returnLabel = 'Volver al origen',
     required this.onSaved,
     this.accountId,
   });
@@ -20,6 +21,7 @@ class AccountFormScreen extends StatefulWidget {
   final Month initialMonth;
   final String? accountId;
   final VoidCallback onReturn;
+  final String returnLabel;
   final ValueChanged<AccountDetails> onSaved;
   @override
   State<AccountFormScreen> createState() => _AccountFormScreenState();
@@ -383,7 +385,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                     children: [
                       TextButton(
                         onPressed: _locked ? null : _leave,
-                        child: const Text('Volver al origen'),
+                        child: Text(widget.returnLabel),
                       ),
                       if (_busy)
                         const LinearProgressIndicator(

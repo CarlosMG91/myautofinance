@@ -20,10 +20,12 @@ class AccountCatalogScreen extends StatefulWidget {
     required this.controller,
     required this.onOpen,
     required this.onReturn,
+    this.returnLabel = 'Volver al origen',
   });
   final WealthController controller;
   final Future<void> Function(String? id) onOpen;
   final VoidCallback onReturn;
+  final String returnLabel;
   @override
   State<AccountCatalogScreen> createState() => _AccountCatalogScreenState();
 }
@@ -54,7 +56,7 @@ class _AccountCatalogScreenState extends State<AccountCatalogScreen> {
             children: [
               TextButton(
                 onPressed: widget.onReturn,
-                child: const Text('Volver al origen'),
+                child: Text(widget.returnLabel),
               ),
               Align(
                 alignment: Alignment.centerLeft,

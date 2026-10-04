@@ -13,6 +13,7 @@ import '../../features/wealth/wealth.dart';
 import '../../features/wealth/presentation/account_catalog_screen.dart';
 import '../../features/wealth/presentation/account_form_screen.dart';
 import '../../features/wealth/presentation/wealth_photo_screen.dart';
+import '../../features/wealth/presentation/wealth_screen.dart';
 import 'wealth_route.dart';
 
 /// El selector conserva su propio borrador y recibe solo el alta confirmada.
@@ -23,7 +24,7 @@ class CategoryNavigationContext {
   final ValueChanged<CategoryDetails>? onCreated;
 }
 
-/// Navegación de desarrollo, sin pantallas ni operaciones financieras.
+/// Compone las rutas de producto y los marcadores pendientes.
 abstract final class AppRouter {
   static Route<Object?> generateRoute(
     RouteSettings settings, {
@@ -37,7 +38,11 @@ abstract final class AppRouter {
     if (wealth != null &&
         (uri?.path == AppRoutes.wealth ||
             uri?.path.startsWith('${AppRoutes.wealth}/') == true)) {
-      page = _WealthRoute(settings: settings, loadManagement: wealth);
+      page = _WealthRoute(
+        settings: settings,
+        loadManagement: wealth,
+        categoriesAvailable: categories != null,
+      );
     } else if (uri?.path == AppRoutes.categories ||
         uri?.path.startsWith('${AppRoutes.categories}/') == true) {
       page = categories == null
@@ -110,28 +115,22 @@ abstract final class AppRouter {
   }
 }
 
-/// Host de composición de MA-TSK-071; los formularios y la vista financiera
-/// completa pertenecen a los siguientes tickets de EP-009.
+/// Compone Patrimonio y sus formularios sin retener conexiones SQLite.
 class _WealthRoute extends StatefulWidget {
-  const _WealthRoute({required this.settings, required this.loadManagement});
+  const _WealthRoute({
+    required this.settings,
+    required this.loadManagement,
+    this.categoriesAvailable = false,
+  });
   final RouteSettings settings;
   final WealthManagementLoader loadManagement;
+  final bool categoriesAvailable;
 
   @override
   State<_WealthRoute> createState() => _WealthRouteState();
 }
 
 class _WealthRouteState extends State<_WealthRoute> {
-  late Future<Object?> data = _load();
-
-  Future<Object?> _load() async {
-    final route = WealthRoute.parse(
-      widget.settings.name!,
-      defaultMonth: madridMonth(DateTime.now()),
-    );
-    return route.load(WealthController(loadManagement: widget.loadManagement));
-  }
-
   @override
   Widget build(BuildContext context) {
     final uri = Uri.tryParse(widget.settings.name ?? '');
@@ -147,6 +146,60 @@ class _WealthRouteState extends State<_WealthRoute> {
       }
     }
 
+    if (uri?.path == AppRoutes.wealth) {
+      try {
+        final route = WealthRoute.parse(
+          widget.settings.name!,
+          defaultMonth: madridMonth(DateTime.now()),
+        );
+        String period(Month month) =>
+            'a=${month.value.substring(0, 4)}&m=${month.value.substring(5, 7)}';
+        Future<void> open(String path, Month month) async {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          final saved = await Navigator.of(context).pushNamed<Object?>(
+            '$path?${period(month)}',
+            arguments: path.startsWith(AppRoutes.accounts)
+                ? _WealthOrigin(month)
+                : widget.settings.arguments,
+          );
+          if (context.mounted && saved is WealthSnapshot) {
+            _photoNotice(context, saved);
+          }
+        }
+
+        return WealthScreen(
+          controller: WealthController(loadManagement: widget.loadManagement),
+          initialMonth: route.month!,
+          onPhoto: (month) => open(AppRoutes.wealthPhoto, month),
+          onAccount: (id, month) =>
+              open('${AppRoutes.accounts}/${Uri.encodeComponent(id)}', month),
+          onCatalog: (month) => open(AppRoutes.accounts, month),
+          onReturn: Navigator.of(context).canPop() ? back : null,
+          destinations: {
+            for (final destination in AppRoutes.destinations)
+              destination.path: switch (destination.path) {
+                AppRoutes.monthlyStatus => 'Estado',
+                AppRoutes.wealth => 'Patrimonio',
+                AppRoutes.budget => 'Presupuesto',
+                AppRoutes.actualSpending => 'Real',
+                _ => 'Indicadores',
+              },
+          },
+          onNavigate: (path, month) => Navigator.of(context)
+              .pushNamedAndRemoveUntil('$path?${period(month)}', (_) => false),
+          management: (month, refresh) => _ManagementMenu(
+            categoriesAvailable: widget.categoriesAvailable,
+            wealthAvailable: true,
+            onOpen: (path) async {
+              await open(path, month);
+              if (context.mounted) await refresh();
+            },
+          ),
+        );
+      } on AccountFailure catch (_) {
+        // Error de navegación sin consultas ni escrituras.
+      }
+    }
     if (uri?.path == AppRoutes.wealthPhoto) {
       final WealthRoute route;
       try {
@@ -216,12 +269,20 @@ class _WealthRouteState extends State<_WealthRoute> {
       return AccountCatalogScreen(
         controller: WealthController(loadManagement: widget.loadManagement),
         onReturn: back,
+        returnLabel: widget.settings.arguments is _WealthOrigin
+            ? (widget.settings.arguments as _WealthOrigin).returnLabel
+            : 'Volver al origen',
         onOpen: (id) async {
           final saved = await Navigator.of(context).pushNamed<Object?>(
             id == null
                 ? AppRoutes.newAccount
                 : '${AppRoutes.accounts}/${Uri.encodeComponent(id)}',
-            arguments: widget.settings.arguments,
+            arguments: widget.settings.arguments is _WealthOrigin
+                ? _WealthOrigin(
+                    (widget.settings.arguments as _WealthOrigin).month,
+                    fromCatalog: true,
+                  )
+                : widget.settings.arguments,
           );
           if (context.mounted && saved is AccountDetails) {
             ScaffoldMessenger.of(context)
@@ -233,11 +294,16 @@ class _WealthRouteState extends State<_WealthRoute> {
     if (uri?.pathSegments.length == 3 && uri?.pathSegments[1] == 'fichas') {
       return AccountFormScreen(
         loadManagement: widget.loadManagement,
-        initialMonth: madridMonth(DateTime.now()),
+        initialMonth: widget.settings.arguments is _WealthOrigin
+            ? (widget.settings.arguments as _WealthOrigin).month
+            : madridMonth(DateTime.now()),
         accountId: uri!.path == AppRoutes.newAccount
             ? null
             : uri.pathSegments.last,
         onReturn: back,
+        returnLabel: widget.settings.arguments is _WealthOrigin
+            ? (widget.settings.arguments as _WealthOrigin).returnLabel
+            : 'Volver al origen',
         onSaved: (saved) {
           if (Navigator.of(context).canPop()) {
             back(saved);
@@ -252,96 +318,24 @@ class _WealthRouteState extends State<_WealthRoute> {
     return Scaffold(
       appBar: AppBar(title: const Text('Patrimonio')),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: FutureBuilder<Object?>(
-            future: data,
-            builder: (context, snapshot) {
-              void back() {
-                final navigator = Navigator.of(context);
-                if (navigator.canPop()) {
-                  navigator.pop();
-                } else {
-                  final origin = widget.settings.arguments;
-                  final month = madridMonth(DateTime.now()).value;
-                  navigator.pushReplacementNamed(
-                    origin is _BackupOrigin
-                        ? origin.route
-                        : '${AppRoutes.monthlyStatus}?a=${month.substring(0, 4)}&m=${month.substring(5, 7)}',
-                  );
-                }
-              }
-
-              final value = snapshot.data;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (snapshot.connectionState != ConnectionState.done)
-                    const LinearProgressIndicator()
-                  else if (snapshot.hasError)
-                    const Text('No se pudo abrir este detalle')
-                  else ...[
-                    const Text('Consulta de Patrimonio'),
-                    if (value is List<AccountRecord>)
-                      for (final account in value)
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pushNamed(
-                            '${AppRoutes.accounts}/${Uri.encodeComponent(account.id)}',
-                            arguments: widget.settings.arguments,
-                          ),
-                          child: Text(account.name),
-                        ),
-                    if (value is AccountDetails) ...[
-                      Text(value.account.name),
-                      Text('Alta: ${value.account.activeFrom.value}'),
-                      if (value.account.activeThrough != null)
-                        Text('Baja: ${value.account.activeThrough!.value}'),
-                      Text('Periodos de liquidez: ${value.history.length}'),
-                    ],
-                    if (value is WealthSnapshot) ...[
-                      Text('Foto del día 1 · ${value.month.value}'),
-                      Text(switch (value.status) {
-                        WealthSnapshotStatus.absent =>
-                          'Sin dato: falta foto patrimonial',
-                        WealthSnapshotStatus.incomplete =>
-                          'Sin dato: foto patrimonial incompleta',
-                        WealthSnapshotStatus.complete => 'Foto completa',
-                      }),
-                      for (final account in value.pending)
-                        Text('Pendiente: ${account.name}'),
-                      FilledButton(
-                        onPressed: () async {
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          final month = value.month.value;
-                          final saved = await Navigator.of(context)
-                              .pushNamed<Object?>(
-                                '${AppRoutes.wealthPhoto}?a=${month.substring(0, 4)}&m=${month.substring(5, 7)}',
-                                arguments: widget.settings.arguments,
-                              );
-                          if (!context.mounted || saved is! WealthSnapshot) {
-                            return;
-                          }
-                          setState(() {
-                            data = _load();
-                          });
-                          _photoNotice(context, saved);
-                        },
-                        child: const Text('Registrar / editar foto'),
-                      ),
-                    ],
-                  ],
-                  TextButton(
-                    onPressed: back,
-                    child: const Text('Volver al origen'),
-                  ),
-                ],
-              );
-            },
-          ),
+        child: Column(
+          children: [
+            const Text('No se pudo abrir este detalle'),
+            TextButton(onPressed: back, child: const Text('Volver al origen')),
+          ],
         ),
       ),
     );
   }
+}
+
+class _WealthOrigin {
+  const _WealthOrigin(this.month, {this.fromCatalog = false});
+  final Month month;
+  final bool fromCatalog;
+  String get returnLabel => fromCatalog
+      ? 'Volver a Fichas'
+      : 'Volver a Patrimonio, ${month.value.substring(0, 7)}';
 }
 
 void _photoNotice(BuildContext context, WealthSnapshot saved) {
@@ -716,24 +710,33 @@ class _ManagementMenu extends StatelessWidget {
   const _ManagementMenu({
     this.categoriesAvailable = false,
     this.wealthAvailable = false,
+    this.onOpen,
   });
   final bool categoriesAvailable;
   final bool wealthAvailable;
+  final Future<void> Function(String path)? onOpen;
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     tooltip: 'Gestión',
-    onSelected: (value) => Navigator.of(context).pushNamed(
-      value == 'categories'
+    onSelected: (value) {
+      final path = value == 'categories'
           ? AppRoutes.categories
           : value == 'accounts'
           ? AppRoutes.accounts
           : value == 'drive'
           ? AppRoutes.drive
-          : AppRoutes.localBackups,
-      arguments: _BackupOrigin(
-        ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
-      ),
-    ),
+          : AppRoutes.localBackups;
+      if (onOpen != null) {
+        onOpen!(path);
+      } else {
+        Navigator.of(context).pushNamed(
+          path,
+          arguments: _BackupOrigin(
+            ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
+          ),
+        );
+      }
+    },
     itemBuilder: (_) => [
       const PopupMenuItem(enabled: false, child: Text('Importar CSV')),
       PopupMenuItem(

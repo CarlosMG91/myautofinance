@@ -288,14 +288,14 @@ void main() {
       await tap(tester, 'Guardar foto');
       await settle(tester);
       expect(find.byType(WealthPhotoScreen), findsNothing);
-      expect(find.text('Foto del día 1 · 2026-02-01'), findsOneWidget);
-      expect(find.text('Pendiente: Z Deuda sintética'), findsOneWidget);
+      expect(find.textContaining('01/02/2026'), findsOneWidget);
+      expect(find.text('Pendientes: Z Deuda sintética'), findsOneWidget);
       expect(
         find.textContaining('Foto guardada · 2026-02-01. Foto incompleta.'),
         findsOneWidget,
       );
       expect(
-        ModalRoute.of(tester.element(find.text('Foto del día 1 · 2026-02-01')))!
+        ModalRoute.of(tester.element(find.textContaining('01/02/2026')))!
             .settings
             .name,
         '/patrimonio?a=2026&m=02',
