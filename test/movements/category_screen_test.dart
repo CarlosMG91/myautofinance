@@ -41,7 +41,11 @@ void main() {
     await directory.delete(recursive: true);
   });
 
-  Future<void> settle(WidgetTester tester, {bool waitForStorage = true}) async {
+  Future<void> settle(
+    WidgetTester tester, {
+    bool waitForStorage = true,
+    bool Function()? until,
+  }) async {
     // Bombea también las lecturas SQLite encadenadas y la validación de tipo.
     for (var turn = 0; turn < 300; turn++) {
       await tester.runAsync(() async {
@@ -53,7 +57,11 @@ void main() {
           find.text('Leyendo categorías…').evaluate().isNotEmpty ||
           find.text('Leyendo categoría…').evaluate().isNotEmpty ||
           find.text('Guardando categoría…').evaluate().isNotEmpty;
-      if (turn >= 3 && (!waitForStorage || !loading)) break;
+      if (turn >= 3 &&
+          (!waitForStorage || !loading) &&
+          (until == null || until())) {
+        break;
+      }
     }
     await tester.pumpAndSettle();
   }
@@ -243,6 +251,8 @@ void main() {
       await tester.enterText(find.byType(TextField), 'IMPUESTOS');
       await parent(tester, salary);
       await tap(tester, 'Crear categoría');
+      // El resultado del alta atraviesa dos rutas y la recarga del árbol.
+      await settle(tester, until: () => selected!.node.id != tax.node.id);
       expect(selected!.node.id, isNot(tax.node.id));
       expect(selected!.path, tax.path);
       expect(find.text('Autofinance · Base técnica'), findsOneWidget);
@@ -601,6 +611,17 @@ void main() {
         'ZZZ categoría sintética 7 editada',
       );
       await tap(tester, 'Revisar y guardar');
+      await settle(
+        tester,
+        until: () {
+          final edits = find.widgetWithText(
+            OutlinedButton,
+            'Editar / gestionar',
+          );
+          if (edits.evaluate().isEmpty) return false;
+          return tester.widget<OutlinedButton>(edits.last).focusNode!.hasFocus;
+        },
+      );
       expect(find.text(tax.path), findsNothing);
       expect(
         tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,

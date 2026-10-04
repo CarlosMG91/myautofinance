@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../domain/category_management.dart';
@@ -28,6 +30,9 @@ class _CategoryTreeScreenState extends State<CategoryTreeScreen> {
   String? _error;
   String? _notice;
   bool _loading = false;
+  bool _refreshPending = false;
+  bool _editing = false;
+  StreamSubscription<int>? _changes;
   bool _showArchived = false;
   final _collapsed = <String>{};
   final _scroll = ScrollController();
@@ -42,6 +47,7 @@ class _CategoryTreeScreenState extends State<CategoryTreeScreen> {
 
   @override
   void dispose() {
+    _changes?.cancel();
     _scroll.dispose();
     _createFocus.dispose();
     for (final node in _focus.values) {
@@ -51,7 +57,10 @@ class _CategoryTreeScreenState extends State<CategoryTreeScreen> {
   }
 
   Future<void> _refresh() async {
-    if (_loading) return;
+    if (_loading) {
+      _refreshPending = true;
+      return;
+    }
     final offset = _scroll.hasClients ? _scroll.offset : 0.0;
     setState(() {
       _loading = true;
@@ -59,8 +68,17 @@ class _CategoryTreeScreenState extends State<CategoryTreeScreen> {
     });
     try {
       final service = await widget.loadManagement();
+      if (!mounted) return;
+      _changes ??= service.invalidation.changes.listen((_) {
+        _notice = null;
+        if (_editing) {
+          _refreshPending = true;
+        } else {
+          unawaited(_refresh());
+        }
+      });
       final items = await service.list();
-      if (mounted) setState(() => _items = items);
+      if (mounted && !_refreshPending) setState(() => _items = items);
     } catch (e) {
       if (mounted) {
         setState(
@@ -72,6 +90,10 @@ class _CategoryTreeScreenState extends State<CategoryTreeScreen> {
     } finally {
       if (mounted) {
         setState(() => _loading = false);
+        if (_refreshPending) {
+          _refreshPending = false;
+          unawaited(_refresh());
+        }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _scroll.hasClients) {
             _scroll.jumpTo(offset.clamp(0.0, _scroll.position.maxScrollExtent));
@@ -82,7 +104,14 @@ class _CategoryTreeScreenState extends State<CategoryTreeScreen> {
   }
 
   Future<void> _edit(String? id) async {
-    final saved = await widget.onOpenEditor(id);
+    _editing = true;
+    CategoryDetails? result;
+    try {
+      result = await widget.onOpenEditor(id);
+    } finally {
+      _editing = false;
+    }
+    final saved = result;
     if (!mounted) return;
     if (saved != null) {
       setState(() {
@@ -100,16 +129,36 @@ class _CategoryTreeScreenState extends State<CategoryTreeScreen> {
               .parentId;
         }
       });
+    }
+    if (saved != null || _refreshPending) {
+      _refreshPending = false;
       await _refresh();
     }
     if (!mounted) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    final focus = saved == null && id == null
+        ? _createFocus
+        : _focus['edit-${saved?.node.id ?? id}'];
+    void restoreFocus() {
       if (!mounted) return;
-      final focus = saved == null && id == null
-          ? _createFocus
-          : _focus['edit-${saved?.node.id ?? id}'];
-      focus?.requestFocus();
-    });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) focus?.requestFocus();
+      });
+      // La lectura puede acabar después del último frame de la transición.
+      WidgetsBinding.instance.scheduleFrame();
+    }
+
+    final animation = ModalRoute.of(context)?.secondaryAnimation;
+    if (animation != null && animation.status != AnimationStatus.dismissed) {
+      void afterReturn(AnimationStatus status) {
+        if (status != AnimationStatus.dismissed) return;
+        animation.removeStatusListener(afterReturn);
+        restoreFocus();
+      }
+
+      animation.addStatusListener(afterReturn);
+    } else {
+      restoreFocus();
+    }
   }
 
   List<CategoryDetails> get _visible {

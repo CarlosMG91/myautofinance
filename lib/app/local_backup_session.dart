@@ -24,6 +24,8 @@ class LocalBackupSession {
       activeAvailable: false,
       retryStartup: open,
     );
+    // La recuperación puede reemplazar el catálogo sin pasar por gestión.
+    controller.addListener(categoryInvalidation.invalidate);
   }
 
   final LocalDatabaseStore store;
@@ -32,9 +34,12 @@ class LocalBackupSession {
     onRecoveryRequired: controller.retryOpen,
   );
   late final LocalBackupController controller;
+  final categoryInvalidation = CategoryReadInvalidation();
 
-  Future<CategoryManagement> categories() async =>
-      createCategoryManagement(database: await store.open());
+  Future<CategoryManagement> categories() async => createCategoryManagement(
+    database: await store.open(),
+    invalidation: categoryInvalidation,
+  );
 
   Future<bool> open() async {
     try {

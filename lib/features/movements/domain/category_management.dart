@@ -1,5 +1,6 @@
 import '../../../core/persistence/unit_of_work.dart';
 import 'category_repository.dart';
+import 'category_read_invalidation.dart';
 
 /// Datos para gestión y selectores. El tipo efectivo procede de la raíz actual.
 final class CategoryDetails {
@@ -26,7 +27,10 @@ final class CategoryManagement {
     required this._repository,
     required this._unitOfWork,
     this._errorMessage,
-  });
+    CategoryReadInvalidation? invalidation,
+  }) : invalidation = invalidation ?? CategoryReadInvalidation();
+
+  final CategoryReadInvalidation invalidation;
 
   final CategoryRepository _repository;
   final UnitOfWork _unitOfWork;
@@ -137,8 +141,16 @@ final class CategoryManagement {
         return _details(_find(id, nodes), nodes);
       });
 
-  Future<T> _mutate<T>(Future<T> Function() action) =>
-      _guard(() => _unitOfWork.run(action));
+  Future<T> _mutate<T>(Future<T> Function() action) => _guard(() async {
+    final before = await _unitOfWork.readState();
+    final result = await _unitOfWork.run(action);
+    final after = await _unitOfWork.readState();
+    if (before.datasetId != after.datasetId ||
+        before.revision != after.revision) {
+      invalidation.invalidate();
+    }
+    return result;
+  });
 
   Future<T> _guard<T>(Future<T> Function() action) async {
     try {
