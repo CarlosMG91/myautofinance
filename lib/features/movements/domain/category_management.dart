@@ -54,6 +54,12 @@ final class CategoryManagement {
     return _details(_find(id, nodes), nodes);
   });
 
+  Future<bool> canChangeRootType(String id) => _guard(() async {
+    final node = await _repository.get(id);
+    if (node == null) throw const CategoryFailure('La categoría no existe.');
+    return node.parentId == null && !await _repository.hasReferences(id);
+  });
+
   Future<CategoryDetails> create({
     required String name,
     String? parentId,

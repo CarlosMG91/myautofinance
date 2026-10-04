@@ -19,6 +19,8 @@ abstract final class AppRoutes {
   static const error = '/error';
   static const drive = '/drive';
   static const localBackups = '/copias-locales';
+  static const categories = '/categorias';
+  static const newCategory = '/categorias/nueva';
 
   static const destinations = <TechnicalDestination>[
     TechnicalDestination(

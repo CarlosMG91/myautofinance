@@ -4,6 +4,8 @@ import 'data/sqlite/local_database_store.dart';
 import 'local_backup_factory.dart';
 import 'drive_ui_factory.dart';
 import '../features/synchronization/presentation/drive_controller.dart';
+import '../features/movements/movements.dart';
+import 'category_management_factory.dart';
 
 /// Una sola conexión y los servicios locales de la instalación, sin OAuth.
 class LocalBackupSession {
@@ -30,6 +32,9 @@ class LocalBackupSession {
     onRecoveryRequired: controller.retryOpen,
   );
   late final LocalBackupController controller;
+
+  Future<CategoryManagement> categories() async =>
+      createCategoryManagement(database: await store.open());
 
   Future<bool> open() async {
     try {

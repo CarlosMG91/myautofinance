@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import 'package:drift/drift.dart' show Variable;
 
 import '../../../features/movements/movements.dart';
 import 'local_database.dart';
@@ -44,6 +45,28 @@ WITH RECURSIVE tree(id,parent_id,name,income,archived,depth) AS (
       if (node.id == id) return node;
     }
     return null;
+  }
+
+  @override
+  Future<bool> hasReferences(String id) async {
+    // Identidad validada antes de la consulta; no filtrar por mes ni archivo.
+    if (await get(id) == null) {
+      throw const CategoryFailure('La categoría no existe.');
+    }
+    final rows = await database
+        .customSelect(
+          '''
+WITH RECURSIVE branch(id) AS (
+ SELECT id FROM categories WHERE id=? UNION ALL
+ SELECT c.id FROM categories c JOIN branch b ON c.parent_id=b.id
+) SELECT 1 FROM movements WHERE category_id IN (SELECT id FROM branch)
+ UNION ALL SELECT 1 FROM budgets WHERE category_id IN (SELECT id FROM branch)
+ LIMIT 1
+''',
+          variables: [Variable.withString(id)],
+        )
+        .get();
+    return rows.isNotEmpty;
   }
 
   Future<void> _validate(

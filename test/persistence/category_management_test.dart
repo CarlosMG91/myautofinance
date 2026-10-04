@@ -163,6 +163,11 @@ void main() {
       final movements = SqliteMovementRepository(db);
       final budgets = SqliteBudgetRepository(db);
       final real = await movements.create(data);
+      final queriedRevision = await revision();
+      expect(await management.canChangeRootType(income.node.id), isFalse);
+      expect(await management.canChangeRootType(child.node.id), isFalse);
+      expect(await management.canChangeRootType(expense.node.id), isTrue);
+      expect(await revision(), queriedRevision);
       await budgets.create(
         BudgetInput(
           month: BudgetMonth(2026, 1),
@@ -180,6 +185,8 @@ void main() {
       expect(result.path, 'Gastos / Impuesto');
       expect(result.node.isIncome, isFalse);
       expect(result.node.id, child.node.id);
+      expect(await management.canChangeRootType(income.node.id), isTrue);
+      expect(await management.canChangeRootType(expense.node.id), isFalse);
       expect(await revision(), before + 1);
       expect(await rows('movements'), beforeReal);
       expect(await rows('budgets'), beforeBudget);

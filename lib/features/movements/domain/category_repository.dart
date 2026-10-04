@@ -45,6 +45,9 @@ final class CategoryBudgetConflict {
 abstract interface class CategoryRepository {
   Future<List<CategoryNode>> list({bool includeArchived = true});
   Future<CategoryNode?> get(String id);
+
+  /// Incluye referencias históricas y archivadas de toda la rama.
+  Future<bool> hasReferences(String id);
   Future<CategoryNode> create({
     required String name,
     String? parentId,
