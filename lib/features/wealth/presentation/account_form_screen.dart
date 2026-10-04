@@ -5,6 +5,7 @@ import '../domain/account_repository.dart';
 import '../domain/wealth_management.dart';
 import 'account_catalog_screen.dart';
 import 'wealth_controller.dart';
+import 'liquidity_form_screen.dart';
 
 class AccountFormScreen extends StatefulWidget {
   const AccountFormScreen({
@@ -265,6 +266,76 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     }
   }
 
+  Future<void> _editLiquidity(bool historical) async {
+    if (_locked || _editing || _old == null || _kind == AccountKind.debt) {
+      return;
+    }
+    final saved = await Navigator.of(context).push<AccountDetails>(
+      MaterialPageRoute(
+        builder: (_) => LiquidityFormScreen(
+          details: _old!,
+          initialMonth: widget.initialMonth,
+          loadManagement: widget.loadManagement,
+          historical: historical,
+        ),
+      ),
+    );
+    if (!mounted || saved == null) return;
+    setState(() => _old = saved);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Liquidez guardada')));
+  }
+
+  Widget _history() {
+    final periods = _old!.history;
+    String month(Month value) => value.value.substring(0, 7);
+    String end(LiquidityPeriod p) =>
+        p.until == null ? 'Fin de vigencia' : month(p.until!);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 600) {
+          return Table(
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            children: [
+              const TableRow(
+                children: [
+                  Text('Liquidez'),
+                  Text('Desde (incluido)'),
+                  Text('Hasta (excluido)'),
+                ],
+              ),
+              for (final p in periods)
+                TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(liquidityLabel(p.liquidity)),
+                    ),
+                    Text(month(p.from)),
+                    Text(end(p)),
+                  ],
+                ),
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final p in periods)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    '${liquidityLabel(p.liquidity)} · desde ${month(p.from)} (incluido) hasta ${end(p)} (excluido)',
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _field(
     TextEditingController controller,
     FocusNode focus,
@@ -417,9 +488,27 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
                         if (_old != null && _kind != AccountKind.debt) ...[
                           const SizedBox(height: 16),
                           const Text('Historial de liquidez'),
-                          for (final period in _old!.history)
-                            Text(
-                              '${liquidityLabel(period.liquidity)} · desde ${period.from.value.substring(0, 7)} hasta ${period.until?.value.substring(0, 7) ?? 'fin abierto'} (fin exclusivo)',
+                          _history(),
+                          if (!_editing)
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                TextButton(
+                                  onPressed: _locked
+                                      ? null
+                                      : () => _editLiquidity(false),
+                                  child: const Text('Cambiar liquidez'),
+                                ),
+                                TextButton(
+                                  onPressed: _locked
+                                      ? null
+                                      : () => _editLiquidity(true),
+                                  child: const Text(
+                                    'Corregir liquidez histórica',
+                                  ),
+                                ),
+                              ],
                             ),
                         ],
                         if (_error != null)

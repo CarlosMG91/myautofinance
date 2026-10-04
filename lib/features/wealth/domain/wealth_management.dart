@@ -26,6 +26,26 @@ final class WealthManagement {
 
   Future<List<AccountRecord>> catalog() => accounts.list();
 
+  /// Confirma la escritura y devuelve el historial en la misma transacción.
+  Future<AccountDetails> changeLiquidity(
+    String id,
+    Month from,
+    Liquidity liquidity,
+  ) => _unitOfWork.run(() async {
+    await accounts.changeLiquidity(id, from, liquidity);
+    return details(id);
+  });
+
+  Future<AccountDetails> correctHistoricalLiquidity(
+    String id,
+    Month from,
+    Month? until,
+    Liquidity liquidity,
+  ) => _unitOfWork.run(() async {
+    await accounts.correctHistoricalLiquidity(id, from, until, liquidity);
+    return details(id);
+  });
+
   Future<WealthReading> readMonth(Month month) async =>
       WealthReading.fromSnapshot(await photos.read(month));
 
