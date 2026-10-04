@@ -129,7 +129,7 @@ final class SqliteMovementRepository implements MovementRepository {
         data.concept,
         data.amountCents,
         data.categoryId,
-        data.discretion,
+        normalizeMovementDiscretion(data.discretion),
         rowId,
         now,
         now,
@@ -177,7 +177,7 @@ final class SqliteMovementRepository implements MovementRepository {
         await _require(id);
         await database.customStatement(
           'UPDATE movements SET discretion=?,updated_at=? WHERE id=?',
-          [discretion, movementTimestamp(), id],
+          [normalizeMovementDiscretion(discretion), movementTimestamp(), id],
         );
       });
   @override
