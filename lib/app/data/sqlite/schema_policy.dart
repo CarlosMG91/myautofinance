@@ -1,6 +1,8 @@
 import 'package:sqlite3/common.dart';
 
 import 'database_failure.dart';
+import 'concept_search_key.dart';
+import 'movement_subtotal.dart';
 
 const localSchemaVersion = 7;
 // ASCII AFNC: identifica este formato, independientemente del dataset_id.
@@ -180,6 +182,17 @@ void validateIntegrity(CommonDatabase db) {
 
 /// Drift llama setup en cada conexión SQLite, antes de crear/migrar.
 void configureConnection(CommonDatabase db) {
+  db.createFunction(
+    functionName: 'movement_search_key',
+    argumentCount: const AllowedArgumentCount(1),
+    deterministic: true,
+    function: (arguments) => conceptSearchKey(arguments[0] as String),
+  );
+  db.createAggregateFunction(
+    functionName: 'movement_subtotal',
+    argumentCount: const AllowedArgumentCount(1),
+    function: const MovementSubtotal(),
+  );
   final objects = db.select(
     "SELECT name FROM sqlite_master WHERE name NOT GLOB 'sqlite_*'",
   );

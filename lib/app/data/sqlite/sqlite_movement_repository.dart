@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../features/movements/movements.dart';
 import 'local_database.dart';
+import 'concept_search_key.dart';
 
 String movementTimestamp() => DateTime.fromMillisecondsSinceEpoch(
   DateTime.now().millisecondsSinceEpoch,
@@ -45,23 +46,16 @@ final class SqliteMovementRepository implements MovementRepository {
     ValueDate? until,
     String? categoryId,
   ) async {
-    final args = <Variable>[Variable(from.value)];
-    final clauses = ['m.value_date>=?'];
-    if (until != null) {
-      clauses.add('m.value_date<?');
-      args.add(Variable(until.value));
-    }
-    if (categoryId != null) {
-      clauses.add('''m.category_id IN (WITH RECURSIVE branch(id) AS (
-SELECT id FROM categories WHERE id=?
-UNION ALL SELECT c.id FROM categories c JOIN branch b ON c.parent_id=b.id
-) SELECT id FROM branch)''');
-      args.add(Variable(categoryId));
-    }
+    final filter = _filter(
+      from: from,
+      until: until,
+      categoryId: categoryId,
+      categoryScope: MovementCategoryScope.branch,
+    );
     return (await database
             .customSelect(
-              '$_select WHERE ${clauses.join(' AND ')} ORDER BY m.value_date,m.id',
-              variables: args,
+              '$_select WHERE ${filter.where} ORDER BY m.value_date,m.id',
+              variables: filter.arguments,
             )
             .get())
         .map(_read)
@@ -197,16 +191,94 @@ UNION ALL SELECT c.id FROM categories c JOIN branch b ON c.parent_id=b.id
     required ValueDate? until,
     String? accountId,
     String? categoryId,
+    MovementCategoryScope categoryScope = MovementCategoryScope.direct,
     bool unclassifiedOnly = false,
+    String? concept,
     MovementCursor? after,
     int limit = 100,
   }) async {
-    if (limit < 1 ||
-        limit > 500 ||
-        (until != null && until.compareTo(from) <= 0) ||
+    _validateLimit(limit);
+    final filter = _filter(
+      from: from,
+      until: until,
+      accountId: accountId,
+      categoryId: categoryId,
+      categoryScope: categoryScope,
+      unclassifiedOnly: unclassifiedOnly,
+      concept: concept,
+    );
+    return _pageRecords(filter, after, limit);
+  }
+
+  @override
+  Future<MovementPage> readPage({
+    required ValueDate from,
+    required ValueDate? until,
+    String? accountId,
+    String? categoryId,
+    MovementCategoryScope categoryScope = MovementCategoryScope.direct,
+    bool unclassifiedOnly = false,
+    String? concept,
+    MovementCursor? after,
+    int limit = 100,
+  }) async {
+    _validateLimit(limit);
+    final filter = _filter(
+      from: from,
+      until: until,
+      accountId: accountId,
+      categoryId: categoryId,
+      categoryScope: categoryScope,
+      unclassifiedOnly: unclassifiedOnly,
+      concept: concept,
+    );
+    return database.transaction(() async {
+      // Acumulación exacta: no pierde céntimos ni falla por overflow intermedio
+      // cuando importes de signo contrario dejan el resultado dentro de int64.
+      final subtotal =
+          (await database
+                  .customSelect(
+                    'SELECT movement_subtotal(m.amount_cents) AS subtotal '
+                    'FROM movements m WHERE ${filter.where}',
+                    variables: filter.arguments,
+                  )
+                  .getSingle())
+              .readNullable<int>('subtotal');
+      if (subtotal == null) {
+        throw const MovementFailure('El subtotal excede el rango int64.');
+      }
+      final rows = await _pageRecords(filter, after, limit + 1);
+      final hasMore = rows.length > limit;
+      final visible = hasMore ? rows.sublist(0, limit) : rows;
+      return MovementPage(
+        records: visible,
+        subtotalCents: subtotal,
+        nextCursor: hasMore
+            ? MovementCursor(visible.last.data.valueDate, visible.last.id)
+            : null,
+      );
+    });
+  }
+
+  void _validateLimit(int limit) {
+    if (limit < 1 || limit > 500) {
+      throw const MovementFailure('Tamaño de página inválido.');
+    }
+  }
+
+  _MovementFilter _filter({
+    required ValueDate from,
+    required ValueDate? until,
+    String? accountId,
+    String? categoryId,
+    MovementCategoryScope categoryScope = MovementCategoryScope.direct,
+    bool unclassifiedOnly = false,
+    String? concept,
+  }) {
+    if ((until != null && until.compareTo(from) <= 0) ||
         (until == null && !from.value.startsWith('9999-')) ||
         (unclassifiedOnly && categoryId != null)) {
-      throw const MovementFailure('Rango o paginación inválidos.');
+      throw const MovementFailure('Rango o filtro de categoría inválidos.');
     }
     final clauses = ['m.value_date>=?'];
     final args = <Variable>[Variable(from.value)];
@@ -219,22 +291,53 @@ UNION ALL SELECT c.id FROM categories c JOIN branch b ON c.parent_id=b.id
       args.add(Variable(accountId));
     }
     if (categoryId != null) {
-      clauses.add('m.category_id=?');
+      clauses.add(
+        categoryScope == MovementCategoryScope.direct
+            ? 'm.category_id=?'
+            : '''m.category_id IN (WITH RECURSIVE branch(id) AS (
+SELECT id FROM categories WHERE id=?
+UNION ALL SELECT c.id FROM categories c JOIN branch b ON c.parent_id=b.id
+) SELECT id FROM branch)''',
+      );
       args.add(Variable(categoryId));
     }
     if (unclassifiedOnly) clauses.add('m.category_id IS NULL');
+    if (concept != null && concept.trim().isNotEmpty) {
+      clauses.add('instr(movement_search_key(m.concept),?)>0');
+      args.add(Variable(conceptSearchKey(concept.trim())));
+    }
+    return _MovementFilter(clauses.join(' AND '), args);
+  }
+
+  Future<List<MovementRecord>> _pageRecords(
+    _MovementFilter filter,
+    MovementCursor? after,
+    int limit,
+  ) async {
+    var where = filter.where;
+    final args = [...filter.arguments];
     if (after != null) {
-      clauses.add('(m.value_date,m.id)>(?,?)');
-      args.addAll([Variable(after.valueDate.value), Variable(after.id)]);
+      where += ' AND (m.value_date<? OR (m.value_date=? AND m.id>?))';
+      args.addAll([
+        Variable(after.valueDate.value),
+        Variable(after.valueDate.value),
+        Variable(after.id),
+      ]);
     }
     args.add(Variable(limit));
     return (await database
             .customSelect(
-              '$_select WHERE ${clauses.join(' AND ')} ORDER BY m.value_date,m.id LIMIT ?',
+              '$_select WHERE $where ORDER BY m.value_date DESC,m.id ASC LIMIT ?',
               variables: args,
             )
             .get())
         .map(_read)
         .toList();
   }
+}
+
+final class _MovementFilter {
+  const _MovementFilter(this.where, this.arguments);
+  final String where;
+  final List<Variable> arguments;
 }

@@ -69,6 +69,22 @@ final class MovementCursor {
   final String id;
 }
 
+enum MovementCategoryScope { direct, branch }
+
+/// Una página y el subtotal firmado de todos los resultados filtrados.
+/// Reutilizar el cursor únicamente con los mismos filtros y una base estable.
+final class MovementPage {
+  MovementPage({
+    required List<MovementRecord> records,
+    required this.subtotalCents,
+    required this.nextCursor,
+  }) : records = List.unmodifiable(records);
+
+  final List<MovementRecord> records;
+  final int subtotalCents;
+  final MovementCursor? nextCursor;
+}
+
 abstract interface class MovementRepository {
   /// Lecturas completas, sin límite de paginación. categoryId selecciona
   /// el nodo y toda su rama; null incluye también los no clasificados.
@@ -90,13 +106,33 @@ abstract interface class MovementRepository {
   Future<void> setDiscretion(String id, String? discretion);
   Future<void> delete(String id);
 
-  /// [from, until), orden estable por fecha e identidad. until null para 9999.
+  /// [from, until), fecha descendente y UUID ascendente. until null para 9999.
+  /// Concepto como subcadena literal sin mayúsculas ni marcas Unicode.
+  /// Categoría concreta y unclassifiedOnly son mutuamente excluyentes.
   Future<List<MovementRecord>> list({
     required ValueDate from,
     required ValueDate? until,
     String? accountId,
     String? categoryId,
+    MovementCategoryScope categoryScope = MovementCategoryScope.direct,
     bool unclassifiedOnly = false,
+    String? concept,
+    MovementCursor? after,
+    int limit = 100,
+  });
+
+  /// Página y subtotal en una misma transacción de lectura. El subtotal ignora
+  /// cursor y límite, vale cero sin resultados y falla si desborda int64.
+  /// nextCursor es null al terminar. No mantiene un snapshot entre llamadas:
+  /// tras escrituras o cambios de filtros se debe reiniciar la lectura.
+  Future<MovementPage> readPage({
+    required ValueDate from,
+    required ValueDate? until,
+    String? accountId,
+    String? categoryId,
+    MovementCategoryScope categoryScope = MovementCategoryScope.direct,
+    bool unclassifiedOnly = false,
+    String? concept,
     MovementCursor? after,
     int limit = 100,
   });
