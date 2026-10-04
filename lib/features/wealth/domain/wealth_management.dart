@@ -1,6 +1,7 @@
 import '../../../core/persistence/unit_of_work.dart';
 import 'account_repository.dart';
 import 'wealth_repository.dart';
+import 'wealth_reading.dart';
 
 final class AccountDetails {
   AccountDetails({
@@ -24,6 +25,14 @@ final class WealthManagement {
   final UnitOfWork _unitOfWork;
 
   Future<List<AccountRecord>> catalog() => accounts.list();
+
+  Future<WealthReading> readMonth(Month month) async =>
+      WealthReading.fromSnapshot(await photos.read(month));
+
+  /// Doce lecturas independientes; el patrimonio no tiene total anual.
+  Future<List<WealthReading>> readYear(int year) async => List.unmodifiable(
+    (await photos.readYear(year)).map(WealthReading.fromSnapshot),
+  );
 
   Future<AccountDetails> create({
     required String name,

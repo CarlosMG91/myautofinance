@@ -1,6 +1,7 @@
 import '../domain/wealth_management.dart';
 import '../domain/account_repository.dart';
 import '../domain/wealth_repository.dart';
+import '../domain/wealth_reading.dart';
 
 typedef WealthManagementLoader = Future<WealthManagement> Function();
 
@@ -17,4 +18,9 @@ final class WealthController {
       (await _loadManagement()).photos.read(month);
   Future<List<WealthSnapshot>> year(int year) async =>
       (await _loadManagement()).photos.readYear(year);
+
+  Future<WealthReading> readMonth(Month month) async =>
+      (await _loadManagement()).readMonth(month);
+  Future<List<WealthReading>> readYear(int year) async =>
+      (await _loadManagement()).readYear(year);
 }
