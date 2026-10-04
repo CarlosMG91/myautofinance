@@ -10,6 +10,8 @@ import '../../features/movements/movements.dart';
 import '../../features/movements/presentation/category_tree_screen.dart';
 import '../../features/movements/presentation/category_form_screen.dart';
 import '../../features/wealth/wealth.dart';
+import '../../features/wealth/presentation/account_catalog_screen.dart';
+import '../../features/wealth/presentation/account_form_screen.dart';
 import 'wealth_route.dart';
 
 /// El selector conserva su propio borrador y recibe solo el alta confirmada.
@@ -130,79 +132,131 @@ class _WealthRouteState extends State<_WealthRoute> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Patrimonio')),
-    body: SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: FutureBuilder<Object?>(
-          future: data,
-          builder: (context, snapshot) {
-            void back() {
-              final navigator = Navigator.of(context);
-              if (navigator.canPop()) {
-                navigator.pop();
-              } else {
-                final origin = widget.settings.arguments;
-                final month = madridMonth(DateTime.now()).value;
-                navigator.pushReplacementNamed(
-                  origin is _BackupOrigin
-                      ? origin.route
-                      : '${AppRoutes.monthlyStatus}?a=${month.substring(0, 4)}&m=${month.substring(5, 7)}',
-                );
-              }
-            }
+  Widget build(BuildContext context) {
+    final uri = Uri.tryParse(widget.settings.name ?? '');
+    void back([Object? result]) {
+      final navigator = Navigator.of(context);
+      if (navigator.canPop()) {
+        navigator.pop(result);
+      } else {
+        final origin = widget.settings.arguments;
+        navigator.pushReplacementNamed(
+          origin is _BackupOrigin ? origin.route : AppRoutes.monthlyStatus,
+        );
+      }
+    }
 
-            final value = snapshot.data;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (snapshot.connectionState != ConnectionState.done)
-                  const LinearProgressIndicator()
-                else if (snapshot.hasError)
-                  const Text('No se pudo abrir este detalle')
-                else ...[
-                  const Text('Consulta de Patrimonio'),
-                  if (value is List<AccountRecord>)
-                    for (final account in value)
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pushNamed(
-                          '${AppRoutes.accounts}/${Uri.encodeComponent(account.id)}',
-                          arguments: widget.settings.arguments,
+    if (uri?.path == AppRoutes.accounts) {
+      return AccountCatalogScreen(
+        controller: WealthController(loadManagement: widget.loadManagement),
+        onReturn: back,
+        onOpen: (id) async {
+          final saved = await Navigator.of(context).pushNamed<Object?>(
+            id == null
+                ? AppRoutes.newAccount
+                : '${AppRoutes.accounts}/${Uri.encodeComponent(id)}',
+            arguments: widget.settings.arguments,
+          );
+          if (context.mounted && saved is AccountDetails) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text('Ficha guardada')));
+          }
+        },
+      );
+    }
+    if (uri?.pathSegments.length == 3 && uri?.pathSegments[1] == 'fichas') {
+      return AccountFormScreen(
+        loadManagement: widget.loadManagement,
+        initialMonth: madridMonth(DateTime.now()),
+        accountId: uri!.path == AppRoutes.newAccount
+            ? null
+            : uri.pathSegments.last,
+        onReturn: back,
+        onSaved: (saved) {
+          if (Navigator.of(context).canPop()) {
+            back(saved);
+          } else {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.accounts);
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text('Ficha guardada')));
+          }
+        },
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Patrimonio')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: FutureBuilder<Object?>(
+            future: data,
+            builder: (context, snapshot) {
+              void back() {
+                final navigator = Navigator.of(context);
+                if (navigator.canPop()) {
+                  navigator.pop();
+                } else {
+                  final origin = widget.settings.arguments;
+                  final month = madridMonth(DateTime.now()).value;
+                  navigator.pushReplacementNamed(
+                    origin is _BackupOrigin
+                        ? origin.route
+                        : '${AppRoutes.monthlyStatus}?a=${month.substring(0, 4)}&m=${month.substring(5, 7)}',
+                  );
+                }
+              }
+
+              final value = snapshot.data;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (snapshot.connectionState != ConnectionState.done)
+                    const LinearProgressIndicator()
+                  else if (snapshot.hasError)
+                    const Text('No se pudo abrir este detalle')
+                  else ...[
+                    const Text('Consulta de Patrimonio'),
+                    if (value is List<AccountRecord>)
+                      for (final account in value)
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pushNamed(
+                            '${AppRoutes.accounts}/${Uri.encodeComponent(account.id)}',
+                            arguments: widget.settings.arguments,
+                          ),
+                          child: Text(account.name),
                         ),
-                        child: Text(account.name),
-                      ),
-                  if (value is AccountDetails) ...[
-                    Text(value.account.name),
-                    Text('Alta: ${value.account.activeFrom.value}'),
-                    if (value.account.activeThrough != null)
-                      Text('Baja: ${value.account.activeThrough!.value}'),
-                    Text('Periodos de liquidez: ${value.history.length}'),
+                    if (value is AccountDetails) ...[
+                      Text(value.account.name),
+                      Text('Alta: ${value.account.activeFrom.value}'),
+                      if (value.account.activeThrough != null)
+                        Text('Baja: ${value.account.activeThrough!.value}'),
+                      Text('Periodos de liquidez: ${value.history.length}'),
+                    ],
+                    if (value is WealthSnapshot) ...[
+                      Text('Foto del día 1 · ${value.month.value}'),
+                      Text(switch (value.status) {
+                        WealthSnapshotStatus.absent =>
+                          'Sin dato: falta foto patrimonial',
+                        WealthSnapshotStatus.incomplete =>
+                          'Sin dato: foto patrimonial incompleta',
+                        WealthSnapshotStatus.complete => 'Foto completa',
+                      }),
+                      for (final account in value.pending)
+                        Text('Pendiente: ${account.name}'),
+                    ],
                   ],
-                  if (value is WealthSnapshot) ...[
-                    Text('Foto del día 1 · ${value.month.value}'),
-                    Text(switch (value.status) {
-                      WealthSnapshotStatus.absent =>
-                        'Sin dato: falta foto patrimonial',
-                      WealthSnapshotStatus.incomplete =>
-                        'Sin dato: foto patrimonial incompleta',
-                      WealthSnapshotStatus.complete => 'Foto completa',
-                    }),
-                    for (final account in value.pending)
-                      Text('Pendiente: ${account.name}'),
-                  ],
+                  TextButton(
+                    onPressed: back,
+                    child: const Text('Volver al origen'),
+                  ),
                 ],
-                TextButton(
-                  onPressed: back,
-                  child: const Text('Volver al origen'),
-                ),
-              ],
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// La ruta original queda en la pila: conserva periodo, scroll y foco.

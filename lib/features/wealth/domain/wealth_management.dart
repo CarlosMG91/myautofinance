@@ -25,6 +25,44 @@ final class WealthManagement {
 
   Future<List<AccountRecord>> catalog() => accounts.list();
 
+  Future<AccountDetails> create({
+    required String name,
+    required AccountKind kind,
+    required Month activeFrom,
+    Month? activeThrough,
+    Liquidity? liquidity,
+  }) => _unitOfWork.run(() async {
+    final account = await accounts.create(
+      name: name.trim(),
+      kind: kind,
+      activeFrom: activeFrom,
+      activeThrough: activeThrough,
+      liquidity: liquidity,
+    );
+    return details(account.id);
+  });
+
+  /// Nombre y baja se confirman juntos; un rechazo conserva toda la ficha.
+  Future<AccountDetails> edit(
+    String id, {
+    required String name,
+    required Month? activeThrough,
+  }) => _unitOfWork.run(() async {
+    final before = await details(id);
+    if (before.account.activeThrough?.value != activeThrough?.value) {
+      if (before.account.activeThrough != null || activeThrough == null) {
+        throw const AccountFailure(
+          'Una ficha cerrada conserva su mes de baja.',
+        );
+      }
+      await accounts.close(id, activeThrough);
+    }
+    if (before.account.name != name.trim()) {
+      await accounts.rename(id, name.trim());
+    }
+    return details(id);
+  });
+
   /// Ficha e historial se leen en una misma transacción, también tras su baja.
   Future<AccountDetails> details(String id) => _unitOfWork.run(() async {
     final account = await accounts.get(id);
