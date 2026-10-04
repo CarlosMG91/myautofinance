@@ -12,6 +12,7 @@ import '../../features/movements/presentation/category_form_screen.dart';
 import '../../features/wealth/wealth.dart';
 import '../../features/wealth/presentation/account_catalog_screen.dart';
 import '../../features/wealth/presentation/account_form_screen.dart';
+import '../../features/wealth/presentation/wealth_photo_screen.dart';
 import 'wealth_route.dart';
 
 /// El selector conserva su propio borrador y recibe solo el alta confirmada.
@@ -121,7 +122,7 @@ class _WealthRoute extends StatefulWidget {
 }
 
 class _WealthRouteState extends State<_WealthRoute> {
-  late final Future<Object?> data = _load();
+  late Future<Object?> data = _load();
 
   Future<Object?> _load() async {
     final route = WealthRoute.parse(
@@ -144,6 +145,71 @@ class _WealthRouteState extends State<_WealthRoute> {
           origin is _BackupOrigin ? origin.route : AppRoutes.monthlyStatus,
         );
       }
+    }
+
+    if (uri?.path == AppRoutes.wealthPhoto) {
+      final WealthRoute route;
+      try {
+        route = WealthRoute.parse(
+          widget.settings.name!,
+          defaultMonth: madridMonth(DateTime.now()),
+        );
+      } on AccountFailure catch (e) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('Patrimonio')),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('No se pudo abrir este detalle'),
+                  Text(e.message),
+                  TextButton(
+                    onPressed: back,
+                    child: const Text('Volver al origen'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+      final period =
+          'a=${route.month!.value.substring(0, 4)}&m=${route.month!.value.substring(5, 7)}';
+      return WealthPhotoScreen(
+        controller: WealthController(loadManagement: widget.loadManagement),
+        month: route.month!,
+        onReturn: () {
+          if (Navigator.of(context).canPop()) {
+            back();
+          } else {
+            Navigator.of(context).pushReplacementNamed(
+              '${AppRoutes.wealth}?$period',
+              arguments: widget.settings.arguments,
+            );
+          }
+        },
+        onSaved: (saved) {
+          if (Navigator.of(context).canPop()) {
+            back(saved);
+          } else {
+            Navigator.of(context).pushReplacementNamed(
+              '${AppRoutes.wealth}?$period',
+              arguments: widget.settings.arguments,
+            );
+            _photoNotice(context, saved);
+          }
+        },
+        destinations: {
+          for (final destination in AppRoutes.destinations)
+            destination.path: destination.label,
+        },
+        onNavigate: (path) => Navigator.of(context).pushReplacementNamed(
+          '$path?$period',
+          arguments: widget.settings.arguments,
+        ),
+      );
     }
 
     if (uri?.path == AppRoutes.accounts) {
@@ -243,6 +309,25 @@ class _WealthRouteState extends State<_WealthRoute> {
                       }),
                       for (final account in value.pending)
                         Text('Pendiente: ${account.name}'),
+                      FilledButton(
+                        onPressed: () async {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          final month = value.month.value;
+                          final saved = await Navigator.of(context)
+                              .pushNamed<Object?>(
+                                '${AppRoutes.wealthPhoto}?a=${month.substring(0, 4)}&m=${month.substring(5, 7)}',
+                                arguments: widget.settings.arguments,
+                              );
+                          if (!context.mounted || saved is! WealthSnapshot) {
+                            return;
+                          }
+                          setState(() {
+                            data = _load();
+                          });
+                          _photoNotice(context, saved);
+                        },
+                        child: const Text('Registrar / editar foto'),
+                      ),
                     ],
                   ],
                   TextButton(
@@ -257,6 +342,18 @@ class _WealthRouteState extends State<_WealthRoute> {
       ),
     );
   }
+}
+
+void _photoNotice(BuildContext context, WealthSnapshot saved) {
+  final status = switch (saved.status) {
+    WealthSnapshotStatus.absent => 'Sin dato: falta foto patrimonial',
+    WealthSnapshotStatus.incomplete =>
+      'Foto incompleta. Pendientes: ${saved.pending.map((a) => a.name).join(', ')}',
+    WealthSnapshotStatus.complete => 'Foto completa',
+  };
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Foto guardada · ${saved.month.value}. $status')),
+  );
 }
 
 /// La ruta original queda en la pila: conserva periodo, scroll y foco.

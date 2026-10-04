@@ -19,6 +19,11 @@ final class WealthController {
   Future<List<WealthSnapshot>> year(int year) async =>
       (await _loadManagement()).photos.readYear(year);
 
+  Future<WealthSnapshot> savePhoto(
+    Month month,
+    Map<String, int?> draft,
+  ) async => (await _loadManagement()).savePhoto(month, draft);
+
   Future<WealthReading> readMonth(Month month) async =>
       (await _loadManagement()).readMonth(month);
   Future<List<WealthReading>> readYear(int year) async =>

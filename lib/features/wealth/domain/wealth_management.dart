@@ -26,6 +26,41 @@ final class WealthManagement {
 
   Future<List<AccountRecord>> catalog() => accounts.list();
 
+  /// El borrador contiene todas las fichas del mes; null deja pendiente.
+  /// Reutiliza las operaciones de EP-004 bajo una única confirmación.
+  Future<WealthSnapshot> savePhoto(Month month, Map<String, int?> draft) {
+    final values = Map<String, int?>.unmodifiable(draft);
+    return _unitOfWork.run(() async {
+      final before = await photos.read(month);
+      final activeIds = {
+        ...before.values.map((value) => value.account.id),
+        ...before.pending.map((account) => account.id),
+      };
+      if (activeIds.length != values.length ||
+          !activeIds.every(values.containsKey)) {
+        throw const WealthFailure(
+          'Las fichas vigentes han cambiado. Vuelve a abrir la foto antes de guardar.',
+        );
+      }
+      if (values.values.any((amount) => amount != null && amount < 0)) {
+        throw const WealthFailure('Introduce un valor de 0,00 € o más');
+      }
+      final registered = {
+        for (final value in before.values) value.account.id: value.amountCents,
+      };
+      for (final entry in values.entries) {
+        if (entry.value == registered[entry.key]) continue;
+        if (entry.value == null) {
+          await photos.deleteValue(month, entry.key);
+        } else {
+          await photos.setValue(month, entry.key, entry.value!);
+        }
+      }
+      // Un fallo al releer también revierte todas las escrituras.
+      return photos.read(month);
+    });
+  }
+
   /// Confirma la escritura y devuelve el historial en la misma transacción.
   Future<AccountDetails> changeLiquidity(
     String id,
