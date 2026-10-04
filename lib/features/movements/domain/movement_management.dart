@@ -37,8 +37,8 @@ String? normalizeMovementDiscretion(String? value) {
 
 typedef MovementErrorMessage = String? Function(Object error);
 
-/// Casos individuales para ambas plataformas. Repositorio y UnitOfWork deben
-/// compartir conexión. La cuenta y categoría se revalidan en la persistencia.
+/// Casos individuales y por lote para ambas plataformas. Repositorio y
+/// UnitOfWork deben compartir conexión. Las referencias se revalidan al escribir.
 final class MovementManagement {
   MovementManagement({
     required this._repository,
@@ -131,6 +131,28 @@ final class MovementManagement {
       await _repository.delete(id);
     }),
   );
+
+  Future<void> assignCategory(List<String> ids, String categoryId) =>
+      _guard(() {
+        final selection = MovementSelection(ids);
+        _validateId(categoryId);
+        return _unitOfWork.run(
+          () => _repository.setCategoryBatch(selection.ids, categoryId),
+        );
+      });
+
+  Future<void> removeCategory(List<String> ids) => _guard(() {
+    final selection = MovementSelection(ids);
+    return _unitOfWork.run(
+      () => _repository.setCategoryBatch(selection.ids, null),
+    );
+  });
+
+  /// Invocar únicamente tras confirmar la cantidad y los UUID seleccionados.
+  Future<void> deleteBatch(List<String> ids) => _guard(() {
+    final selection = MovementSelection(ids);
+    return _unitOfWork.run(() => _repository.deleteBatch(selection.ids));
+  });
 
   Future<MovementRecord> _require(String id) async {
     _validateId(id);

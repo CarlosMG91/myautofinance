@@ -69,6 +69,25 @@ final class MovementCursor {
   final String id;
 }
 
+/// Captura exactamente los UUID seleccionados, también para una página visible.
+/// No admite selección vacía ni amplía el alcance mediante filtros.
+final class MovementSelection {
+  MovementSelection(List<String> ids) : ids = List.unmodifiable(ids.toSet()) {
+    if (this.ids.isEmpty) {
+      throw const MovementFailure('Selecciona al menos un movimiento.');
+    }
+    for (final id in this.ids) {
+      if (!RegExp(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      ).hasMatch(id)) {
+        throw const MovementFailure('Identificador de movimiento inválido.');
+      }
+    }
+  }
+
+  final List<String> ids;
+}
+
 enum MovementCategoryScope { direct, branch }
 
 /// Una página y el subtotal firmado de todos los resultados filtrados.
@@ -105,6 +124,18 @@ abstract interface class MovementRepository {
   /// Permite cambiar o retirar expresamente la discrecionalidad.
   Future<void> setDiscretion(String id, String? discretion);
   Future<void> delete(String id);
+
+  /// Lote atómico de UUID explícitos (deduplicados y no vacíos). Revalida todos
+  /// los movimientos y la categoría destino dentro de la transacción. null
+  /// retira la categoría; una categoría archivada no es asignable, ni siquiera
+  /// si ya estaba asignada. Conserva los demás campos y toda la procedencia.
+  /// Cambios efectivos incrementan la revisión una vez; no-op/error, ninguna.
+  Future<void> setCategoryBatch(List<String> ids, String? categoryId);
+
+  /// Invocar tras confirmar cantidad y alcance en la interfaz. Revalida todos
+  /// los UUID y borra solo esos movimientos en una transacción; conserva filas
+  /// y lotes de importación. Un error revierte datos y revisión del lote entero.
+  Future<void> deleteBatch(List<String> ids);
 
   /// [from, until), fecha descendente y UUID ascendente. until null para 9999.
   /// Concepto como subcadena literal sin mayúsculas ni marcas Unicode.

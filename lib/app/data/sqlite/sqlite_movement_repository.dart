@@ -185,6 +185,72 @@ final class SqliteMovementRepository implements MovementRepository {
     await _require(id);
     await database.customStatement('DELETE FROM movements WHERE id=?', [id]);
   });
+
+  @override
+  Future<void> setCategoryBatch(List<String> ids, String? categoryId) {
+    final selection = MovementSelection(ids);
+    return database.writeTransaction(() async {
+      final records = await _requireSelection(selection);
+      if (categoryId != null) {
+        final category = await database
+            .customSelect(
+              'SELECT archived FROM categories WHERE id=?',
+              variables: [Variable(categoryId)],
+            )
+            .getSingleOrNull();
+        if (category == null || category.read<int>('archived') != 0) {
+          throw const MovementFailure(
+            'La categoría no existe o está archivada.',
+          );
+        }
+      }
+      final now = movementTimestamp();
+      for (final record in records) {
+        if (record.data.categoryId == categoryId) continue;
+        final changed = await database.customUpdate(
+          'UPDATE movements SET category_id=?,updated_at=? WHERE id=?',
+          variables: [
+            Variable<String>(categoryId),
+            Variable(now),
+            Variable(record.id),
+          ],
+        );
+        if (changed != 1) {
+          throw const MovementFailure('No se pudo categorizar todo el lote.');
+        }
+      }
+    });
+  }
+
+  @override
+  Future<void> deleteBatch(List<String> ids) {
+    final selection = MovementSelection(ids);
+    return database.writeTransaction(() async {
+      await _requireSelection(selection);
+      for (final id in selection.ids) {
+        final deleted = await database.customUpdate(
+          'DELETE FROM movements WHERE id=?',
+          variables: [Variable(id)],
+        );
+        if (deleted != 1) {
+          throw const MovementFailure('No se pudo borrar todo el lote.');
+        }
+      }
+    });
+  }
+
+  Future<List<MovementRecord>> _requireSelection(
+    MovementSelection selection,
+  ) async {
+    final records = <MovementRecord>[];
+    // Sin IN ni límite de página: el tamaño del lote no depende del límite de
+    // parámetros SQLite. Cada UUID debe seguir existiendo antes de escribir.
+    for (final id in selection.ids) {
+      records.add(await _require(id));
+    }
+    return records;
+  }
+
   @override
   Future<List<MovementRecord>> list({
     required ValueDate from,
