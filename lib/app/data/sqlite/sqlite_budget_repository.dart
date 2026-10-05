@@ -61,7 +61,10 @@ UNION ALL SELECT c.id FROM categories c JOIN income i ON c.parent_id=i.id
     String? previousCategory,
   }) async {
     if (data.concept != null && data.concept!.trim().isEmpty) {
-      throw const BudgetFailure('Concepto vacío.');
+      throw const BudgetFailure(
+        'Concepto vacío.',
+        code: BudgetFailureCode.invalidConcept,
+      );
     }
     final nodes = await database
         .customSelect(
@@ -69,10 +72,18 @@ UNION ALL SELECT c.id FROM categories c JOIN income i ON c.parent_id=i.id
           variables: [Variable(data.categoryId)],
         )
         .get();
-    if (nodes.isEmpty ||
-        (nodes.single.read<int>('archived') == 1 &&
-            previousCategory != data.categoryId)) {
-      throw const BudgetFailure('La categoría no existe o está archivada.');
+    if (nodes.isEmpty) {
+      throw const BudgetFailure(
+        'La categoría no existe.',
+        code: BudgetFailureCode.categoryNotFound,
+      );
+    }
+    if (nodes.single.read<int>('archived') == 1 &&
+        previousCategory != data.categoryId) {
+      throw const BudgetFailure(
+        'La categoría está archivada. Elige una categoría activa.',
+        code: BudgetFailureCode.categoryArchived,
+      );
     }
     final conflicts = await database
         .customSelect(
@@ -82,8 +93,9 @@ WITH RECURSIVE ancestors(id,parent_id) AS (
  UNION ALL SELECT c.id,c.parent_id FROM categories c JOIN ancestors a ON c.id=a.parent_id
 ), descendants(id) AS (
  SELECT ? UNION ALL SELECT c.id FROM categories c JOIN descendants d ON c.parent_id=d.id
-) SELECT b.id FROM budgets b WHERE b.month=? AND b.id<>?
+) SELECT b.id,b.category_id FROM budgets b WHERE b.month=? AND b.id<>?
 AND (b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id FROM descendants))
+ORDER BY b.category_id,b.id
 ''',
           variables: [
             Variable(data.categoryId),
@@ -94,10 +106,50 @@ AND (b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id 
         )
         .get();
     if (conflicts.isNotEmpty) {
-      throw const BudgetFailure(
-        'Ya hay presupuesto en este nodo, un ancestro o un descendiente del mismo mes.',
+      final requestedPath = await _categoryPath(data.categoryId);
+      final context = <BudgetConflict>[];
+      for (final row in conflicts) {
+        final categoryId = row.read<String>('category_id');
+        context.add(
+          BudgetConflict(
+            month: data.month,
+            requestedCategoryId: data.categoryId,
+            requestedPath: requestedPath,
+            existingBudgetId: row.read<String>('id'),
+            existingCategoryId: categoryId,
+            existingPath: await _categoryPath(categoryId),
+          ),
+        );
+      }
+      final duplicate = context.any(
+        (c) => c.existingCategoryId == data.categoryId,
+      );
+      throw BudgetFailure(
+        duplicate
+            ? 'Ya hay una partida en $requestedPath para ${data.month.value.substring(0, 7)}.'
+            : 'No se puede presupuestar $requestedPath en ${data.month.value.substring(0, 7)}: ya hay partidas en ${context.map((c) => c.existingPath).join('; ')}. No se permite presupuestar un padre y sus descendientes en el mismo mes. Corrige o elimina explícitamente las partidas en conflicto.',
+        code: duplicate
+            ? BudgetFailureCode.duplicateCategoryMonth
+            : BudgetFailureCode.ancestorDescendantConflict,
+        conflicts: List.unmodifiable(context),
       );
     }
+  }
+
+  Future<String> _categoryPath(String categoryId) async {
+    final rows = await database
+        .customSelect(
+          '''
+WITH RECURSIVE path(id,parent_id,name,level) AS (
+ SELECT id,parent_id,name,0 FROM categories WHERE id=?
+ UNION ALL SELECT c.id,c.parent_id,c.name,p.level+1
+ FROM categories c JOIN path p ON c.id=p.parent_id
+) SELECT name FROM path ORDER BY level DESC
+''',
+          variables: [Variable(categoryId)],
+        )
+        .get();
+    return rows.map((r) => r.read<String>('name')).join(' / ');
   }
 
   Future<BudgetRecord> _insert(BudgetInput data, String? rowId) async {
@@ -138,7 +190,12 @@ AND (b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id 
   Future<BudgetRecord> edit(String id, BudgetInput data) =>
       database.writeTransaction(() async {
         final old = await get(id);
-        if (old == null) throw const BudgetFailure('La partida no existe.');
+        if (old == null) {
+          throw const BudgetFailure(
+            'La partida no existe.',
+            code: BudgetFailureCode.notFound,
+          );
+        }
         await _validate(
           data,
           excludeId: id,
@@ -161,7 +218,10 @@ AND (b.category_id IN (SELECT id FROM ancestors) OR b.category_id IN (SELECT id 
   @override
   Future<void> delete(String id) => database.writeTransaction(() async {
     if (await get(id) == null) {
-      throw const BudgetFailure('La partida no existe.');
+      throw const BudgetFailure(
+        'La partida no existe.',
+        code: BudgetFailureCode.notFound,
+      );
     }
     await database.customStatement('DELETE FROM budgets WHERE id=?', [id]);
   });
