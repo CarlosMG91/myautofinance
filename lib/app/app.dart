@@ -1,4 +1,5 @@
 import '../features/movements/presentation/movement_list_controller.dart';
+import '../features/budget/presentation/budget_source.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -25,6 +26,7 @@ class AutofinanceApp extends StatelessWidget {
     this.categories,
     this.wealth,
     this.movements,
+    this.budgets,
   });
 
   final AppConfig config;
@@ -36,6 +38,7 @@ class AutofinanceApp extends StatelessWidget {
   final CategoryManagementLoader? categories;
   final WealthManagementLoader? wealth;
   final MovementListLoader? movements;
+  final BudgetLoader? budgets;
 
   /// Entradas técnicas disponibles para conectar las futuras funcionalidades.
   static const modules = applicationModules;
@@ -106,6 +109,7 @@ class AutofinanceApp extends StatelessWidget {
           categories: categoryLoader,
           wealth: wealthLoader,
           movements: movements ?? localSession?.movements,
+          budgets: budgets ?? localSession?.budgets,
         ),
       ],
       onGenerateRoute: (settings) => AppRouter.generateRoute(
@@ -115,6 +119,7 @@ class AutofinanceApp extends StatelessWidget {
         categories: categoryLoader,
         wealth: wealthLoader,
         movements: movements ?? localSession?.movements,
+        budgets: budgets ?? localSession?.budgets,
       ),
     );
   }

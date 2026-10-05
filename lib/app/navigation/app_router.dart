@@ -1,4 +1,6 @@
 import 'movement_list_route.dart';
+import 'budget_route.dart';
+import '../../features/budget/presentation/budget_source.dart';
 import 'movement_editor_route.dart';
 import 'movement_links.dart';
 import 'category_navigation_context.dart';
@@ -32,10 +34,19 @@ abstract final class AppRouter {
     CategoryManagementLoader? categories,
     WealthManagementLoader? wealth,
     MovementListLoader? movements,
+    BudgetLoader? budgets,
   }) {
     Widget page;
     final uri = Uri.tryParse(settings.name ?? '');
-    if (uri?.path == AppRoutes.movements && movements != null) {
+    if (budgets != null &&
+        (uri?.path == AppRoutes.budget ||
+            uri?.path.startsWith('${AppRoutes.budget}/') == true)) {
+      page = BudgetRoute(
+        settings: settings,
+        load: budgets,
+        categories: categories,
+      );
+    } else if (uri?.path == AppRoutes.movements && movements != null) {
       page = MovementListRoute(
         settings: settings,
         load: movements,
