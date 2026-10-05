@@ -137,3 +137,33 @@ Logs locales sin versionar: `.tools/095-journey-reviewed.log`,
 en `.tools/095-quality.log`, `.tools/095-quality-final.log` y
 `.tools/095-quality-delivery.log`. No contienen evidencia de éxito remoto CI;
 la publicación del código no equivale a una ejecución CI correcta.
+
+## Revisión de entrega posterior · 2026-10-05
+
+El checkout ya contenía la implementación completa en `749380b`. Se auditó el
+guion compartido frente a MA-TSK-095 y se contrastaron los logs nativos anteriores:
+Windows profile y Android debug terminaron correctamente. Esas ejecuciones nativas
+no se repitieron en esta revisión; sigue pendiente la prueba en teléfono físico.
+
+Se ejecutaron de nuevo, secuencialmente, con salida 0:
+
+- `check-quality.ps1`: 206 archivos sin cambios de formato, análisis sin
+  incidencias, **1002 pruebas correctas** y las cuatro variantes de arranque.
+  Log local: `.tools/095-quality-recheck.log`.
+- Windows release APP_ENV=test: ejecutable generado en 14,5 segundos.
+  Log local: `.tools/095-build-windows-recheck.log`.
+- Android debug APP_ENV=test: APK de la aplicación generado en 13,9 segundos,
+  con el mismo JDK 17 local mediante JAVA_HOME/GRADLE_OPTS.
+  Log local: `.tools/095-build-android-recheck.log`.
+- Comprobadores EP-001 y mockup EP-010 correctos; `git diff --check` correcto.
+
+Toolchain y lockfile permanecen intactos. La calidad y builds corresponden al
+checkout compartido con los cambios concurrentes descritos arriba. No se acredita
+CI remota. La primera resolución de paquetes dentro del sandbox falló por acceso
+a pub.dev; `check-quality.ps1` resolvió con `--enforce-lockfile` en la ejecución
+autorizada fuera del sandbox.
+
+La consulta directa del remoto confirmó `749380b` en
+`refs/heads/ticket/ma-tsk-071`: los cambios funcionales y artefactos pendientes de
+EP-010 ya estaban publicados. Esta revisión solo añade esta evidencia de entrega;
+los cambios concurrentes de README, EP-007 y EP-008 quedan fuera de su commit.
