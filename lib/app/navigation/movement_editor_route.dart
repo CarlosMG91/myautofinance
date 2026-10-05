@@ -4,14 +4,15 @@ import '../../features/movements/movements.dart';
 import '../../features/movements/presentation/movement_form_screen.dart';
 import '../../features/movements/presentation/movement_list_controller.dart';
 import '../../features/movements/presentation/category_tree_screen.dart';
-import '../../features/wealth/wealth.dart';
 import '../category_selector_navigation.dart';
 import 'app_routes.dart';
 import 'wealth_route.dart';
+import 'movement_links.dart';
 
 class MovementEditorOrigin {
-  const MovementEditorOrigin(this.context);
+  const MovementEditorOrigin(this.context, {this.listRoute});
   final MovementListContext context;
+  final String? listRoute;
 }
 
 class MovementEditorRoute extends StatelessWidget {
@@ -30,12 +31,18 @@ class MovementEditorRoute extends StatelessWidget {
     final uri = Uri.tryParse(settings.name ?? '');
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    String fallback = AppRoutes.monthlyStatus;
     void back([MovementRecord? saved]) {
       final nav = Navigator.of(context);
       if (nav.canPop()) {
         nav.pop(saved);
       } else {
-        nav.pushReplacementNamed(AppRoutes.monthlyStatus);
+        final origin = settings.arguments;
+        nav.pushReplacementNamed(
+          origin is MovementEditorOrigin && origin.listRoute != null
+              ? origin.listRoute!
+              : fallback,
+        );
       }
     }
 
@@ -46,15 +53,18 @@ class MovementEditorRoute extends StatelessWidget {
               uri.queryParameters.containsKey('m')) {
         throw const MovementFailure('Ruta inválida.');
       }
-      final current = madridMonth(DateTime.now());
-      final month = Month(
-        int.parse(uri.queryParameters['a'] ?? current.value.substring(0, 4)),
-        int.parse(uri.queryParameters['m'] ?? current.value.substring(5, 7)),
+      final query = MovementLinks.parse(
+        uri.replace(path: AppRoutes.movements).toString(),
+        defaultMonth: madridMonth(DateTime.now()),
       );
       final origin = settings.arguments is MovementEditorOrigin
           ? (settings.arguments as MovementEditorOrigin).context
           : null;
-      final date = origin?.from ?? ValueDate.parse(month.value);
+      final date = origin?.from ?? query.from;
+      fallback = MovementLinks.list(
+        query,
+        origin: MovementLinks.origin(uri.toString()),
+      );
       final id = uri.pathSegments.last == 'nuevo'
           ? null
           : uri.pathSegments.last;

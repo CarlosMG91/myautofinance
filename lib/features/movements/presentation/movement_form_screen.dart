@@ -116,6 +116,16 @@ class _MovementFormScreenState extends State<MovementFormScreen> {
     _error = null;
   }
 
+  Object? _readIdentity;
+
+  void _validateIdentity(MovementEditorSource source) {
+    if (!identical(_readIdentity, source.identity)) {
+      throw const MovementFailure(
+        'La base local se ha sustituido. El borrador se conserva; vuelve a abrir el movimiento antes de escribir.',
+      );
+    }
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -130,6 +140,7 @@ class _MovementFormScreenState extends State<MovementFormScreen> {
       final categories = await source.categories();
       if (!mounted) return;
       setState(() {
+        _readIdentity = source.identity;
         _old = old;
         _accounts = accounts;
         _categories = categories;
@@ -232,6 +243,7 @@ class _MovementFormScreenState extends State<MovementFormScreen> {
     });
     try {
       final source = await widget.load();
+      _validateIdentity(source);
       final data = _old;
       final saved = data == null
           ? await source.management.create(
@@ -285,7 +297,9 @@ class _MovementFormScreenState extends State<MovementFormScreen> {
       _error = null;
     });
     try {
-      await (await widget.load()).management.delete(_old!.id);
+      final source = await widget.load();
+      _validateIdentity(source);
+      await source.management.delete(_old!.id);
       if (mounted) _exit(widget.onDeleted);
     } catch (e) {
       if (mounted) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../domain/movement_repository.dart';
+import '../domain/category_management.dart';
 import 'movement_list_controller.dart';
 
 class MovementListScreen extends StatefulWidget {
@@ -11,6 +12,7 @@ class MovementListScreen extends StatefulWidget {
     required this.onReturn,
     this.onSelection,
     this.onCreate,
+    this.selectCategory,
     this.navigation,
     this.bottomNavigation,
     this.returnLabel = 'Volver al origen',
@@ -19,6 +21,7 @@ class MovementListScreen extends StatefulWidget {
   final Future<void> Function(String id) onOpen;
   final VoidCallback onReturn;
   final Future<void> Function()? onCreate;
+  final Future<CategoryDetails?> Function()? selectCategory;
 
   /// Entrega UUID y contexto exactos a las acciones de MA-TSK-094.
   final void Function(MovementSelection?, MovementListContext)? onSelection;
@@ -115,12 +118,80 @@ class _MovementListScreenState extends State<MovementListScreen> {
     });
   }
 
+  Future<bool> _confirmBatch(
+    MovementBatchRequest request,
+    MovementBatchAction action,
+    CategoryDetails? category,
+  ) async {
+    final count = request.selection.ids.length;
+    final noun = count == 1 ? 'movimiento' : 'movimientos';
+    final deleting = action == MovementBatchAction.delete;
+    final title = deleting
+        ? 'Borrar $count $noun'
+        : 'Asignar categoría a $count $noun';
+    final focus = FocusManager.instance.primaryFocus;
+    final route = DialogRoute<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        insetPadding: const EdgeInsets.all(16),
+        title: Focus(autofocus: true, child: Text(title)),
+        content: Text(
+          'Solo los UUID seleccionados: ${request.selection.ids.join(', ')}.\n'
+          'Periodo ${request.context.from.value} → ${request.context.until?.value ?? 'fin del calendario'}.\n'
+          '${deleting ? 'El borrado no se puede deshacer en la app. Se conserva la procedencia histórica de importación.' : 'Categoría destino: ${category!.path}. Se conservan los demás campos y la procedencia.'}\n'
+          'Si falla un movimiento, no se modifica ninguno.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(deleting ? 'Confirmar borrado' : 'Asignar categoría'),
+          ),
+        ],
+      ),
+    );
+    final confirmed = await Navigator.of(context).push(route) ?? false;
+    await route.completed;
+    if (mounted && focus?.context != null) focus?.requestFocus();
+    return confirmed;
+  }
+
+  Future<void> _batch(MovementBatchAction action) async {
+    final request = c.beginBatch();
+    if (request == null) return;
+    try {
+      CategoryDetails? category;
+      if (action == MovementBatchAction.assignCategory) {
+        category = await widget.selectCategory!();
+        if (!mounted) return;
+        if (category == null) {
+          c.cancelBatch();
+          return;
+        }
+      }
+      if (action != MovementBatchAction.removeCategory &&
+          !await _confirmBatch(request, action, category)) {
+        c.cancelBatch();
+        return;
+      }
+      if (!mounted) return;
+      await c.executeBatch(request, action, categoryId: category?.node.id);
+    } catch (failure) {
+      c.rejectBatch(failure);
+    }
+  }
+
   double get _controlWidth =>
       MediaQuery.sizeOf(context).width < 600 ? double.infinity : 260;
 
   Widget _field(TextEditingController controller, String label) => SizedBox(
     width: _controlWidth,
     child: TextField(
+      enabled: !c.locked,
       controller: controller,
       onSubmitted: (_) => _apply(),
       decoration: InputDecoration(labelText: label),
@@ -152,7 +223,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
                 child: Text('${entry.value} · ${entry.key.substring(0, 8)}'),
               ),
           ],
-          onChanged: c.loading
+          onChanged: c.locked
               ? null
               : (v) {
                   _accountId = v == '' ? null : v;
@@ -186,7 +257,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
                 child: Text('${entry.value} · ${entry.key.substring(0, 8)}'),
               ),
           ],
-          onChanged: c.loading
+          onChanged: c.locked
               ? null
               : (v) {
                   _unclassified = v == 'unclassified';
@@ -214,7 +285,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
               child: Text('Solo directos'),
             ),
           ],
-          onChanged: c.loading
+          onChanged: c.locked
               ? null
               : (v) {
                   _scope = v!;
@@ -223,11 +294,11 @@ class _MovementListScreenState extends State<MovementListScreen> {
         ),
       ),
       FilledButton(
-        onPressed: c.loading ? null : _apply,
+        onPressed: c.locked ? null : _apply,
         child: const Text('Aplicar filtros'),
       ),
       TextButton(
-        onPressed: c.loading
+        onPressed: c.locked
             ? null
             : () {
                 _search.clear();
@@ -246,12 +317,12 @@ class _MovementListScreenState extends State<MovementListScreen> {
     child: Checkbox(
       semanticLabel: 'Seleccionar ${row.data.concept} · ${row.id}',
       value: c.selected.contains(row.id),
-      onChanged: (v) => c.toggle(row.id, v!),
+      onChanged: c.locked ? null : (v) => c.toggle(row.id, v!),
     ),
   );
   Widget _openButton(MovementRecord row) => TextButton(
     focusNode: _focus.putIfAbsent(row.id, () => FocusNode()),
-    onPressed: () => _open(row.id),
+    onPressed: c.locked ? null : () => _open(row.id),
     child: Text('Abrir ${row.data.concept}'),
   );
   List<String> _values(MovementRecord row) => [
@@ -266,192 +337,239 @@ class _MovementListScreenState extends State<MovementListScreen> {
     final wide =
         MediaQuery.sizeOf(context).width >= 840 &&
         MediaQuery.textScalerOf(context).scale(14) < 21;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Movimientos'),
-        leading: IconButton(
-          tooltip: widget.returnLabel,
-          onPressed: widget.onReturn,
-          icon: const Icon(Icons.arrow_back),
+    return PopScope(
+      canPop: !c.batchActive,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Movimientos'),
+          leading: IconButton(
+            tooltip: widget.returnLabel,
+            onPressed: c.batchActive ? null : widget.onReturn,
+            icon: const Icon(Icons.arrow_back),
+          ),
         ),
-      ),
-      bottomNavigationBar: widget.bottomNavigation,
-      body: _withNavigation(
-        SafeArea(
-          child: SingleChildScrollView(
-            controller: _scroll,
-            padding: EdgeInsets.all(wide ? 24 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Periodo ${c.from.value} → ${c.until?.value ?? 'fin del calendario'} · Recientes primero',
+        bottomNavigationBar: widget.bottomNavigation == null
+            ? null
+            : ExcludeFocus(
+                excluding: c.batchActive,
+                child: IgnorePointer(
+                  ignoring: c.batchActive,
+                  child: widget.bottomNavigation,
                 ),
-                Text(
-                  'Resultados: ${c.accountId == null ? 'Todas las cuentas' : c.accounts[c.accountId] ?? c.accountId} · ${c.unclassified
-                      ? 'Sin clasificar'
-                      : c.categoryId == null
-                      ? 'Todas las categorías'
-                      : c.categoryLabel(c.categoryId)} · ${c.scope == MovementCategoryScope.branch ? 'Rama completa' : 'Solo directos'} · Concepto: ${c.concept.isEmpty ? 'Todos' : c.concept}',
-                ),
-                _filters(),
-                if (widget.onCreate != null)
-                  FilledButton(
-                    onPressed: c.loading
-                        ? null
-                        : () async {
-                            await widget.onCreate!();
-                            if (mounted) await c.refresh();
-                          },
-                    child: const Text('Añadir movimiento'),
+              ),
+        body: _withNavigation(
+          SafeArea(
+            child: SingleChildScrollView(
+              controller: _scroll,
+              padding: EdgeInsets.all(wide ? 24 : 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Periodo ${c.from.value} → ${c.until?.value ?? 'fin del calendario'} · Recientes primero',
                   ),
-                if (_validation != null)
-                  Semantics(liveRegion: true, child: Text(_validation!)),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    '${c.selected.length} seleccionados · UUID: ${c.selected.join(', ')}',
+                  Text(
+                    'Resultados: ${c.accountId == null ? 'Todas las cuentas' : c.accounts[c.accountId] ?? c.accountId} · ${c.unclassified
+                        ? 'Sin clasificar'
+                        : c.categoryId == null
+                        ? 'Todas las categorías'
+                        : c.categoryLabel(c.categoryId)} · ${c.scope == MovementCategoryScope.branch ? 'Rama completa' : 'Solo directos'} · Concepto: ${c.concept.isEmpty ? 'Todos' : c.concept}',
                   ),
-                ),
-                if (c.notice != null)
-                  Semantics(liveRegion: true, child: Text(c.notice!)),
-                Wrap(
-                  spacing: 12,
-                  children: [
-                    OutlinedButton(
-                      onPressed:
-                          c.loading || c.page == null || c.page!.records.isEmpty
+                  _filters(),
+                  if (widget.onCreate != null)
+                    FilledButton(
+                      onPressed: c.locked
                           ? null
-                          : c.selectPage,
-                      child: Text(
-                        'Seleccionar página visible (${c.page?.records.length ?? 0})',
-                      ),
+                          : () async {
+                              await widget.onCreate!();
+                              if (mounted) await c.refresh();
+                            },
+                      child: const Text('Añadir movimiento'),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        c.clearSelection();
-                        _changed();
-                      },
-                      child: const Text('Quitar selección'),
-                    ),
-                  ],
-                ),
-                if (c.loading)
+                  if (_validation != null)
+                    Semantics(liveRegion: true, child: Text(_validation!)),
                   Semantics(
                     liveRegion: true,
-                    child: Text('Cargando movimientos…'),
-                  ),
-                if (c.error != null) ...[
-                  Semantics(liveRegion: true, child: Text(c.error!)),
-                  FilledButton(
-                    onPressed: () => c.refresh(),
-                    child: const Text('Reintentar'),
-                  ),
-                ],
-                if (c.page != null) ...[
-                  Text(
-                    'Subtotal filtrado: ${movementEuro(c.page!.subtotalCents)}',
-                  ),
-                  if (c.page!.records.isEmpty)
-                    const Text(
-                      'No hay movimientos que coincidan con este periodo y filtros.',
+                    child: Text(
+                      '${c.selected.length} seleccionados · UUID: ${c.selected.join(', ')}',
                     ),
-                  if (wide && c.page!.records.isNotEmpty)
-                    Table(
-                      columnWidths: const {
-                        0: FixedColumnWidth(48),
-                        1: FlexColumnWidth(1),
-                        2: FlexColumnWidth(2),
-                        3: FlexColumnWidth(1.5),
-                        4: FlexColumnWidth(2),
-                        5: FlexColumnWidth(1.2),
-                        6: FlexColumnWidth(1.5),
-                      },
-                      defaultVerticalAlignment:
-                          TableCellVerticalAlignment.middle,
-                      children: [
-                        TableRow(
-                          children: [
-                            for (final title in [
-                              '',
-                              'Fecha',
-                              'Concepto',
-                              'Cuenta',
-                              'Categoría',
-                              'Importe EUR',
-                              'Detalle',
-                            ])
-                              Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Text(
-                                  title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                          ],
+                  ),
+                  if (c.notice != null)
+                    Semantics(liveRegion: true, child: Text(c.notice!)),
+                  Wrap(
+                    spacing: 12,
+                    children: [
+                      OutlinedButton(
+                        onPressed:
+                            c.locked ||
+                                c.page == null ||
+                                c.page!.records.isEmpty
+                            ? null
+                            : c.selectPage,
+                        child: Text(
+                          'Seleccionar página visible (${c.page?.records.length ?? 0})',
                         ),
-                        for (final row in c.page!.records)
+                      ),
+                      TextButton(
+                        onPressed: c.locked
+                            ? null
+                            : () {
+                                c.clearSelection();
+                                _changed();
+                              },
+                        child: const Text('Quitar selección'),
+                      ),
+                      if (widget.selectCategory != null)
+                        OutlinedButton(
+                          onPressed:
+                              c.locked || c.selection == null || c.page == null
+                              ? null
+                              : () =>
+                                    _batch(MovementBatchAction.assignCategory),
+                          child: const Text('Asignar categoría'),
+                        ),
+                      OutlinedButton(
+                        onPressed:
+                            c.locked || c.selection == null || c.page == null
+                            ? null
+                            : () => _batch(MovementBatchAction.removeCategory),
+                        child: const Text('Quitar categoría'),
+                      ),
+                      OutlinedButton(
+                        onPressed:
+                            c.locked || c.selection == null || c.page == null
+                            ? null
+                            : () => _batch(MovementBatchAction.delete),
+                        child: Text(
+                          'Borrar seleccionados (${c.selected.length})',
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (c.loading)
+                    Semantics(
+                      liveRegion: true,
+                      child: Text('Cargando movimientos…'),
+                    ),
+                  if (c.batchActive)
+                    Semantics(
+                      liveRegion: true,
+                      child: const Text(
+                        'Operación sobre la selección en curso…',
+                      ),
+                    ),
+                  if (c.error != null) ...[
+                    Semantics(liveRegion: true, child: Text(c.error!)),
+                    FilledButton(
+                      onPressed: c.locked ? null : () => c.refresh(),
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                  if (c.page != null) ...[
+                    Text(
+                      'Subtotal filtrado: ${movementEuro(c.page!.subtotalCents)}',
+                    ),
+                    if (c.page!.records.isEmpty)
+                      const Text(
+                        'No hay movimientos que coincidan con este periodo y filtros.',
+                      ),
+                    if (wide && c.page!.records.isNotEmpty)
+                      Table(
+                        columnWidths: const {
+                          0: FixedColumnWidth(48),
+                          1: FlexColumnWidth(1),
+                          2: FlexColumnWidth(2),
+                          3: FlexColumnWidth(1.5),
+                          4: FlexColumnWidth(2),
+                          5: FlexColumnWidth(1.2),
+                          6: FlexColumnWidth(1.5),
+                        },
+                        defaultVerticalAlignment:
+                            TableCellVerticalAlignment.middle,
+                        children: [
                           TableRow(
                             children: [
-                              _check(row),
-                              for (final value in _values(row))
+                              for (final title in [
+                                '',
+                                'Fecha',
+                                'Concepto',
+                                'Cuenta',
+                                'Categoría',
+                                'Importe EUR',
+                                'Detalle',
+                              ])
                                 Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: Text(
-                                    value,
-                                    style: const TextStyle(fontSize: 14),
+                                    title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              _openButton(row),
                             ],
                           ),
-                      ],
-                    ),
-                  if (!wide)
-                    for (final row in c.page!.records)
-                      Card(
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          for (final row in c.page!.records)
+                            TableRow(
                               children: [
                                 _check(row),
-                                for (final (index, value) in _values(
-                                  row,
-                                ).indexed)
-                                  Text(
-                                    '${['Fecha', 'Concepto', 'Cuenta', 'Categoría', 'Importe EUR'][index]}: $value',
+                                for (final value in _values(row))
+                                  Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Text(
+                                      value,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
                                   ),
                                 _openButton(row),
                               ],
                             ),
+                        ],
+                      ),
+                    if (!wide)
+                      for (final row in c.page!.records)
+                        Card(
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _check(row),
+                                  for (final (index, value) in _values(
+                                    row,
+                                  ).indexed)
+                                    Text(
+                                      '${['Fecha', 'Concepto', 'Cuenta', 'Categoría', 'Importe EUR'][index]}: $value',
+                                    ),
+                                  _openButton(row),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                ],
-                Wrap(
-                  spacing: 12,
-                  children: [
-                    TextButton(
-                      onPressed: c.loading || c.pageIndex == 0
-                          ? null
-                          : c.previous,
-                      child: const Text('Página anterior'),
-                    ),
-                    Text('Página ${c.pageIndex + 1}'),
-                    TextButton(
-                      onPressed: c.loading || c.page?.nextCursor == null
-                          ? null
-                          : c.next,
-                      child: const Text('Página siguiente'),
-                    ),
                   ],
-                ),
-              ],
+                  Wrap(
+                    spacing: 12,
+                    children: [
+                      TextButton(
+                        onPressed: c.locked || c.pageIndex == 0
+                            ? null
+                            : c.previous,
+                        child: const Text('Página anterior'),
+                      ),
+                      Text('Página ${c.pageIndex + 1}'),
+                      TextButton(
+                        onPressed: c.locked || c.page?.nextCursor == null
+                            ? null
+                            : c.next,
+                        child: const Text('Página siguiente'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -464,7 +582,13 @@ class _MovementListScreenState extends State<MovementListScreen> {
       : Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            widget.navigation!,
+            ExcludeFocus(
+              excluding: c.batchActive,
+              child: IgnorePointer(
+                ignoring: c.batchActive,
+                child: widget.navigation!,
+              ),
+            ),
             Expanded(child: content),
           ],
         );

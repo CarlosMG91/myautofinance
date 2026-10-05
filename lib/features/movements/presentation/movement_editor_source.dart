@@ -19,8 +19,10 @@ class MovementEditorSource {
     required this.management,
     required this.accounts,
     required this.categories,
+    required this.identity,
   });
   final MovementManagement management;
+  final Object identity;
   final Future<List<MovementAccountOption>> Function() accounts;
   final Future<List<CategoryDetails>> Function() categories;
 }

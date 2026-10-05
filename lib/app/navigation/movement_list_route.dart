@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../../features/movements/movements.dart';
 import '../../features/movements/presentation/movement_list_controller.dart';
 import '../../features/movements/presentation/movement_list_screen.dart';
-import '../../features/wealth/wealth.dart';
 import 'app_routes.dart';
 import 'wealth_route.dart';
 import 'movement_editor_route.dart';
+import 'movement_links.dart';
+import '../category_selector_navigation.dart';
+import '../../features/movements/presentation/category_tree_screen.dart';
 
 class MovementListOrigin {
   const MovementListOrigin(this.route);
@@ -30,9 +32,11 @@ class MovementListRoute extends StatefulWidget {
     super.key,
     required this.settings,
     required this.load,
+    this.categories,
   });
   final RouteSettings settings;
   final MovementListLoader load;
+  final CategoryManagementLoader? categories;
   @override
   State<MovementListRoute> createState() => _MovementListRouteState();
 }
@@ -41,34 +45,37 @@ class _MovementListRouteState extends State<MovementListRoute> {
   MovementListController? _controller;
   @override
   Widget build(BuildContext context) {
-    final uri = Uri.parse(widget.settings.name!);
-    final params = uri.queryParameters;
     try {
-      final current = madridMonth(DateTime.now());
-      final month = Month(
-        int.parse(params['a'] ?? current.value.substring(0, 4)),
-        int.parse(params['m'] ?? current.value.substring(5, 7)),
+      final query = MovementLinks.parse(
+        widget.settings.name!,
+        defaultMonth: madridMonth(DateTime.now()),
       );
       final controller = _controller ??= MovementListController(
         load: widget.load,
-        from: ValueDate.parse(params['desde'] ?? month.value),
-        until: params['hasta'] != null
-            ? ValueDate.parse(params['hasta']!)
-            : month.next == null
-            ? null
-            : ValueDate.parse(month.next!.value),
-        categoryId: params['c'],
-        unclassified: params['sinClasificar'] == '1',
-        scope: params['alcance'] == 'direct'
-            ? MovementCategoryScope.direct
-            : MovementCategoryScope.branch,
+        from: query.from,
+        until: query.until,
+        categoryId: query.categoryId,
+        unclassified: query.unclassified,
+        scope: query.scope,
+        accountId: query.accountId,
+        concept: query.concept,
       );
-      if (controller.unclassified && controller.categoryId != null ||
-          controller.until != null &&
-              controller.from.compareTo(controller.until!) >= 0) {
-        controller.dispose();
-        throw const MovementFailure('Periodo o categoría ambiguos.');
-      }
+      final origin = widget.settings.arguments is MovementListOrigin
+          ? (widget.settings.arguments as MovementListOrigin).route
+          : MovementLinks.origin(widget.settings.name!) ??
+                AppRoutes.monthlyStatus;
+      String currentRoute() => MovementLinks.list(
+        MovementListQuery(
+          from: controller.from,
+          until: controller.until,
+          accountId: controller.accountId,
+          categoryId: controller.categoryId,
+          scope: controller.scope,
+          unclassified: controller.unclassified,
+          concept: controller.concept,
+        ),
+        origin: origin,
+      );
       final width = MediaQuery.sizeOf(context).width;
       Widget navigation(bool vertical) => Wrap(
         direction: vertical ? Axis.vertical : Axis.horizontal,
@@ -83,10 +90,12 @@ class _MovementListRouteState extends State<MovementListRoute> {
                             ? 2
                             : 3),
               child: TextButton(
-                onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                  '${destination.path}?a=${controller.from.value.substring(0, 4)}&m=${controller.from.value.substring(5, 7)}',
-                  (_) => false,
-                ),
+                onPressed: controller.batchActive
+                    ? null
+                    : () => Navigator.of(context).pushNamedAndRemoveUntil(
+                        '${destination.path}?a=${controller.from.value.substring(0, 4)}&m=${controller.from.value.substring(5, 7)}',
+                        (_) => false,
+                      ),
                 child: Text(switch (destination.path) {
                   AppRoutes.monthlyStatus => 'Estado',
                   AppRoutes.wealth => 'Patrimonio',
@@ -99,8 +108,7 @@ class _MovementListRouteState extends State<MovementListRoute> {
         ],
       );
       return MovementListScreen(
-        returnLabel:
-            'Volver a ${widget.settings.arguments is MovementListOrigin ? (widget.settings.arguments as MovementListOrigin).label : 'Estado del mes'}',
+        returnLabel: 'Volver a ${MovementListOrigin(origin).label}',
         navigation: width >= 840
             ? Container(
                 width: width >= 1200 ? 216 : 200,
@@ -115,18 +123,26 @@ class _MovementListRouteState extends State<MovementListRoute> {
         controller: controller,
         onReturn: () => Navigator.of(context).canPop()
             ? Navigator.of(context).pop()
-            : Navigator.of(context)
-                  .pushReplacementNamed(AppRoutes.monthlyStatus),
+            : Navigator.of(context).pushReplacementNamed(origin),
+        selectCategory: widget.categories == null
+            ? null
+            : () => selectCategory(context, loadManagement: widget.categories!),
         onCreate: () async {
           await Navigator.of(context).pushNamed(
             '${AppRoutes.movements}/nuevo',
-            arguments: MovementEditorOrigin(controller.context),
+            arguments: MovementEditorOrigin(
+              controller.context,
+              listRoute: currentRoute(),
+            ),
           );
         },
         onOpen: (id) async {
           await Navigator.of(context).pushNamed(
             '${AppRoutes.movements}/$id',
-            arguments: MovementEditorOrigin(controller.context),
+            arguments: MovementEditorOrigin(
+              controller.context,
+              listRoute: currentRoute(),
+            ),
           );
         },
       );

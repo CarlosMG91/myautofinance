@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../domain/movement_repository.dart';
 import '../domain/category_repository.dart';
 import '../domain/category_read_invalidation.dart';
+import '../domain/movement_management.dart';
 import 'movement_editor_source.dart';
 
 /// Etiquetas resueltas por composición; movimientos no depende de patrimonio.
@@ -14,16 +15,32 @@ class MovementListSource {
     required this.categories,
     required this.accounts,
     required this.invalidation,
+    required this.identity,
+    required this.management,
     this.editor,
   });
   final MovementRepository movements;
   final CategoryRepository categories;
   final Future<Map<String, String>> Function() accounts;
   final CategoryReadInvalidation invalidation;
+
+  /// Identidad de la conexión activa; cambia incluso al restaurar la misma copia.
+  final Object identity;
+  final MovementManagement management;
   final MovementEditorLoader? editor;
 }
 
 typedef MovementListLoader = Future<MovementListSource> Function();
+
+enum MovementBatchAction { assignCategory, removeCategory, delete }
+
+/// UUID y base leídos antes del selector/confirmación, nunca una consulta viva.
+class MovementBatchRequest {
+  const MovementBatchRequest(this.selection, this.context, this.identity);
+  final MovementSelection selection;
+  final MovementListContext context;
+  final Object identity;
+}
 
 /// Captura inmutable del alcance para las confirmaciones de lote.
 class MovementListContext {
@@ -52,6 +69,8 @@ class MovementListController extends ChangeNotifier {
     required this.from,
     required this.until,
     this.categoryId,
+    this.accountId,
+    this.concept = '',
     this.scope = MovementCategoryScope.branch,
     this.unclassified = false,
     this.pageSize = 100,
@@ -61,10 +80,12 @@ class MovementListController extends ChangeNotifier {
   ValueDate from;
   ValueDate? until;
   String? accountId, categoryId;
-  String concept = '';
+  String concept;
   MovementCategoryScope scope;
   bool unclassified;
   bool loading = false;
+  bool batchActive = false;
+  bool get locked => loading || batchActive;
   String? error, notice;
   MovementPage? page;
   Map<String, String> accounts = {}, paths = {};
@@ -73,6 +94,7 @@ class MovementListController extends ChangeNotifier {
   int pageIndex = 0;
   int _generation = 0;
   bool _disposed = false;
+  Object? _readIdentity;
   StreamSubscription<int>? _changes;
   MovementSelection? get selection =>
       selected.isEmpty ? null : MovementSelection(selected.toList());
@@ -88,6 +110,7 @@ class MovementListController extends ChangeNotifier {
   );
 
   Future<void> refresh({bool restart = false}) async {
+    if (batchActive || _disposed) return;
     if (restart) {
       _cursors
         ..clear()
@@ -102,9 +125,17 @@ class MovementListController extends ChangeNotifier {
     try {
       final source = await load();
       if (_disposed || generation != _generation) return;
+      final replaced =
+          _readIdentity != null && !identical(_readIdentity, source.identity);
+      if (replaced) {
+        // El cursor pertenece a la imagen anterior, aunque su revisión coincida.
+        _cursors
+          ..clear()
+          ..add(null);
+        pageIndex = 0;
+      }
       _changes ??= source.invalidation.changes.listen((_) {
-        clearSelection();
-        unawaited(refresh(restart: true));
+        unawaited(refresh());
       });
       final labels = await source.accounts();
       final nodes = await source.categories.list();
@@ -128,6 +159,11 @@ class MovementListController extends ChangeNotifier {
       accounts = labels;
       paths = categories;
       page = result;
+      if (replaced) {
+        selected.clear();
+        notice = 'La base local ha cambiado. Revisa los movimientos y selecciona de nuevo.';
+      }
+      _readIdentity = source.identity;
       selected.retainAll(result.records.map((e) => e.id));
     } catch (_) {
       if (_disposed || generation != _generation) return;
@@ -139,6 +175,7 @@ class MovementListController extends ChangeNotifier {
   }
 
   void clearSelection() {
+    if (batchActive) return;
     if (selected.isNotEmpty) {
       notice = 'Selección limpiada al cambiar página o filtros.';
     }
@@ -146,13 +183,14 @@ class MovementListController extends ChangeNotifier {
   }
 
   Future<void> apply() {
+    if (locked) return Future.value();
     clearSelection();
     return refresh(restart: true);
   }
 
   Future<void> next() async {
     final cursor = page?.nextCursor;
-    if (loading || cursor == null) return;
+    if (locked || cursor == null) return;
     clearSelection();
     _cursors.removeRange(pageIndex + 1, _cursors.length);
     _cursors.add(cursor);
@@ -161,14 +199,14 @@ class MovementListController extends ChangeNotifier {
   }
 
   Future<void> previous() async {
-    if (loading || pageIndex == 0) return;
+    if (locked || pageIndex == 0) return;
     clearSelection();
     pageIndex--;
     await refresh();
   }
 
   void toggle(String id, bool value) {
-    if (loading || page == null || !page!.records.any((e) => e.id == id)) {
+    if (locked || page == null || !page!.records.any((e) => e.id == id)) {
       return;
     }
     value ? selected.add(id) : selected.remove(id);
@@ -176,7 +214,7 @@ class MovementListController extends ChangeNotifier {
   }
 
   void selectPage() {
-    if (loading || page == null) return;
+    if (locked || page == null) return;
     selected
       ..clear()
       ..addAll(page!.records.map((e) => e.id));
@@ -185,6 +223,75 @@ class MovementListController extends ChangeNotifier {
 
   String categoryLabel(String? id) =>
       id == null ? 'Sin clasificar' : paths[id] ?? id;
+
+  MovementBatchRequest? beginBatch() {
+    if (locked || selection == null || page == null || _readIdentity == null) {
+      return null;
+    }
+    final request = MovementBatchRequest(selection!, context, _readIdentity!);
+    batchActive = true;
+    error = null;
+    notice = null;
+    notifyListeners();
+    return request;
+  }
+
+  void cancelBatch() {
+    if (_disposed) return;
+    batchActive = false;
+    notifyListeners();
+  }
+
+  void rejectBatch(Object failure) {
+    if (_disposed) return;
+    batchActive = false;
+    error =
+        'Lote rechazado: ${failure is MovementFailure ? failure.message : 'No se pudo completar la operación local.'} La selección se conserva.';
+    notifyListeners();
+  }
+
+  Future<void> executeBatch(
+    MovementBatchRequest request,
+    MovementBatchAction action, {
+    String? categoryId,
+  }) async {
+    if (!batchActive || _disposed) return;
+    try {
+      final source = await load();
+      if (_disposed) return;
+      if (!identical(source.identity, request.identity)) {
+        throw const MovementFailure(
+          'La base local se ha sustituido. Reintenta la lectura y selecciona de nuevo antes de escribir.',
+        );
+      }
+      final ids = request.selection.ids;
+      switch (action) {
+        case MovementBatchAction.assignCategory:
+          if (categoryId == null) {
+            throw const MovementFailure('Elige una categoría activa.');
+          }
+          await source.management.assignCategory(ids, categoryId);
+        case MovementBatchAction.removeCategory:
+          await source.management.removeCategory(ids);
+        case MovementBatchAction.delete:
+          await source.management.deleteBatch(ids);
+      }
+      if (_disposed) return;
+      batchActive = false;
+      if (action == MovementBatchAction.delete) selected.removeAll(ids);
+      final plural = ids.length == 1 ? '' : 's';
+      notice =
+          '${ids.length} movimiento$plural ${switch (action) {
+            MovementBatchAction.assignCategory => 'categorizado$plural',
+            MovementBatchAction.removeCategory => 'sin categoría',
+            MovementBatchAction.delete => 'borrado$plural',
+          }}.';
+      await refresh(restart: action == MovementBatchAction.delete);
+    } catch (failure) {
+      rejectBatch(failure);
+    }
+  }
+
   @override
   void dispose() {
     _disposed = true;

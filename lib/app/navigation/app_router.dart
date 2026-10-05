@@ -1,5 +1,6 @@
 import 'movement_list_route.dart';
 import 'movement_editor_route.dart';
+import 'movement_links.dart';
 import 'category_navigation_context.dart';
 export 'category_navigation_context.dart';
 import '../../features/movements/presentation/movement_list_controller.dart';
@@ -35,7 +36,11 @@ abstract final class AppRouter {
     Widget page;
     final uri = Uri.tryParse(settings.name ?? '');
     if (uri?.path == AppRoutes.movements && movements != null) {
-      page = MovementListRoute(settings: settings, load: movements);
+      page = MovementListRoute(
+        settings: settings,
+        load: movements,
+        categories: categories,
+      );
     } else if (uri?.path.startsWith('${AppRoutes.movements}/') == true &&
         movements != null) {
       page = MovementEditorRoute(
@@ -708,7 +713,10 @@ class _TechnicalPlaceholder extends StatelessWidget {
                       ModalRoute.of(context)?.settings.name ??
                       AppRoutes.monthlyStatus;
                   Navigator.of(context).pushNamed(
-                    '${AppRoutes.movements}?${Uri.tryParse(origin)?.query ?? ''}',
+                    MovementLinks.management(
+                      origin,
+                      defaultMonth: madridMonth(DateTime.now()),
+                    ),
                     arguments: MovementListOrigin(origin),
                   );
                 },
@@ -759,7 +767,10 @@ class _ManagementMenu extends StatelessWidget {
       } else {
         Navigator.of(context).pushNamed(
           path == AppRoutes.movements
-              ? '$path?${Uri.tryParse(ModalRoute.of(context)?.settings.name ?? '')?.query ?? ''}'
+              ? MovementLinks.management(
+                  ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
+                  defaultMonth: madridMonth(DateTime.now()),
+                )
               : path,
           arguments: path == AppRoutes.movements
               ? MovementListOrigin(

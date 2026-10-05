@@ -20,7 +20,10 @@ MovementListSource createMovementListSource(
       if (account.kind == AccountKind.account) account.id: account.name,
   },
   invalidation: invalidation,
+  identity: database,
+  management: createMovementManagement(database: database),
   editor: () async => MovementEditorSource(
+    identity: database,
     management: createMovementManagement(database: database),
     accounts: () async => [
       for (final a in await SqliteAccountRepository(database).list())
