@@ -6,6 +6,7 @@ import '../../features/movements/presentation/movement_list_screen.dart';
 import '../../features/wealth/wealth.dart';
 import 'app_routes.dart';
 import 'wealth_route.dart';
+import 'movement_editor_route.dart';
 
 class MovementListOrigin {
   const MovementListOrigin(this.route);
@@ -116,16 +117,16 @@ class _MovementListRouteState extends State<MovementListRoute> {
             ? Navigator.of(context).pop()
             : Navigator.of(context)
                   .pushReplacementNamed(AppRoutes.monthlyStatus),
+        onCreate: () async {
+          await Navigator.of(context).pushNamed(
+            '${AppRoutes.movements}/nuevo',
+            arguments: MovementEditorOrigin(controller.context),
+          );
+        },
         onOpen: (id) async {
-          await Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              settings: RouteSettings(name: '${AppRoutes.movements}/$id'),
-              builder: (_) => _MovementDetail(
-                load: widget.load,
-                id: id,
-                controller: controller,
-              ),
-            ),
+          await Navigator.of(context).pushNamed(
+            '${AppRoutes.movements}/$id',
+            arguments: MovementEditorOrigin(controller.context),
           );
         },
       );
@@ -139,76 +140,4 @@ class _MovementListRouteState extends State<MovementListRoute> {
       );
     }
   }
-}
-
-/// Detalle de lectura; el editor pertenece a MA-TSK-093.
-class _MovementDetail extends StatefulWidget {
-  const _MovementDetail({
-    required this.load,
-    required this.id,
-    required this.controller,
-  });
-  final MovementListLoader load;
-  final String id;
-  final MovementListController controller;
-  @override
-  State<_MovementDetail> createState() => _MovementDetailState();
-}
-
-class _MovementDetailState extends State<_MovementDetail> {
-  late Future<MovementRecord?> _record = _read();
-  Future<MovementRecord?> _read() async =>
-      (await widget.load()).movements.get(widget.id);
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Detalle de movimiento')),
-    body: SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: FutureBuilder<MovementRecord?>(
-          future: _record,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Text('Cargando detalle…');
-            }
-            if (snapshot.hasError || snapshot.data == null) {
-              return Column(
-                children: [
-                  const Text('No se pudo abrir este detalle'),
-                  TextButton(
-                    onPressed: () => setState(() => _record = _read()),
-                    child: const Text('Reintentar'),
-                  ),
-                ],
-              );
-            }
-            final row = snapshot.data!;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('UUID: ${row.id}'),
-                Text('Fecha: ${row.data.valueDate.value}'),
-                Text('Concepto: ${row.data.concept}'),
-                Text(
-                  'Cuenta: ${widget.controller.accounts[row.data.accountId] ?? row.data.accountId}',
-                ),
-                Text(
-                  'Categoría: ${widget.controller.categoryLabel(row.data.categoryId)}',
-                ),
-                Text('Importe EUR: ${movementEuro(row.data.amountCents)}'),
-                Text('Discrecionalidad: ${row.data.discretion ?? 'Sin dato'}'),
-                Text(
-                  'Procedencia: ${row.importRowId ?? 'Manual'} · Lote: ${row.batchId ?? 'Sin lote'}',
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Volver a Movimientos'),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    ),
-  );
 }

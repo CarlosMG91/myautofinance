@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../domain/movement_repository.dart';
 import '../domain/category_repository.dart';
 import '../domain/category_read_invalidation.dart';
+import 'movement_editor_source.dart';
 
 /// Etiquetas resueltas por composición; movimientos no depende de patrimonio.
 class MovementListSource {
@@ -13,11 +14,13 @@ class MovementListSource {
     required this.categories,
     required this.accounts,
     required this.invalidation,
+    this.editor,
   });
   final MovementRepository movements;
   final CategoryRepository categories;
   final Future<Map<String, String>> Function() accounts;
   final CategoryReadInvalidation invalidation;
+  final MovementEditorLoader? editor;
 }
 
 typedef MovementListLoader = Future<MovementListSource> Function();

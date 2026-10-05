@@ -1,4 +1,7 @@
 import 'movement_list_route.dart';
+import 'movement_editor_route.dart';
+import 'category_navigation_context.dart';
+export 'category_navigation_context.dart';
 import '../../features/movements/presentation/movement_list_controller.dart';
 
 import 'package:flutter/material.dart';
@@ -19,14 +22,6 @@ import '../../features/wealth/presentation/wealth_photo_screen.dart';
 import '../../features/wealth/presentation/wealth_screen.dart';
 import 'wealth_route.dart';
 
-/// El selector conserva su propio borrador y recibe solo el alta confirmada.
-/// La pila mantiene filtros, scroll y foco del origen, sin guardarlo.
-class CategoryNavigationContext {
-  const CategoryNavigationContext({required this.returnLabel, this.onCreated});
-  final String returnLabel;
-  final ValueChanged<CategoryDetails>? onCreated;
-}
-
 /// Compone las rutas de producto y los marcadores pendientes.
 abstract final class AppRouter {
   static Route<Object?> generateRoute(
@@ -41,6 +36,13 @@ abstract final class AppRouter {
     final uri = Uri.tryParse(settings.name ?? '');
     if (uri?.path == AppRoutes.movements && movements != null) {
       page = MovementListRoute(settings: settings, load: movements);
+    } else if (uri?.path.startsWith('${AppRoutes.movements}/') == true &&
+        movements != null) {
+      page = MovementEditorRoute(
+        settings: settings,
+        load: movements,
+        categories: categories,
+      );
     } else if (wealth != null &&
         (uri?.path == AppRoutes.wealth ||
             uri?.path.startsWith('${AppRoutes.wealth}/') == true)) {

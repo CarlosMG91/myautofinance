@@ -4,7 +4,7 @@ import '../features/movements/movements.dart';
 import '../features/movements/presentation/category_selector.dart';
 import '../features/movements/presentation/category_tree_screen.dart';
 import 'navigation/app_routes.dart';
-import 'navigation/app_router.dart';
+import 'navigation/category_navigation_context.dart';
 
 /// La pantalla consumidora conserva su borrador y solo aplica un resultado no null.
 /// Usa las rutas aprobadas sin modificar Gestión ni rutas de EP-009.

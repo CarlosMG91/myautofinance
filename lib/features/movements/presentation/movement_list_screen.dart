@@ -10,6 +10,7 @@ class MovementListScreen extends StatefulWidget {
     required this.onOpen,
     required this.onReturn,
     this.onSelection,
+    this.onCreate,
     this.navigation,
     this.bottomNavigation,
     this.returnLabel = 'Volver al origen',
@@ -17,6 +18,7 @@ class MovementListScreen extends StatefulWidget {
   final MovementListController controller;
   final Future<void> Function(String id) onOpen;
   final VoidCallback onReturn;
+  final Future<void> Function()? onCreate;
 
   /// Entrega UUID y contexto exactos a las acciones de MA-TSK-094.
   final void Function(MovementSelection?, MovementListContext)? onSelection;
@@ -293,6 +295,16 @@ class _MovementListScreenState extends State<MovementListScreen> {
                       : c.categoryLabel(c.categoryId)} · ${c.scope == MovementCategoryScope.branch ? 'Rama completa' : 'Solo directos'} · Concepto: ${c.concept.isEmpty ? 'Todos' : c.concept}',
                 ),
                 _filters(),
+                if (widget.onCreate != null)
+                  FilledButton(
+                    onPressed: c.loading
+                        ? null
+                        : () async {
+                            await widget.onCreate!();
+                            if (mounted) await c.refresh();
+                          },
+                    child: const Text('Añadir movimiento'),
+                  ),
                 if (_validation != null)
                   Semantics(liveRegion: true, child: Text(_validation!)),
                 Semantics(
