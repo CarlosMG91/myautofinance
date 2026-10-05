@@ -1,3 +1,6 @@
+import 'movement_list_route.dart';
+import '../../features/movements/presentation/movement_list_controller.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -32,10 +35,13 @@ abstract final class AppRouter {
     DriveController? drive,
     CategoryManagementLoader? categories,
     WealthManagementLoader? wealth,
+    MovementListLoader? movements,
   }) {
     Widget page;
     final uri = Uri.tryParse(settings.name ?? '');
-    if (wealth != null &&
+    if (uri?.path == AppRoutes.movements && movements != null) {
+      page = MovementListRoute(settings: settings, load: movements);
+    } else if (wealth != null &&
         (uri?.path == AppRoutes.wealth ||
             uri?.path.startsWith('${AppRoutes.wealth}/') == true)) {
       page = _WealthRoute(
@@ -67,7 +73,8 @@ abstract final class AppRouter {
             localBackups != null ||
             drive != null ||
             categories != null ||
-            wealth != null,
+            wealth != null ||
+            movements != null,
         categoriesAvailable: categories != null,
         wealthAvailable: wealth != null,
       );
@@ -84,7 +91,8 @@ abstract final class AppRouter {
             localBackups != null ||
             drive != null ||
             categories != null ||
-            wealth != null,
+            wealth != null ||
+            movements != null,
         categoriesAvailable: categories != null,
         wealthAvailable: wealth != null,
         title: destination?.label ?? 'Error de navegación',
@@ -158,7 +166,9 @@ class _WealthRouteState extends State<_WealthRoute> {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           final saved = await Navigator.of(context).pushNamed<Object?>(
             '$path?${period(month)}',
-            arguments: path.startsWith(AppRoutes.accounts)
+            arguments: path == AppRoutes.movements
+                ? MovementListOrigin('${AppRoutes.wealth}?${period(month)}')
+                : path.startsWith(AppRoutes.accounts)
                 ? _WealthOrigin(month)
                 : widget.settings.arguments,
           );
@@ -688,6 +698,20 @@ class _TechnicalPlaceholder extends StatelessWidget {
           children: [
             Text(message),
             const Text('Sin contenido de producto · Diseño pendiente'),
+            if (showManagement &&
+                (title == 'Estado del mes' || title == 'Real anual'))
+              TextButton(
+                onPressed: () {
+                  final origin =
+                      ModalRoute.of(context)?.settings.name ??
+                      AppRoutes.monthlyStatus;
+                  Navigator.of(context).pushNamed(
+                    '${AppRoutes.movements}?${Uri.tryParse(origin)?.query ?? ''}',
+                    arguments: MovementListOrigin(origin),
+                  );
+                },
+                child: const Text('Ver movimientos reales'),
+              ),
             TextButton(
               onPressed: () {
                 final navigator = Navigator.of(context);
@@ -719,7 +743,9 @@ class _ManagementMenu extends StatelessWidget {
   Widget build(BuildContext context) => PopupMenuButton<String>(
     tooltip: 'Gestión',
     onSelected: (value) {
-      final path = value == 'categories'
+      final path = value == 'movements'
+          ? AppRoutes.movements
+          : value == 'categories'
           ? AppRoutes.categories
           : value == 'accounts'
           ? AppRoutes.accounts
@@ -730,15 +756,22 @@ class _ManagementMenu extends StatelessWidget {
         onOpen!(path);
       } else {
         Navigator.of(context).pushNamed(
-          path,
-          arguments: _BackupOrigin(
-            ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
-          ),
+          path == AppRoutes.movements
+              ? '$path?${Uri.tryParse(ModalRoute.of(context)?.settings.name ?? '')?.query ?? ''}'
+              : path,
+          arguments: path == AppRoutes.movements
+              ? MovementListOrigin(
+                  ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
+                )
+              : _BackupOrigin(
+                  ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
+                ),
         );
       }
     },
     itemBuilder: (_) => [
       const PopupMenuItem(enabled: false, child: Text('Importar CSV')),
+      const PopupMenuItem(value: 'movements', child: Text('Movimientos')),
       PopupMenuItem(
         value: 'categories',
         enabled: categoriesAvailable,

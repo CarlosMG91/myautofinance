@@ -1,3 +1,5 @@
+import 'movement_list_factory.dart';
+import '../features/movements/presentation/movement_list_controller.dart';
 import '../features/synchronization/presentation/local_backup_controller.dart';
 import 'data/sqlite/database_failure.dart';
 import 'data/sqlite/local_database_store.dart';
@@ -39,6 +41,9 @@ class LocalBackupSession {
   final categoryInvalidation = CategoryReadInvalidation();
 
   // Resolver por visita: una restauración puede sustituir la conexión activa.
+  Future<MovementListSource> movements() async =>
+      createMovementListSource(await store.open(), categoryInvalidation);
+
   Future<WealthManagement> wealth() async =>
       createWealthManagement(database: await store.open());
 
