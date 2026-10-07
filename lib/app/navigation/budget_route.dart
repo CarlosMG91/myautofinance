@@ -102,6 +102,10 @@ class _BudgetRouteState extends State<BudgetRoute> {
             },
             itemBuilder: (_) => [
               const PopupMenuItem(
+                value: AppRoutes.importHistory,
+                child: Text('Historial de importaciones'),
+              ),
+              const PopupMenuItem(
                 value: '/importar/csv',
                 enabled: false,
                 child: Text('Importar CSV · pendiente'),

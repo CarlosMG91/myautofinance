@@ -1,4 +1,6 @@
 import 'movement_list_route.dart';
+import 'import_route.dart';
+import '../../features/importing/presentation/import_controller.dart';
 import 'budget_route.dart';
 import '../../features/budget/presentation/budget_source.dart';
 import 'movement_editor_route.dart';
@@ -35,10 +37,24 @@ abstract final class AppRouter {
     WealthManagementLoader? wealth,
     MovementListLoader? movements,
     BudgetLoader? budgets,
+    ImportServicesLoader? imports,
+    bool allowTestImports = false,
   }) {
     Widget page;
     final uri = Uri.tryParse(settings.name ?? '');
-    if (budgets != null &&
+    if (uri?.path == AppRoutes.importHistory ||
+        uri?.path.startsWith('${AppRoutes.importHistory}/') == true) {
+      page = imports == null
+          ? const _TechnicalPlaceholder(
+              title: 'Importaciones no disponibles',
+              message: 'No se ha inicializado el almacenamiento local.',
+            )
+          : ImportRoute(
+              settings: settings,
+              load: imports,
+              allowTestLaunch: allowTestImports,
+            );
+    } else if (budgets != null &&
         (uri?.path == AppRoutes.budget ||
             uri?.path.startsWith('${AppRoutes.budget}/') == true)) {
       page = BudgetRoute(
@@ -92,7 +108,8 @@ abstract final class AppRouter {
             drive != null ||
             categories != null ||
             wealth != null ||
-            movements != null,
+            movements != null ||
+            imports != null,
         categoriesAvailable: categories != null,
         wealthAvailable: wealth != null,
       );
@@ -110,7 +127,8 @@ abstract final class AppRouter {
             drive != null ||
             categories != null ||
             wealth != null ||
-            movements != null,
+            movements != null ||
+            imports != null,
         categoriesAvailable: categories != null,
         wealthAvailable: wealth != null,
         title: destination?.label ?? 'Error de navegación',
@@ -766,6 +784,8 @@ class _ManagementMenu extends StatelessWidget {
     onSelected: (value) {
       final path = value == 'movements'
           ? AppRoutes.movements
+          : value == 'imports'
+          ? AppRoutes.importHistory
           : value == 'categories'
           ? AppRoutes.categories
           : value == 'accounts'
@@ -795,6 +815,11 @@ class _ManagementMenu extends StatelessWidget {
     },
     itemBuilder: (_) => [
       const PopupMenuItem(enabled: false, child: Text('Importar CSV')),
+      const PopupMenuItem(enabled: false, child: Text('Importar XLS')),
+      const PopupMenuItem(
+        value: 'imports',
+        child: Text('Historial de importaciones'),
+      ),
       const PopupMenuItem(value: 'movements', child: Text('Movimientos')),
       PopupMenuItem(
         value: 'categories',

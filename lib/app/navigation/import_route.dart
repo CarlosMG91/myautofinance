@@ -1,0 +1,135 @@
+import 'package:flutter/material.dart';
+
+import '../../features/importing/importing.dart';
+import '../../features/importing/presentation/import_controller.dart';
+import '../../features/importing/presentation/import_history_screen.dart';
+import '../../features/importing/presentation/import_review_screen.dart';
+import 'app_routes.dart';
+import 'movement_list_route.dart';
+
+/// Entrada del recorrido de pruebas. Ningún selector de producción la genera.
+class ImportReviewLaunch {
+  const ImportReviewLaunch({
+    required this.file,
+    required this.adapter,
+    this.origin = AppRoutes.monthlyStatus,
+  });
+  final ImportFile file;
+  final ImportAdapter adapter;
+  final String origin;
+}
+
+class ImportRoute extends StatefulWidget {
+  const ImportRoute({
+    super.key,
+    required this.settings,
+    required this.load,
+    this.allowTestLaunch = false,
+  });
+  final RouteSettings settings;
+  final ImportServicesLoader load;
+  final bool allowTestLaunch;
+  @override
+  State<ImportRoute> createState() => _ImportRouteState();
+}
+
+class _ImportRouteState extends State<ImportRoute> {
+  ImportController? _controller;
+  @override
+  void initState() {
+    super.initState();
+    if (Uri.parse(widget.settings.name!).path == AppRoutes.importReview &&
+        widget.allowTestLaunch &&
+        widget.settings.arguments is ImportReviewLaunch) {
+      final launch = widget.settings.arguments as ImportReviewLaunch;
+      _controller = ImportController(widget.load)
+        ..start(launch.file, launch.adapter);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  void _back() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    } else {
+      navigator.pushReplacementNamed(AppRoutes.home);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final uri = Uri.parse(widget.settings.name!);
+    final navigator = Navigator.of(context);
+    void batch(String id) => navigator.pushNamed(
+      '${AppRoutes.importBatches}/${Uri.encodeComponent(id)}',
+    );
+    if (_controller != null) {
+      final launch = widget.settings.arguments as ImportReviewLaunch;
+      return ImportReviewScreen(
+        controller: _controller!,
+        onReturn: () {
+          if (navigator.canPop()) {
+            navigator.pop();
+          } else {
+            navigator.pushReplacementNamed(launch.origin);
+          }
+        },
+        returnLabel: 'Volver a ${MovementListOrigin(launch.origin).label}',
+        onHistory: () => navigator.pushNamed(AppRoutes.importHistory),
+        onBatch: batch,
+        onPeriod: (label, period) => navigator.pushNamed(
+          '${switch (label) {
+            'Estado' => AppRoutes.monthlyStatus,
+            'Presupuesto' => AppRoutes.budget,
+            _ => AppRoutes.actualSpending,
+          }}?a=${period.substring(0, 4)}&m=${period.substring(5, 7)}',
+        ),
+      );
+    }
+    final parts = uri.pathSegments;
+    if (uri.path == AppRoutes.importHistory ||
+        (parts.length == 3 &&
+            parts.first == 'importaciones' &&
+            (parts[1] == 'lotes' || parts[1] == 'origen'))) {
+      return ImportHistoryScreen(
+        load: widget.load,
+        onReturn: _back,
+        batchId: parts.length == 3 && parts[1] == 'lotes' ? parts.last : null,
+        rowId: parts.length == 3 && parts[1] == 'origen' ? parts.last : null,
+        onBatch: batch,
+        onRow: (id) => navigator.pushNamed(
+          '${AppRoutes.importRows}/${Uri.encodeComponent(id)}',
+        ),
+        onRecord: (row) async {
+          final path = row.currentMovement != null
+              ? '${AppRoutes.movements}/${Uri.encodeComponent(row.currentMovement!.id)}?a=${row.currentMovement!.data.valueDate.value.substring(0, 4)}&m=${row.currentMovement!.data.valueDate.value.substring(5, 7)}'
+              : '${AppRoutes.budget}/partidas/${Uri.encodeComponent(row.currentBudget!.id)}?a=${row.currentBudget!.data.month.value.substring(0, 4)}&m=${row.currentBudget!.data.month.value.substring(5, 7)}';
+          await navigator.pushNamed(path);
+        },
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Importación')),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Text(
+              'La selección y lectura de CSV/XLS estará disponible cuando se integren sus lectores.',
+            ),
+            TextButton(
+              onPressed: () => navigator.pushNamed(AppRoutes.importHistory),
+              child: const Text('Historial de lotes'),
+            ),
+            TextButton(onPressed: _back, child: const Text('Volver')),
+          ],
+        ),
+      ),
+    );
+  }
+}

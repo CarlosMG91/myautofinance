@@ -11,6 +11,10 @@ class TechnicalDestination {
 
 abstract final class AppRoutes {
   static const home = '/';
+  static const importHistory = '/importaciones';
+  static const importReview = '/importaciones/revision';
+  static const importBatches = '/importaciones/lotes';
+  static const importRows = '/importaciones/origen';
   static const movements = '/movimientos';
   static const monthlyStatus = '/estado';
   static const wealth = '/patrimonio';

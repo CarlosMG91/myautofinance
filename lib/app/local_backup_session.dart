@@ -1,4 +1,6 @@
 import 'movement_list_factory.dart';
+import 'import_factory.dart';
+import '../features/importing/presentation/import_controller.dart';
 import 'budget_factory.dart';
 import '../features/budget/presentation/budget_source.dart';
 import '../features/movements/presentation/movement_list_controller.dart';
@@ -45,6 +47,11 @@ class LocalBackupSession {
   // Resolver por visita: una restauración puede sustituir la conexión activa.
   Future<BudgetSource> budgets() async =>
       createBudgetSource(await store.open(), categoryInvalidation);
+
+  Future<ImportServices> imports() async => createImportServices(
+    await store.open(),
+    onConfirmed: categoryInvalidation.invalidate,
+  );
 
   Future<MovementListSource> movements() async =>
       createMovementListSource(await store.open(), categoryInvalidation);
