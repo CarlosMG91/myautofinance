@@ -31,6 +31,13 @@ implementados. No se importa código de una funcionalidad solo para declarar
 el permiso: se evita acoplar los módulos vacíos. El catálogo importa todas sus
 entradas públicas, por lo que arranque y pruebas ya comprueban su compilación.
 
+MA-TSK-109 amplía `importing → wealth` para revisar cuentas, vigencia y planes
+de altas con los tipos públicos de EP-009. Se mantienen `importing → movements`
+y `importing → budget`. Patrimonio no depende de importación; el grafo continúa
+acíclico. El motor recibe un puerto de lectura por constructor y app aporta
+la instantánea SQLite sobre los repositorios existentes. Ver el
+[contrato de previsualización](../ep-012/previsualizacion.md).
+
 ## Reglas de dependencias
 
 - `app` compone módulos y adaptadores; ninguna funcionalidad importa `app` ni

@@ -14,7 +14,10 @@ referencias, sesión, revisión, solicitud/resultados y puertos. Dominio depende
 solo de Dart y de las entradas públicas de movements/budget. App inyecta
 `Sha256ImportFingerprint`, de `importing/data`, que utiliza la dependencia
 crypto ya fijada. No se exporta ese adaptador desde la entrada del dominio.
-No cambian grafo, esquema SQLite, SDK ni lockfile.
+MA-TSK-107 no cambia grafo, esquema SQLite, SDK ni lockfile. MA-TSK-109 amplía
+compatiblemente estos puertos con planes de alta y candidatos pendientes;
+su [contrato de previsualización](previsualizacion.md) registra la dependencia
+adicional de los tipos públicos de wealth para las cuentas.
 
 `importContractVersion = '1'` versiona la estructura común. El lector declara
 además `ImportInterpretation.formatVersion`, no vacía: identifica la versión
@@ -144,10 +147,11 @@ constituye el motor de producción ni un lector de archivos.
 ## Traspaso de alcance
 
 MA-TSK-109 implementa validación completa contra catálogos, conflictos y resolución
-de ambigüedades; añadirá los planes de creación aprobados y sus parámetros de
-dominio, incluida marca de ingreso explícita en raíces nuevas. Las vinculaciones
-de este contrato representan exclusivamente UUID existentes, no altas ficticias.
-El puerto de revisión puede extenderse con esos planes sin mezclarlo con el lector.
+de ambigüedades; incorpora los planes de creación y sus parámetros de dominio,
+incluida marca de ingreso explícita en raíces nuevas. `accounts` y `categories`
+siguen representando exclusivamente UUID existentes. `newAccounts` y
+`newCategories` contienen decisiones en memoria, sin UUID ficticios ni altas
+persistidas. El lector mantiene su separación de la resolución.
 
 MA-TSK-110 implementa el confirmador y amplía el repositorio SQLite para conservar
 originales y crear referencias aprobadas atómicamente. El repositorio actual

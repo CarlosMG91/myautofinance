@@ -1,5 +1,6 @@
 import 'import_batch_repository.dart';
 import 'import_file.dart';
+import 'import_creation.dart';
 import 'interpreted_import.dart';
 
 /// El lector entrega también todos sus errores; no omite filas inválidas para
@@ -98,12 +99,15 @@ final class ImportPendingReference {
     required this.reference,
     required List<int> sourceOrdinals,
     required this.reason,
-  }) : sourceOrdinals = List.unmodifiable(sourceOrdinals);
+    List<String> candidateIds = const [],
+  }) : sourceOrdinals = List.unmodifiable(sourceOrdinals),
+       candidateIds = List.unmodifiable(candidateIds);
 
   // Los únicos tipos permitidos son los dos tipos de referencias públicas.
   final ImportReference reference;
   final List<int> sourceOrdinals;
   final String reason;
+  final List<String> candidateIds;
 }
 
 sealed class ImportReference {
@@ -132,32 +136,49 @@ final class ImportOverlap {
   String get key => '$sourceOrdinal:$existingMovementId';
 }
 
-/// Vinculaciones explícitas a identidades existentes; una misma referencia
-/// aplica a todas sus filas. Las altas propuestas se concretan en MA-TSK-109.
+/// Vinculaciones a identidades existentes y altas explícitamente propuestas;
+/// una misma referencia aplica a todas sus filas. Son decisiones en memoria.
 /// No confundir una referencia ausente en este mapa con Sin clasificar.
 final class ImportReferenceBindings {
   ImportReferenceBindings({
     Map<ImportAccountReference, String> accounts = const {},
     Map<ImportCategoryReference, String> categories = const {},
+    Map<ImportAccountReference, ImportNewAccount> newAccounts = const {},
+    Map<ImportCategoryReference, ImportNewCategory> newCategories = const {},
   }) : accounts = Map.unmodifiable(accounts),
-       categories = Map.unmodifiable(categories);
+       categories = Map.unmodifiable(categories),
+       newAccounts = Map.unmodifiable(newAccounts),
+       newCategories = Map.unmodifiable(newCategories);
 
   final Map<ImportAccountReference, String> accounts;
   final Map<ImportCategoryReference, String> categories;
+  final Map<ImportAccountReference, ImportNewAccount> newAccounts;
+  final Map<ImportCategoryReference, ImportNewCategory> newCategories;
+
+  ImportCategoryTarget? categoryTarget(ImportCategoryReference reference) {
+    final id = categories[reference];
+    if (id != null && id.trim().isNotEmpty) {
+      return ImportCategoryTarget.existing(id);
+    }
+    return newCategories.containsKey(reference)
+        ? ImportCategoryTarget.proposed(reference)
+        : null;
+  }
 
   bool resolves(InterpretedImportRow row) {
     bool present(String? id) => id != null && id.trim().isNotEmpty;
     return switch (row) {
       InterpretedMovement() =>
-        present(accounts[row.account]) &&
-            (row.category == null || present(categories[row.category])),
-      InterpretedBudget() => present(categories[row.category]),
+        (present(accounts[row.account]) ||
+                newAccounts.containsKey(row.account)) &&
+            (row.category == null || categoryTarget(row.category!) != null),
+      InterpretedBudget() => categoryTarget(row.category) != null,
     };
   }
 }
 
-/// Resultado de lectura; asignaciones/planes de altas se incorporarán por el
-/// resolutor de MA-TSK-109. Una revisión preparada no garantiza confirmación:
+/// Resultado de lectura con asignaciones y planes de altas validados.
+/// Una revisión preparada no garantiza confirmación:
 /// toda restricción se vuelve a validar al confirmar con la base vigente.
 final class ImportReview {
   ImportReview({
