@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/features/importing/data/sha256_import_fingerprint.dart';
 import 'package:myautofinance/features/importing/importing.dart';
-import 'package:myautofinance/features/movements/movements.dart';
 
 import '../support/synthetic_import_adapter.dart';
 

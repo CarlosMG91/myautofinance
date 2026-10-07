@@ -59,8 +59,9 @@ final class SyntheticImportAdapter implements ImportAdapter {
               throw const FormatException('Falta cuenta real.');
             }
             final dateParts = date.split('-');
-            if (dateParts.length != 3)
+            if (dateParts.length != 3) {
               throw const FormatException('Fecha inválida.');
+            }
             final category = _path(item['category']);
             rows.add(
               InterpretedMovement(
