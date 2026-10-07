@@ -5,6 +5,8 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
+import '../../../core/persistence/local_database_format.dart';
+
 import '../domain/local_backup.dart';
 import '../domain/local_backup_creation.dart';
 import 'backup_catalog.dart';
@@ -136,8 +138,8 @@ final class LocalBackupService implements LocalBackupCreator {
     }
     final hash = await _hash(imagePart);
     final image = await validator.validate(imagePart);
-    if (image.schemaVersion != 7 ||
-        image.applicationId != 1095126595 ||
+    if (image.schemaVersion != localSchemaVersion ||
+        image.applicationId != localApplicationId ||
         image.state.datasetId != snapshot.state.datasetId ||
         image.state.revision != snapshot.state.revision) {
       throw const LocalBackupFailure(LocalBackupFailureCode.invalidSnapshot);
@@ -149,7 +151,7 @@ final class LocalBackupService implements LocalBackupCreator {
     final validation = <String, dynamic>{
       'state': 'valid',
       'checkedAtUtc': backupUtc(_clock()),
-      'policySchemaVersion': 7,
+      'policySchemaVersion': localSchemaVersion,
       'issue': null,
     };
     final descriptor = <String, dynamic>{

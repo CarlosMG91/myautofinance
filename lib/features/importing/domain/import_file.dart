@@ -1,4 +1,4 @@
-import 'import_batch_repository.dart';
+import 'import_batch.dart';
 
 /// SHA-256 hexadecimal de los bytes completos, sin normalizarlos.
 abstract interface class ImportFingerprint {

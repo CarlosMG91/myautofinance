@@ -1,12 +1,31 @@
 import 'package:sqlite3/common.dart';
 
+import '../../../core/persistence/local_database_format.dart';
+
+export '../../../core/persistence/local_database_format.dart';
+
 import 'database_failure.dart';
 import 'concept_search_key.dart';
 import 'movement_subtotal.dart';
 
-const localSchemaVersion = 7;
-// ASCII AFNC: identifica este formato, independientemente del dataset_id.
-const localApplicationId = 0x41464e43;
+/// Extensión v8: los lotes previos conservan su procedencia sin datos inventados.
+const importOriginalSchemaObjects = <String>[
+  '''CREATE TABLE import_batch_metadata (
+ batch_id TEXT NOT NULL PRIMARY KEY REFERENCES import_batches(id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+ format_version TEXT NOT NULL CHECK(length(trim(format_version))>0),
+ movement_count INTEGER NOT NULL CHECK(typeof(movement_count)='integer' AND movement_count>=0),
+ budget_count INTEGER NOT NULL CHECK(typeof(budget_count)='integer' AND budget_count>=0),
+ CHECK(movement_count+budget_count>0)
+)''',
+  '''CREATE TABLE import_row_originals (
+ import_row_id TEXT NOT NULL PRIMARY KEY REFERENCES import_rows(id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+ payload TEXT NOT NULL CHECK(json_valid(payload) AND json_type(payload)='object')
+)''',
+  "CREATE TRIGGER import_batch_metadata_immutable BEFORE UPDATE ON import_batch_metadata BEGIN SELECT RAISE(ABORT,'import_origin_immutable'); END",
+  "CREATE TRIGGER import_batch_metadata_keep BEFORE DELETE ON import_batch_metadata BEGIN SELECT RAISE(ABORT,'import_origin_keep'); END",
+  "CREATE TRIGGER import_row_originals_immutable BEFORE UPDATE ON import_row_originals BEGIN SELECT RAISE(ABORT,'import_origin_immutable'); END",
+  "CREATE TRIGGER import_row_originals_keep BEFORE DELETE ON import_row_originals BEGIN SELECT RAISE(ABORT,'import_origin_keep'); END",
+];
 
 /// v0 es exclusivamente un predecesor sintético para ensayar migraciones.
 /// No se acepta una base genérica con user_version=0.
@@ -68,7 +87,8 @@ void validateExistingDatabase(CommonDatabase db) {
                     (version >= 6 ? wealthSchemaObjects.length : 0) +
                     (version >= 7
                         ? categoryReorganizationObjects.length - 1
-                        : 0))) {
+                        : 0) +
+                    (version >= 8 ? importOriginalSchemaObjects.length : 0))) {
     throw const DatabaseFailure(DatabaseFailureCode.incompatible);
   }
   final object = objects.singleWhere(
@@ -132,6 +152,15 @@ void validateExistingDatabase(CommonDatabase db) {
   }
   if (version >= 7) {
     for (final sql in categoryReorganizationObjects) {
+      if (!objects.any(
+        (o) => normalizeSchema(o['sql'] as String) == normalizeSchema(sql),
+      )) {
+        throw const DatabaseFailure(DatabaseFailureCode.incompatible);
+      }
+    }
+  }
+  if (version >= 8) {
+    for (final sql in importOriginalSchemaObjects) {
       if (!objects.any(
         (o) => normalizeSchema(o['sql'] as String) == normalizeSchema(sql),
       )) {

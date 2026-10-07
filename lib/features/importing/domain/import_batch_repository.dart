@@ -1,37 +1,11 @@
-import '../../budget/budget.dart';
-import '../../movements/movements.dart';
+import 'import_batch.dart';
+import 'import_session.dart';
 
-final class ImportedBudget {
-  const ImportedBudget(this.sourceOrdinal, this.data);
-  final int sourceOrdinal;
+export 'import_batch.dart';
 
-  /// Importe interno normalizado; para CSV usar BudgetInput.fromHistoricalCsv.
-  final BudgetInput data;
-}
-
-enum ImportSource { historicalCsv, bankXls }
-
-final class ImportedMovement {
-  const ImportedMovement(this.sourceOrdinal, this.data);
-  final int sourceOrdinal;
-  final MovementInput data;
-}
-
-final class ImportBatch {
-  const ImportBatch({
-    required this.id,
-    required this.sha256,
-    required this.source,
-    required this.originalName,
-    required this.contractVersion,
-    required this.importedAt,
-  });
-  final String id, sha256, originalName, contractVersion, importedAt;
-  final ImportSource source;
-}
-
-abstract interface class ImportBatchRepository {
-  /// Recibe filas ya interpretadas. Confirma lote, movimientos y presupuestos atómicamente.
+abstract interface class ImportBatchRepository implements ImportConfirmer {
+  /// Frontera anterior para filas ya resueltas, sin originales disponibles.
+  /// Los lectores nuevos deben utilizar confirm para revalidar la revisión.
   Future<ImportBatch> create({
     required String sha256,
     required ImportSource source,

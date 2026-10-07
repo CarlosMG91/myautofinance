@@ -58,6 +58,13 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
         await customStatement(
           'UPDATE database_state SET revision=revision+1 WHERE singleton=1 AND (SELECT dirty FROM local_mutation)=1',
         );
+        final tracked = await customSelect(
+          'SELECT changes() AS changed, (SELECT dirty FROM local_mutation) AS dirty',
+        ).getSingle();
+        if (tracked.read<int>('dirty') == 1 &&
+            tracked.read<int>('changed') != 1) {
+          throw StateError('No se pudo registrar la revisión local.');
+        }
         return result;
       }, zoneValues: {_workKey: true}),
     ).whenComplete(() {
@@ -82,6 +89,8 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
       'movements',
       'import_batches',
       'import_rows',
+      'import_batch_metadata',
+      'import_row_originals',
       'budgets',
       'wealth_snapshots',
       'wealth_values',
@@ -157,11 +166,15 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
           await customStatement(sql);
         }
         if (legacy.isNotEmpty) await _migrateCategoryReorganization();
+        for (final sql
+            in legacy.isNotEmpty ? importOriginalSchemaObjects : <String>[]) {
+          await customStatement(sql);
+        }
         await _checkIntegrity();
       });
     },
     onUpgrade: (_, from, to) async {
-      if (from < 1 || from > 6 || to != 7) {
+      if (from < 1 || from > 7 || to != 8) {
         throw const DatabaseFailure(DatabaseFailureCode.incompatible);
       }
       await transaction(() async {
@@ -182,7 +195,10 @@ class LocalDatabase extends _$LocalDatabase implements UnitOfWork {
         for (final sql in from < 6 ? wealthSchemaObjects : <String>[]) {
           await customStatement(sql);
         }
-        await _migrateCategoryReorganization();
+        if (from < 7) await _migrateCategoryReorganization();
+        for (final sql in importOriginalSchemaObjects) {
+          await customStatement(sql);
+        }
         await _checkIntegrity();
       });
     },

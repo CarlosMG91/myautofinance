@@ -88,6 +88,11 @@ void main() {
           db.execute(sql);
         }
       }
+      if (version >= 8) {
+        for (final sql in importOriginalSchemaObjects) {
+          db.execute(sql);
+        }
+      }
       db.execute('PRAGMA application_id=$localApplicationId');
       db.execute('PRAGMA user_version=$version');
       db.execute('INSERT INTO database_state VALUES(1,?,?)', [

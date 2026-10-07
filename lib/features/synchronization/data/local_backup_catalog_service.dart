@@ -5,6 +5,8 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
+import '../../../core/persistence/local_database_format.dart';
+
 import '../domain/local_backup_catalog.dart';
 import '../domain/local_backup_creation.dart';
 import 'backup_catalog.dart';
@@ -133,7 +135,7 @@ final class LocalBackupCatalogService implements LocalBackupCatalog {
   Map<String, dynamic> _validation(String status, String? issue) => {
     'state': status,
     'checkedAtUtc': backupUtc(_clock()),
-    'policySchemaVersion': 7,
+    'policySchemaVersion': localSchemaVersion,
     'issue': issue,
   };
   Map<String, dynamic> get _pending => {
@@ -537,10 +539,12 @@ final class LocalBackupCatalogService implements LocalBackupCatalog {
     );
     try {
       await _checkArtifact(root, e);
-      if (d['schemaVersion'] < 1 || d['schemaVersion'] > 7) {
+      if (d['schemaVersion'] < 1 || d['schemaVersion'] > localSchemaVersion) {
         e['validation'] = _validation(
           'incompatible',
-          d['schemaVersion'] > 7 ? 'futureSchema' : 'unsupportedSchema',
+          d['schemaVersion'] > localSchemaVersion
+              ? 'futureSchema'
+              : 'unsupportedSchema',
         );
         return false;
       }

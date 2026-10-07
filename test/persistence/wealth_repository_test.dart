@@ -275,7 +275,7 @@ void main() {
       backup.close();
       final expected = sqlite3.openInMemory();
       final snap = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v7.json')
+        File('drift_schemas/autofinance/drift_schema_v8.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       for (final group in snap['fixed_sql'] as List) {

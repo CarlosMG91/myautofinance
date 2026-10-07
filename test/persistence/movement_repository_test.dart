@@ -222,7 +222,7 @@ void main() {
     expect((await db.select(db.databaseState).getSingle()).revision, 17);
     expect((await SqliteAccountRepository(db).get(accountId))!.id, accountId);
     final snapshot = jsonDecode(
-      File('drift_schemas/autofinance/drift_schema_v7.json').readAsStringSync(),
+      File('drift_schemas/autofinance/drift_schema_v8.json').readAsStringSync(),
     ) as Map<String, dynamic>;
     final expected = sqlite3.openInMemory();
     for (final group in snapshot['fixed_sql'] as List) {

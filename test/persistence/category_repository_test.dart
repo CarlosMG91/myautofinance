@@ -189,7 +189,7 @@ void main() {
       expect(readSchemaVersion(backup), 1);
       backup.close();
       final snapshot = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v7.json')
+        File('drift_schemas/autofinance/drift_schema_v8.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();

@@ -459,7 +459,7 @@ JOIN tree t ON t.id=b.category_id WHERE b.month LIKE '2026-%' GROUP BY t.root,t.
       expect(validated.schemaVersion, 6);
       expect(File(store.migrationBackupPath!).readAsBytesSync(), backupBytes);
       final exported = jsonDecode(
-        File('drift_schemas/autofinance/drift_schema_v7.json')
+        File('drift_schemas/autofinance/drift_schema_v8.json')
             .readAsStringSync(),
       ) as Map<String, dynamic>;
       final expected = sqlite3.openInMemory();

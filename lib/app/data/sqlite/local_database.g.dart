@@ -4600,6 +4600,581 @@ class WealthValuesCompanion extends UpdateCompanion<WealthValue> {
   }
 }
 
+class ImportBatchMetadata extends Table
+    with TableInfo<ImportBatchMetadata, ImportBatchMetadataData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  ImportBatchMetadata(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _batchIdMeta = const VerificationMeta(
+    'batchId',
+  );
+  late final GeneratedColumn<String> batchId = GeneratedColumn<String>(
+    'batch_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY REFERENCES import_batches(id)ON UPDATE RESTRICT ON DELETE RESTRICT',
+  );
+  static const VerificationMeta _formatVersionMeta = const VerificationMeta(
+    'formatVersion',
+  );
+  late final GeneratedColumn<String> formatVersion = GeneratedColumn<String>(
+    'format_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (length(trim(format_version)) > 0)',
+  );
+  static const VerificationMeta _movementCountMeta = const VerificationMeta(
+    'movementCount',
+  );
+  late final GeneratedColumn<int> movementCount = GeneratedColumn<int>(
+    'movement_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (typeof(movement_count) = \'integer\' AND movement_count >= 0)',
+  );
+  static const VerificationMeta _budgetCountMeta = const VerificationMeta(
+    'budgetCount',
+  );
+  late final GeneratedColumn<int> budgetCount = GeneratedColumn<int>(
+    'budget_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (typeof(budget_count) = \'integer\' AND budget_count >= 0)',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    batchId,
+    formatVersion,
+    movementCount,
+    budgetCount,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'import_batch_metadata';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ImportBatchMetadataData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('batch_id')) {
+      context.handle(
+        _batchIdMeta,
+        batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_batchIdMeta);
+    }
+    if (data.containsKey('format_version')) {
+      context.handle(
+        _formatVersionMeta,
+        formatVersion.isAcceptableOrUnknown(
+          data['format_version']!,
+          _formatVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_formatVersionMeta);
+    }
+    if (data.containsKey('movement_count')) {
+      context.handle(
+        _movementCountMeta,
+        movementCount.isAcceptableOrUnknown(
+          data['movement_count']!,
+          _movementCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_movementCountMeta);
+    }
+    if (data.containsKey('budget_count')) {
+      context.handle(
+        _budgetCountMeta,
+        budgetCount.isAcceptableOrUnknown(
+          data['budget_count']!,
+          _budgetCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_budgetCountMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {batchId};
+  @override
+  ImportBatchMetadataData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImportBatchMetadataData(
+      batchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}batch_id'],
+      )!,
+      formatVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}format_version'],
+      )!,
+      movementCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}movement_count'],
+      )!,
+      budgetCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}budget_count'],
+      )!,
+    );
+  }
+
+  @override
+  ImportBatchMetadata createAlias(String alias) {
+    return ImportBatchMetadata(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'CHECK(movement_count + budget_count > 0)',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class ImportBatchMetadataData extends DataClass
+    implements Insertable<ImportBatchMetadataData> {
+  final String batchId;
+  final String formatVersion;
+  final int movementCount;
+  final int budgetCount;
+  const ImportBatchMetadataData({
+    required this.batchId,
+    required this.formatVersion,
+    required this.movementCount,
+    required this.budgetCount,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['batch_id'] = Variable<String>(batchId);
+    map['format_version'] = Variable<String>(formatVersion);
+    map['movement_count'] = Variable<int>(movementCount);
+    map['budget_count'] = Variable<int>(budgetCount);
+    return map;
+  }
+
+  ImportBatchMetadataCompanion toCompanion(bool nullToAbsent) {
+    return ImportBatchMetadataCompanion(
+      batchId: Value(batchId),
+      formatVersion: Value(formatVersion),
+      movementCount: Value(movementCount),
+      budgetCount: Value(budgetCount),
+    );
+  }
+
+  factory ImportBatchMetadataData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImportBatchMetadataData(
+      batchId: serializer.fromJson<String>(json['batch_id']),
+      formatVersion: serializer.fromJson<String>(json['format_version']),
+      movementCount: serializer.fromJson<int>(json['movement_count']),
+      budgetCount: serializer.fromJson<int>(json['budget_count']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'batch_id': serializer.toJson<String>(batchId),
+      'format_version': serializer.toJson<String>(formatVersion),
+      'movement_count': serializer.toJson<int>(movementCount),
+      'budget_count': serializer.toJson<int>(budgetCount),
+    };
+  }
+
+  ImportBatchMetadataData copyWith({
+    String? batchId,
+    String? formatVersion,
+    int? movementCount,
+    int? budgetCount,
+  }) => ImportBatchMetadataData(
+    batchId: batchId ?? this.batchId,
+    formatVersion: formatVersion ?? this.formatVersion,
+    movementCount: movementCount ?? this.movementCount,
+    budgetCount: budgetCount ?? this.budgetCount,
+  );
+  ImportBatchMetadataData copyWithCompanion(ImportBatchMetadataCompanion data) {
+    return ImportBatchMetadataData(
+      batchId: data.batchId.present ? data.batchId.value : this.batchId,
+      formatVersion: data.formatVersion.present
+          ? data.formatVersion.value
+          : this.formatVersion,
+      movementCount: data.movementCount.present
+          ? data.movementCount.value
+          : this.movementCount,
+      budgetCount: data.budgetCount.present
+          ? data.budgetCount.value
+          : this.budgetCount,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportBatchMetadataData(')
+          ..write('batchId: $batchId, ')
+          ..write('formatVersion: $formatVersion, ')
+          ..write('movementCount: $movementCount, ')
+          ..write('budgetCount: $budgetCount')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(batchId, formatVersion, movementCount, budgetCount);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImportBatchMetadataData &&
+          other.batchId == this.batchId &&
+          other.formatVersion == this.formatVersion &&
+          other.movementCount == this.movementCount &&
+          other.budgetCount == this.budgetCount);
+}
+
+class ImportBatchMetadataCompanion
+    extends UpdateCompanion<ImportBatchMetadataData> {
+  final Value<String> batchId;
+  final Value<String> formatVersion;
+  final Value<int> movementCount;
+  final Value<int> budgetCount;
+  final Value<int> rowid;
+  const ImportBatchMetadataCompanion({
+    this.batchId = const Value.absent(),
+    this.formatVersion = const Value.absent(),
+    this.movementCount = const Value.absent(),
+    this.budgetCount = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ImportBatchMetadataCompanion.insert({
+    required String batchId,
+    required String formatVersion,
+    required int movementCount,
+    required int budgetCount,
+    this.rowid = const Value.absent(),
+  }) : batchId = Value(batchId),
+       formatVersion = Value(formatVersion),
+       movementCount = Value(movementCount),
+       budgetCount = Value(budgetCount);
+  static Insertable<ImportBatchMetadataData> custom({
+    Expression<String>? batchId,
+    Expression<String>? formatVersion,
+    Expression<int>? movementCount,
+    Expression<int>? budgetCount,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (batchId != null) 'batch_id': batchId,
+      if (formatVersion != null) 'format_version': formatVersion,
+      if (movementCount != null) 'movement_count': movementCount,
+      if (budgetCount != null) 'budget_count': budgetCount,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ImportBatchMetadataCompanion copyWith({
+    Value<String>? batchId,
+    Value<String>? formatVersion,
+    Value<int>? movementCount,
+    Value<int>? budgetCount,
+    Value<int>? rowid,
+  }) {
+    return ImportBatchMetadataCompanion(
+      batchId: batchId ?? this.batchId,
+      formatVersion: formatVersion ?? this.formatVersion,
+      movementCount: movementCount ?? this.movementCount,
+      budgetCount: budgetCount ?? this.budgetCount,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (batchId.present) {
+      map['batch_id'] = Variable<String>(batchId.value);
+    }
+    if (formatVersion.present) {
+      map['format_version'] = Variable<String>(formatVersion.value);
+    }
+    if (movementCount.present) {
+      map['movement_count'] = Variable<int>(movementCount.value);
+    }
+    if (budgetCount.present) {
+      map['budget_count'] = Variable<int>(budgetCount.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportBatchMetadataCompanion(')
+          ..write('batchId: $batchId, ')
+          ..write('formatVersion: $formatVersion, ')
+          ..write('movementCount: $movementCount, ')
+          ..write('budgetCount: $budgetCount, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class ImportRowOriginals extends Table
+    with TableInfo<ImportRowOriginals, ImportRowOriginal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  ImportRowOriginals(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _importRowIdMeta = const VerificationMeta(
+    'importRowId',
+  );
+  late final GeneratedColumn<String> importRowId = GeneratedColumn<String>(
+    'import_row_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL PRIMARY KEY REFERENCES import_rows(id)ON UPDATE RESTRICT ON DELETE RESTRICT',
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (json_valid(payload) AND json_type(payload) = \'object\')',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [importRowId, payload];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'import_row_originals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ImportRowOriginal> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('import_row_id')) {
+      context.handle(
+        _importRowIdMeta,
+        importRowId.isAcceptableOrUnknown(
+          data['import_row_id']!,
+          _importRowIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_importRowIdMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {importRowId};
+  @override
+  ImportRowOriginal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImportRowOriginal(
+      importRowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}import_row_id'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+    );
+  }
+
+  @override
+  ImportRowOriginals createAlias(String alias) {
+    return ImportRowOriginals(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class ImportRowOriginal extends DataClass
+    implements Insertable<ImportRowOriginal> {
+  final String importRowId;
+  final String payload;
+  const ImportRowOriginal({required this.importRowId, required this.payload});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['import_row_id'] = Variable<String>(importRowId);
+    map['payload'] = Variable<String>(payload);
+    return map;
+  }
+
+  ImportRowOriginalsCompanion toCompanion(bool nullToAbsent) {
+    return ImportRowOriginalsCompanion(
+      importRowId: Value(importRowId),
+      payload: Value(payload),
+    );
+  }
+
+  factory ImportRowOriginal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImportRowOriginal(
+      importRowId: serializer.fromJson<String>(json['import_row_id']),
+      payload: serializer.fromJson<String>(json['payload']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'import_row_id': serializer.toJson<String>(importRowId),
+      'payload': serializer.toJson<String>(payload),
+    };
+  }
+
+  ImportRowOriginal copyWith({String? importRowId, String? payload}) =>
+      ImportRowOriginal(
+        importRowId: importRowId ?? this.importRowId,
+        payload: payload ?? this.payload,
+      );
+  ImportRowOriginal copyWithCompanion(ImportRowOriginalsCompanion data) {
+    return ImportRowOriginal(
+      importRowId: data.importRowId.present
+          ? data.importRowId.value
+          : this.importRowId,
+      payload: data.payload.present ? data.payload.value : this.payload,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportRowOriginal(')
+          ..write('importRowId: $importRowId, ')
+          ..write('payload: $payload')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(importRowId, payload);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImportRowOriginal &&
+          other.importRowId == this.importRowId &&
+          other.payload == this.payload);
+}
+
+class ImportRowOriginalsCompanion extends UpdateCompanion<ImportRowOriginal> {
+  final Value<String> importRowId;
+  final Value<String> payload;
+  final Value<int> rowid;
+  const ImportRowOriginalsCompanion({
+    this.importRowId = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ImportRowOriginalsCompanion.insert({
+    required String importRowId,
+    required String payload,
+    this.rowid = const Value.absent(),
+  }) : importRowId = Value(importRowId),
+       payload = Value(payload);
+  static Insertable<ImportRowOriginal> custom({
+    Expression<String>? importRowId,
+    Expression<String>? payload,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (importRowId != null) 'import_row_id': importRowId,
+      if (payload != null) 'payload': payload,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ImportRowOriginalsCompanion copyWith({
+    Value<String>? importRowId,
+    Value<String>? payload,
+    Value<int>? rowid,
+  }) {
+    return ImportRowOriginalsCompanion(
+      importRowId: importRowId ?? this.importRowId,
+      payload: payload ?? this.payload,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (importRowId.present) {
+      map['import_row_id'] = Variable<String>(importRowId.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportRowOriginalsCompanion(')
+          ..write('importRowId: $importRowId, ')
+          ..write('payload: $payload, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$LocalDatabase extends GeneratedDatabase {
   _$LocalDatabase(QueryExecutor e) : super(e);
   $LocalDatabaseManager get managers => $LocalDatabaseManager(this);
@@ -4734,6 +5309,26 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     'CREATE TRIGGER accounts_wealth_bounds BEFORE UPDATE OF active_from, active_through ON accounts BEGIN SELECT RAISE (ABORT, \'wealth_bounds\') WHERE EXISTS (SELECT 1 FROM wealth_values AS v JOIN wealth_snapshots AS s ON s.id = v.snapshot_id WHERE v.account_id = NEW.id AND(s.month < NEW.active_from OR(NEW.active_through IS NOT NULL AND s.month > NEW.active_through)));END',
     'accounts_wealth_bounds',
   );
+  late final ImportBatchMetadata importBatchMetadata = ImportBatchMetadata(
+    this,
+  );
+  late final ImportRowOriginals importRowOriginals = ImportRowOriginals(this);
+  late final Trigger importBatchMetadataImmutable = Trigger(
+    'CREATE TRIGGER import_batch_metadata_immutable BEFORE UPDATE ON import_batch_metadata BEGIN SELECT RAISE (ABORT, \'import_origin_immutable\');END',
+    'import_batch_metadata_immutable',
+  );
+  late final Trigger importBatchMetadataKeep = Trigger(
+    'CREATE TRIGGER import_batch_metadata_keep BEFORE DELETE ON import_batch_metadata BEGIN SELECT RAISE (ABORT, \'import_origin_keep\');END',
+    'import_batch_metadata_keep',
+  );
+  late final Trigger importRowOriginalsImmutable = Trigger(
+    'CREATE TRIGGER import_row_originals_immutable BEFORE UPDATE ON import_row_originals BEGIN SELECT RAISE (ABORT, \'import_origin_immutable\');END',
+    'import_row_originals_immutable',
+  );
+  late final Trigger importRowOriginalsKeep = Trigger(
+    'CREATE TRIGGER import_row_originals_keep BEFORE DELETE ON import_row_originals BEGIN SELECT RAISE (ABORT, \'import_origin_keep\');END',
+    'import_row_originals_keep',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4779,6 +5374,12 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     wealthValuesUpdate,
     wealthMonthImmutable,
     accountsWealthBounds,
+    importBatchMetadata,
+    importRowOriginals,
+    importBatchMetadataImmutable,
+    importBatchMetadataKeep,
+    importRowOriginalsImmutable,
+    importRowOriginalsKeep,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4950,6 +5551,34 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
       ),
       result: [],
     ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'import_batch_metadata',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'import_batch_metadata',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'import_row_originals',
+        limitUpdateKind: UpdateKind.update,
+      ),
+      result: [],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'import_row_originals',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [],
+    ),
   ]);
 }
 
@@ -4994,6 +5623,27 @@ final class $ImportBatchesReferences
     ).filter((f) => f.batchId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_importRowsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<ImportBatchMetadata, List<ImportBatchMetadataData>>
+  _importBatchMetadataRefsTable(_$LocalDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.importBatchMetadata,
+        aliasName: 'import_batches__id__import_batch_metadata__batch_id',
+      );
+
+  $ImportBatchMetadataProcessedTableManager get importBatchMetadataRefs {
+    final manager = $ImportBatchMetadataTableManager(
+      $_db,
+      $_db.importBatchMetadata,
+    ).filter((f) => f.batchId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _importBatchMetadataRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -5065,6 +5715,31 @@ class $ImportBatchesFilterComposer
           }) => $ImportRowsFilterComposer(
             $db: $db,
             $table: $db.importRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> importBatchMetadataRefs(
+    Expression<bool> Function($ImportBatchMetadataFilterComposer f) f,
+  ) {
+    final $ImportBatchMetadataFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.importBatchMetadata,
+      getReferencedColumn: (t) => t.batchId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportBatchMetadataFilterComposer(
+            $db: $db,
+            $table: $db.importBatchMetadata,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5192,6 +5867,31 @@ class $ImportBatchesAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> importBatchMetadataRefs<T extends Object>(
+    Expression<T> Function($ImportBatchMetadataAnnotationComposer a) f,
+  ) {
+    final $ImportBatchMetadataAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.importBatchMetadata,
+      getReferencedColumn: (t) => t.batchId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportBatchMetadataAnnotationComposer(
+            $db: $db,
+            $table: $db.importBatchMetadata,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $ImportBatchesTableManager
@@ -5207,7 +5907,10 @@ class $ImportBatchesTableManager
           $ImportBatchesUpdateCompanionBuilder,
           (ImportBatche, $ImportBatchesReferences),
           ImportBatche,
-          PrefetchHooks Function({bool importRowsRefs})
+          PrefetchHooks Function({
+            bool importRowsRefs,
+            bool importBatchMetadataRefs,
+          })
         > {
   $ImportBatchesTableManager(_$LocalDatabase db, ImportBatches table)
     : super(
@@ -5272,35 +5975,63 @@ class $ImportBatchesTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({importRowsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (importRowsRefs) db.importRows],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (importRowsRefs)
-                    await $_getPrefetchedData<
-                      ImportBatche,
-                      ImportBatches,
-                      ImportRow
-                    >(
-                      currentTable: table,
-                      referencedTable: $ImportBatchesReferences
-                          ._importRowsRefsTable(db),
-                      managerFromTypedResult: (p0) => $ImportBatchesReferences(
-                        db,
-                        table,
-                        p0,
-                      ).importRowsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.batchId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({importRowsRefs = false, importBatchMetadataRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (importRowsRefs) db.importRows,
+                    if (importBatchMetadataRefs) db.importBatchMetadata,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (importRowsRefs)
+                        await $_getPrefetchedData<
+                          ImportBatche,
+                          ImportBatches,
+                          ImportRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $ImportBatchesReferences
+                              ._importRowsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $ImportBatchesReferences(
+                                db,
+                                table,
+                                p0,
+                              ).importRowsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.batchId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (importBatchMetadataRefs)
+                        await $_getPrefetchedData<
+                          ImportBatche,
+                          ImportBatches,
+                          ImportBatchMetadataData
+                        >(
+                          currentTable: table,
+                          referencedTable: $ImportBatchesReferences
+                              ._importBatchMetadataRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $ImportBatchesReferences(
+                                db,
+                                table,
+                                p0,
+                              ).importBatchMetadataRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.batchId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -5317,7 +6048,10 @@ typedef $ImportBatchesProcessedTableManager =
       $ImportBatchesUpdateCompanionBuilder,
       (ImportBatche, $ImportBatchesReferences),
       ImportBatche,
-      PrefetchHooks Function({bool importRowsRefs})
+      PrefetchHooks Function({
+        bool importRowsRefs,
+        bool importBatchMetadataRefs,
+      })
     >;
 typedef $ImportRowsCreateCompanionBuilder = ImportRowsCompanion Function({
   required String id,
@@ -5392,6 +6126,27 @@ final class $ImportRowsReferences
     ).filter((f) => f.importRowId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_budgetsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<ImportRowOriginals, List<ImportRowOriginal>>
+  _importRowOriginalsRefsTable(_$LocalDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.importRowOriginals,
+        aliasName: 'import_rows__id__import_row_originals__import_row_id',
+      );
+
+  $ImportRowOriginalsProcessedTableManager get importRowOriginalsRefs {
+    final manager = $ImportRowOriginalsTableManager(
+      $_db,
+      $_db.importRowOriginals,
+    ).filter((f) => f.importRowId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _importRowOriginalsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -5495,6 +6250,31 @@ class $ImportRowsFilterComposer extends Composer<_$LocalDatabase, ImportRows> {
           }) => $BudgetsFilterComposer(
             $db: $db,
             $table: $db.budgets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> importRowOriginalsRefs(
+    Expression<bool> Function($ImportRowOriginalsFilterComposer f) f,
+  ) {
+    final $ImportRowOriginalsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.importRowOriginals,
+      getReferencedColumn: (t) => t.importRowId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportRowOriginalsFilterComposer(
+            $db: $db,
+            $table: $db.importRowOriginals,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5663,6 +6443,31 @@ class $ImportRowsAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> importRowOriginalsRefs<T extends Object>(
+    Expression<T> Function($ImportRowOriginalsAnnotationComposer a) f,
+  ) {
+    final $ImportRowOriginalsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.importRowOriginals,
+      getReferencedColumn: (t) => t.importRowId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportRowOriginalsAnnotationComposer(
+            $db: $db,
+            $table: $db.importRowOriginals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $ImportRowsTableManager
@@ -5682,6 +6487,7 @@ class $ImportRowsTableManager
             bool batchId,
             bool movementsRefs,
             bool budgetsRefs,
+            bool importRowOriginalsRefs,
           })
         > {
   $ImportRowsTableManager(_$LocalDatabase db, ImportRows table)
@@ -5740,12 +6546,18 @@ class $ImportRowsTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({batchId = false, movementsRefs = false, budgetsRefs = false}) {
+              ({
+                batchId = false,
+                movementsRefs = false,
+                budgetsRefs = false,
+                importRowOriginalsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (movementsRefs) db.movements,
                     if (budgetsRefs) db.budgets,
+                    if (importRowOriginalsRefs) db.importRowOriginals,
                   ],
                   addJoins:
                       <
@@ -5816,6 +6628,26 @@ class $ImportRowsTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (importRowOriginalsRefs)
+                        await $_getPrefetchedData<
+                          ImportRow,
+                          ImportRows,
+                          ImportRowOriginal
+                        >(
+                          currentTable: table,
+                          referencedTable: $ImportRowsReferences
+                              ._importRowOriginalsRefsTable(db),
+                          managerFromTypedResult: (p0) => $ImportRowsReferences(
+                            db,
+                            table,
+                            p0,
+                          ).importRowOriginalsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.importRowId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -5840,6 +6672,7 @@ typedef $ImportRowsProcessedTableManager =
         bool batchId,
         bool movementsRefs,
         bool budgetsRefs,
+        bool importRowOriginalsRefs,
       })
     >;
 typedef $AccountsCreateCompanionBuilder = AccountsCompanion Function({
@@ -9208,6 +10041,580 @@ typedef $WealthValuesProcessedTableManager =
       WealthValue,
       PrefetchHooks Function({bool snapshotId, bool accountId})
     >;
+typedef $ImportBatchMetadataCreateCompanionBuilder =
+    ImportBatchMetadataCompanion Function({
+      required String batchId,
+      required String formatVersion,
+      required int movementCount,
+      required int budgetCount,
+      Value<int> rowid,
+    });
+typedef $ImportBatchMetadataUpdateCompanionBuilder =
+    ImportBatchMetadataCompanion Function({
+      Value<String> batchId,
+      Value<String> formatVersion,
+      Value<int> movementCount,
+      Value<int> budgetCount,
+      Value<int> rowid,
+    });
+
+final class $ImportBatchMetadataReferences
+    extends
+        BaseReferences<
+          _$LocalDatabase,
+          ImportBatchMetadata,
+          ImportBatchMetadataData
+        > {
+  $ImportBatchMetadataReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static ImportBatches _batchIdTable(_$LocalDatabase db) => db.importBatches
+      .createAlias('import_batch_metadata__batch_id__import_batches__id');
+
+  $ImportBatchesProcessedTableManager get batchId {
+    final $_column = $_itemColumn<String>('batch_id')!;
+
+    final manager = $ImportBatchesTableManager(
+      $_db,
+      $_db.importBatches,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_batchIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $ImportBatchMetadataFilterComposer
+    extends Composer<_$LocalDatabase, ImportBatchMetadata> {
+  $ImportBatchMetadataFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get formatVersion => $composableBuilder(
+    column: $table.formatVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get movementCount => $composableBuilder(
+    column: $table.movementCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get budgetCount => $composableBuilder(
+    column: $table.budgetCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $ImportBatchesFilterComposer get batchId {
+    final $ImportBatchesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.batchId,
+      referencedTable: $db.importBatches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportBatchesFilterComposer(
+            $db: $db,
+            $table: $db.importBatches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ImportBatchMetadataOrderingComposer
+    extends Composer<_$LocalDatabase, ImportBatchMetadata> {
+  $ImportBatchMetadataOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get formatVersion => $composableBuilder(
+    column: $table.formatVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get movementCount => $composableBuilder(
+    column: $table.movementCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get budgetCount => $composableBuilder(
+    column: $table.budgetCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $ImportBatchesOrderingComposer get batchId {
+    final $ImportBatchesOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.batchId,
+      referencedTable: $db.importBatches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportBatchesOrderingComposer(
+            $db: $db,
+            $table: $db.importBatches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ImportBatchMetadataAnnotationComposer
+    extends Composer<_$LocalDatabase, ImportBatchMetadata> {
+  $ImportBatchMetadataAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get formatVersion => $composableBuilder(
+    column: $table.formatVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get movementCount => $composableBuilder(
+    column: $table.movementCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get budgetCount => $composableBuilder(
+    column: $table.budgetCount,
+    builder: (column) => column,
+  );
+
+  $ImportBatchesAnnotationComposer get batchId {
+    final $ImportBatchesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.batchId,
+      referencedTable: $db.importBatches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportBatchesAnnotationComposer(
+            $db: $db,
+            $table: $db.importBatches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ImportBatchMetadataTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          ImportBatchMetadata,
+          ImportBatchMetadataData,
+          $ImportBatchMetadataFilterComposer,
+          $ImportBatchMetadataOrderingComposer,
+          $ImportBatchMetadataAnnotationComposer,
+          $ImportBatchMetadataCreateCompanionBuilder,
+          $ImportBatchMetadataUpdateCompanionBuilder,
+          (ImportBatchMetadataData, $ImportBatchMetadataReferences),
+          ImportBatchMetadataData,
+          PrefetchHooks Function({bool batchId})
+        > {
+  $ImportBatchMetadataTableManager(
+    _$LocalDatabase db,
+    ImportBatchMetadata table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $ImportBatchMetadataFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $ImportBatchMetadataOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $ImportBatchMetadataAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> batchId = const Value.absent(),
+                Value<String> formatVersion = const Value.absent(),
+                Value<int> movementCount = const Value.absent(),
+                Value<int> budgetCount = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImportBatchMetadataCompanion(
+                batchId: batchId,
+                formatVersion: formatVersion,
+                movementCount: movementCount,
+                budgetCount: budgetCount,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String batchId,
+                required String formatVersion,
+                required int movementCount,
+                required int budgetCount,
+                Value<int> rowid = const Value.absent(),
+              }) => ImportBatchMetadataCompanion.insert(
+                batchId: batchId,
+                formatVersion: formatVersion,
+                movementCount: movementCount,
+                budgetCount: budgetCount,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<ImportBatchMetadata, ImportBatchMetadataData>(
+                    table,
+                  ),
+                  $ImportBatchMetadataReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({batchId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (batchId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.batchId,
+                        referencedTable: $ImportBatchMetadataReferences
+                            ._batchIdTable(db),
+                        referencedColumn: $ImportBatchMetadataReferences
+                            ._batchIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $ImportBatchMetadataProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      ImportBatchMetadata,
+      ImportBatchMetadataData,
+      $ImportBatchMetadataFilterComposer,
+      $ImportBatchMetadataOrderingComposer,
+      $ImportBatchMetadataAnnotationComposer,
+      $ImportBatchMetadataCreateCompanionBuilder,
+      $ImportBatchMetadataUpdateCompanionBuilder,
+      (ImportBatchMetadataData, $ImportBatchMetadataReferences),
+      ImportBatchMetadataData,
+      PrefetchHooks Function({bool batchId})
+    >;
+typedef $ImportRowOriginalsCreateCompanionBuilder =
+    ImportRowOriginalsCompanion Function({
+      required String importRowId,
+      required String payload,
+      Value<int> rowid,
+    });
+typedef $ImportRowOriginalsUpdateCompanionBuilder =
+    ImportRowOriginalsCompanion Function({
+      Value<String> importRowId,
+      Value<String> payload,
+      Value<int> rowid,
+    });
+
+final class $ImportRowOriginalsReferences
+    extends
+        BaseReferences<_$LocalDatabase, ImportRowOriginals, ImportRowOriginal> {
+  $ImportRowOriginalsReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static ImportRows _importRowIdTable(_$LocalDatabase db) => db.importRows
+      .createAlias('import_row_originals__import_row_id__import_rows__id');
+
+  $ImportRowsProcessedTableManager get importRowId {
+    final $_column = $_itemColumn<String>('import_row_id')!;
+
+    final manager = $ImportRowsTableManager(
+      $_db,
+      $_db.importRows,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_importRowIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $ImportRowOriginalsFilterComposer
+    extends Composer<_$LocalDatabase, ImportRowOriginals> {
+  $ImportRowOriginalsFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $ImportRowsFilterComposer get importRowId {
+    final $ImportRowsFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.importRowId,
+      referencedTable: $db.importRows,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportRowsFilterComposer(
+            $db: $db,
+            $table: $db.importRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ImportRowOriginalsOrderingComposer
+    extends Composer<_$LocalDatabase, ImportRowOriginals> {
+  $ImportRowOriginalsOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $ImportRowsOrderingComposer get importRowId {
+    final $ImportRowsOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.importRowId,
+      referencedTable: $db.importRows,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportRowsOrderingComposer(
+            $db: $db,
+            $table: $db.importRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ImportRowOriginalsAnnotationComposer
+    extends Composer<_$LocalDatabase, ImportRowOriginals> {
+  $ImportRowOriginalsAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  $ImportRowsAnnotationComposer get importRowId {
+    final $ImportRowsAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.importRowId,
+      referencedTable: $db.importRows,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ImportRowsAnnotationComposer(
+            $db: $db,
+            $table: $db.importRows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ImportRowOriginalsTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          ImportRowOriginals,
+          ImportRowOriginal,
+          $ImportRowOriginalsFilterComposer,
+          $ImportRowOriginalsOrderingComposer,
+          $ImportRowOriginalsAnnotationComposer,
+          $ImportRowOriginalsCreateCompanionBuilder,
+          $ImportRowOriginalsUpdateCompanionBuilder,
+          (ImportRowOriginal, $ImportRowOriginalsReferences),
+          ImportRowOriginal,
+          PrefetchHooks Function({bool importRowId})
+        > {
+  $ImportRowOriginalsTableManager(_$LocalDatabase db, ImportRowOriginals table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $ImportRowOriginalsFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $ImportRowOriginalsOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $ImportRowOriginalsAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> importRowId = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImportRowOriginalsCompanion(
+                importRowId: importRowId,
+                payload: payload,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String importRowId,
+                required String payload,
+                Value<int> rowid = const Value.absent(),
+              }) => ImportRowOriginalsCompanion.insert(
+                importRowId: importRowId,
+                payload: payload,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<ImportRowOriginals, ImportRowOriginal>(table),
+                  $ImportRowOriginalsReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({importRowId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (importRowId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.importRowId,
+                        referencedTable: $ImportRowOriginalsReferences
+                            ._importRowIdTable(db),
+                        referencedColumn: $ImportRowOriginalsReferences
+                            ._importRowIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $ImportRowOriginalsProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      ImportRowOriginals,
+      ImportRowOriginal,
+      $ImportRowOriginalsFilterComposer,
+      $ImportRowOriginalsOrderingComposer,
+      $ImportRowOriginalsAnnotationComposer,
+      $ImportRowOriginalsCreateCompanionBuilder,
+      $ImportRowOriginalsUpdateCompanionBuilder,
+      (ImportRowOriginal, $ImportRowOriginalsReferences),
+      ImportRowOriginal,
+      PrefetchHooks Function({bool importRowId})
+    >;
 
 class $LocalDatabaseManager {
   final _$LocalDatabase _db;
@@ -9231,4 +10638,8 @@ class $LocalDatabaseManager {
       $WealthSnapshotsTableManager(_db, _db.wealthSnapshots);
   $WealthValuesTableManager get wealthValues =>
       $WealthValuesTableManager(_db, _db.wealthValues);
+  $ImportBatchMetadataTableManager get importBatchMetadata =>
+      $ImportBatchMetadataTableManager(_db, _db.importBatchMetadata);
+  $ImportRowOriginalsTableManager get importRowOriginals =>
+      $ImportRowOriginalsTableManager(_db, _db.importRowOriginals);
 }

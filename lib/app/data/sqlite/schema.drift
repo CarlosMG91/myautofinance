@@ -235,3 +235,20 @@ CREATE TRIGGER wealth_values_insert BEFORE INSERT ON wealth_values BEGIN SELECT 
 CREATE TRIGGER wealth_values_update BEFORE UPDATE ON wealth_values BEGIN SELECT RAISE(ABORT,'wealth_bounds') WHERE NOT EXISTS (SELECT 1 FROM accounts a JOIN wealth_snapshots s ON s.id=NEW.snapshot_id WHERE a.id=NEW.account_id AND a.active_from<=s.month AND (a.active_through IS NULL OR a.active_through>=s.month)); END;
 CREATE TRIGGER wealth_month_immutable BEFORE UPDATE OF month ON wealth_snapshots WHEN NEW.month<>OLD.month AND EXISTS(SELECT 1 FROM wealth_values WHERE snapshot_id=OLD.id) BEGIN SELECT RAISE(ABORT,'wealth_month_immutable'); END;
 CREATE TRIGGER accounts_wealth_bounds BEFORE UPDATE OF active_from,active_through ON accounts BEGIN SELECT RAISE(ABORT,'wealth_bounds') WHERE EXISTS(SELECT 1 FROM wealth_values v JOIN wealth_snapshots s ON s.id=v.snapshot_id WHERE v.account_id=NEW.id AND (s.month<NEW.active_from OR (NEW.active_through IS NOT NULL AND s.month>NEW.active_through))); END;
+
+-- Ausentes para lotes anteriores: no se inventan originales de datos actuales.
+CREATE TABLE import_batch_metadata (
+ batch_id TEXT NOT NULL PRIMARY KEY REFERENCES import_batches(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+ format_version TEXT NOT NULL CHECK(length(trim(format_version))>0),
+ movement_count INTEGER NOT NULL CHECK(typeof(movement_count)='integer' AND movement_count>=0),
+ budget_count INTEGER NOT NULL CHECK(typeof(budget_count)='integer' AND budget_count>=0),
+ CHECK(movement_count+budget_count>0)
+);
+CREATE TABLE import_row_originals (
+ import_row_id TEXT NOT NULL PRIMARY KEY REFERENCES import_rows(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+ payload TEXT NOT NULL CHECK(json_valid(payload) AND json_type(payload)='object')
+);
+CREATE TRIGGER import_batch_metadata_immutable BEFORE UPDATE ON import_batch_metadata BEGIN SELECT RAISE(ABORT,'import_origin_immutable'); END;
+CREATE TRIGGER import_batch_metadata_keep BEFORE DELETE ON import_batch_metadata BEGIN SELECT RAISE(ABORT,'import_origin_keep'); END;
+CREATE TRIGGER import_row_originals_immutable BEFORE UPDATE ON import_row_originals BEGIN SELECT RAISE(ABORT,'import_origin_immutable'); END;
+CREATE TRIGGER import_row_originals_keep BEFORE DELETE ON import_row_originals BEGIN SELECT RAISE(ABORT,'import_origin_keep'); END;

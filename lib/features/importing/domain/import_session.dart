@@ -1,4 +1,4 @@
-import 'import_batch_repository.dart';
+import 'import_batch.dart';
 import 'import_file.dart';
 import 'import_creation.dart';
 import 'interpreted_import.dart';
