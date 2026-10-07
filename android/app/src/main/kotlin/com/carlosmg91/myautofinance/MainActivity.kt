@@ -4,10 +4,25 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMethodCodec
+import android.content.Intent
 
 class MainActivity : FlutterActivity() {
+    private var localCsv: LocalCsvChannel? = null
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (localCsv?.onActivityResult(requestCode, resultCode, data) == true) return
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        localCsv?.dispose()
+        localCsv = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        localCsv = LocalCsvChannel(this, flutterEngine.dartExecutor.binaryMessenger)
         val store = DriveSessionStore(this)
         val channel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
