@@ -1,4 +1,6 @@
 import 'movement_list_route.dart';
+import 'pending_movement_route.dart';
+import '../../features/movements/presentation/pending_movement_controller.dart';
 import 'import_route.dart';
 import '../../features/importing/importing.dart' show LocalCsvSelector;
 import '../../features/importing/presentation/import_controller.dart';
@@ -37,6 +39,7 @@ abstract final class AppRouter {
     CategoryManagementLoader? categories,
     WealthManagementLoader? wealth,
     MovementListLoader? movements,
+    PendingMovementLoader? pendingMovements,
     BudgetLoader? budgets,
     ImportServicesLoader? imports,
     LocalCsvSelector? csvSelector,
@@ -66,6 +69,17 @@ abstract final class AppRouter {
         categories: categories,
         importsAvailable: imports != null,
       );
+    } else if (uri?.path == AppRoutes.pendingMovements) {
+      page = pendingMovements == null || categories == null
+          ? const _TechnicalPlaceholder(
+              title: 'Bandeja no disponible',
+              message: 'No se ha inicializado el almacenamiento local.',
+            )
+          : PendingMovementRoute(
+              settings: settings,
+              load: pendingMovements,
+              categories: categories,
+            );
     } else if (uri?.path == AppRoutes.movements && movements != null) {
       page = MovementListRoute(
         settings: settings,

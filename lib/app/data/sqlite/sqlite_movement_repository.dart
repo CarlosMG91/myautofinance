@@ -251,15 +251,27 @@ final class SqliteMovementRepository
           selection.datasetId != (await database.readState()).datasetId) {
         throw const MovementFailure(
           'La base local ha cambiado. Selecciona de nuevo los pendientes.',
+          requiresRefresh: true,
         );
       }
-      final records = await _requireSelection(selection.movements);
+      final records = <MovementRecord>[];
+      for (final id in selection.movements.ids) {
+        final record = await get(id);
+        if (record == null) {
+          throw const MovementFailure(
+            'El movimiento no existe.',
+            requiresRefresh: true,
+          );
+        }
+        records.add(record);
+      }
       if (records.any(
         (record) =>
             record.importRowId == null || record.data.categoryId != null,
       )) {
         throw const MovementFailure(
           'Algún movimiento ya no es un importado pendiente. Revisa la selección.',
+          requiresRefresh: true,
         );
       }
       final category = await database
@@ -269,7 +281,10 @@ final class SqliteMovementRepository
           )
           .getSingleOrNull();
       if (category == null || category.read<int>('archived') != 0) {
-        throw const MovementFailure('La categoría no existe o está archivada.');
+        throw const MovementFailure(
+          'La categoría no existe o está archivada.',
+          requiresRefresh: true,
+        );
       }
       final now = movementTimestamp();
       for (final record in records) {
@@ -282,6 +297,7 @@ final class SqliteMovementRepository
         if (changed != 1) {
           throw const MovementFailure(
             'No se pudo categorizar todo el lote pendiente.',
+            requiresRefresh: true,
           );
         }
       }

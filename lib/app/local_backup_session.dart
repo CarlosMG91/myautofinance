@@ -1,4 +1,6 @@
 import 'movement_list_factory.dart';
+import 'pending_movement_factory.dart';
+import '../features/movements/presentation/pending_movement_controller.dart';
 import 'import_factory.dart';
 import '../features/importing/presentation/import_controller.dart';
 import 'budget_factory.dart';
@@ -55,6 +57,9 @@ class LocalBackupSession {
 
   Future<MovementListSource> movements() async =>
       createMovementListSource(await store.open(), categoryInvalidation);
+
+  Future<PendingMovementSource> pendingMovements() async =>
+      createPendingMovementSource(await store.open(), categoryInvalidation);
 
   Future<WealthManagement> wealth() async =>
       createWealthManagement(database: await store.open());

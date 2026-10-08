@@ -28,8 +28,11 @@ final class ValueDate implements Comparable<ValueDate> {
 }
 
 final class MovementFailure implements Exception {
-  const MovementFailure(this.message);
+  const MovementFailure(this.message, {this.requiresRefresh = false});
   final String message;
+
+  /// La bandeja debe releer y exigir una selección nueva antes de reintentar.
+  final bool requiresRefresh;
   @override
   String toString() => message;
 }

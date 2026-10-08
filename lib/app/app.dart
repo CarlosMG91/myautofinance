@@ -1,4 +1,5 @@
 import '../features/movements/presentation/movement_list_controller.dart';
+import '../features/movements/presentation/pending_movement_controller.dart';
 import '../features/importing/presentation/import_controller.dart';
 import '../features/importing/importing.dart' show LocalCsvSelector;
 import '../features/budget/presentation/budget_source.dart';
@@ -28,6 +29,7 @@ class AutofinanceApp extends StatelessWidget {
     this.categories,
     this.wealth,
     this.movements,
+    this.pendingMovements,
     this.budgets,
     this.imports,
     this.csvSelector,
@@ -42,6 +44,7 @@ class AutofinanceApp extends StatelessWidget {
   final CategoryManagementLoader? categories;
   final WealthManagementLoader? wealth;
   final MovementListLoader? movements;
+  final PendingMovementLoader? pendingMovements;
   final BudgetLoader? budgets;
   final ImportServicesLoader? imports;
   final LocalCsvSelector? csvSelector;
@@ -115,6 +118,7 @@ class AutofinanceApp extends StatelessWidget {
           categories: categoryLoader,
           wealth: wealthLoader,
           movements: movements ?? localSession?.movements,
+          pendingMovements: pendingMovements ?? localSession?.pendingMovements,
           budgets: budgets ?? localSession?.budgets,
           imports: imports ?? localSession?.imports,
           csvSelector: csvSelector,
@@ -128,6 +132,7 @@ class AutofinanceApp extends StatelessWidget {
         categories: categoryLoader,
         wealth: wealthLoader,
         movements: movements ?? localSession?.movements,
+        pendingMovements: pendingMovements ?? localSession?.pendingMovements,
         budgets: budgets ?? localSession?.budgets,
         imports: imports ?? localSession?.imports,
         csvSelector: csvSelector,

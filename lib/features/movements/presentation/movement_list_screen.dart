@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../domain/movement_repository.dart';
 import '../domain/category_management.dart';
 import 'movement_list_controller.dart';
+import 'movement_record_list.dart';
 
 class MovementListScreen extends StatefulWidget {
   const MovementListScreen({
@@ -473,82 +474,21 @@ class _MovementListScreenState extends State<MovementListScreen> {
                       const Text(
                         'No hay movimientos que coincidan con este periodo y filtros.',
                       ),
-                    if (wide && c.page!.records.isNotEmpty)
-                      Table(
-                        columnWidths: const {
-                          0: FixedColumnWidth(48),
-                          1: FlexColumnWidth(1),
-                          2: FlexColumnWidth(2),
-                          3: FlexColumnWidth(1.5),
-                          4: FlexColumnWidth(2),
-                          5: FlexColumnWidth(1.2),
-                          6: FlexColumnWidth(1.5),
-                        },
-                        defaultVerticalAlignment:
-                            TableCellVerticalAlignment.middle,
-                        children: [
-                          TableRow(
-                            children: [
-                              for (final title in [
-                                '',
-                                'Fecha',
-                                'Concepto',
-                                'Cuenta',
-                                'Categoría',
-                                'Importe EUR',
-                                'Detalle',
-                              ])
-                                Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Text(
-                                    title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          for (final row in c.page!.records)
-                            TableRow(
-                              children: [
-                                _check(row),
-                                for (final value in _values(row))
-                                  Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Text(
-                                      value,
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                  ),
-                                _openButton(row),
-                              ],
-                            ),
+                    if (c.page!.records.isNotEmpty)
+                      MovementRecordList(
+                        records: c.page!.records,
+                        labels: const [
+                          'Fecha',
+                          'Concepto',
+                          'Cuenta',
+                          'Categoría',
+                          'Importe EUR',
                         ],
+                        values: _values,
+                        checkbox: _check,
+                        actions: _openButton,
+                        wide: wide,
                       ),
-                    if (!wide)
-                      for (final row in c.page!.records)
-                        Card(
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _check(row),
-                                  for (final (index, value) in _values(
-                                    row,
-                                  ).indexed)
-                                    Text(
-                                      '${['Fecha', 'Concepto', 'Cuenta', 'Categoría', 'Importe EUR'][index]}: $value',
-                                    ),
-                                  _openButton(row),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
                   ],
                   Wrap(
                     spacing: 12,

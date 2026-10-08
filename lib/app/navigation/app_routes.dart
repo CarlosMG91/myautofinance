@@ -17,6 +17,7 @@ abstract final class AppRoutes {
   static const importBatches = '/importaciones/lotes';
   static const importRows = '/importaciones/origen';
   static const movements = '/movimientos';
+  static const pendingMovements = '/pendientes-categorizacion';
   static const monthlyStatus = '/estado';
   static const wealth = '/patrimonio';
   static const wealthPhoto = '/patrimonio/foto';
