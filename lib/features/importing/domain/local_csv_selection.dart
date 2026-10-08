@@ -1,29 +1,9 @@
-import 'dart:typed_data';
+import 'local_file_selection.dart';
 
-/// Una carga local, sin rutas, decodificación ni persistencia.
-abstract interface class LocalCsvSelector {
-  Future<LocalCsvSelection> select();
-}
-
-sealed class LocalCsvSelection {
-  const LocalCsvSelection();
-}
-
-final class LocalCsvSelected extends LocalCsvSelection {
-  LocalCsvSelected({required this.name, required Uint8List bytes})
-    : bytes = Uint8List.fromList(bytes).asUnmodifiableView();
-
-  final String name;
-  final Uint8List bytes;
-}
-
-final class LocalCsvCancelled extends LocalCsvSelection {
-  const LocalCsvCancelled();
-}
-
-enum LocalCsvFailureCode { accessDenied, unavailable, readFailed, busy }
-
-final class LocalCsvFailed extends LocalCsvSelection {
-  const LocalCsvFailed(this.code);
-  final LocalCsvFailureCode code;
-}
+/// Alias compatibles para el flujo CSV sobre el puerto binario compartido.
+typedef LocalCsvSelector = LocalFileSelector;
+typedef LocalCsvSelection = LocalFileSelection;
+typedef LocalCsvSelected = LocalFileSelected;
+typedef LocalCsvCancelled = LocalFileCancelled;
+typedef LocalCsvFailureCode = LocalFileFailureCode;
+typedef LocalCsvFailed = LocalFileFailed;

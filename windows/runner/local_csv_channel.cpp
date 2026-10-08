@@ -42,6 +42,22 @@ LocalCsvChannel::LocalCsvChannel(flutter::BinaryMessenger* messenger, HWND owner
       result->Error("busy", "Selección en curso.");
       return;
     }
+    bool xls = false;
+    if (call.arguments() && !std::holds_alternative<std::monostate>(*call.arguments())) {
+      const auto* arguments = std::get_if<flutter::EncodableMap>(call.arguments());
+      if (!arguments) {
+        result->Error("readFailed", "Orientación no reconocida.");
+        return;
+      }
+      const auto extension = arguments->find(flutter::EncodableValue("extension"));
+      if (extension == arguments->end() ||
+          !std::holds_alternative<std::string>(extension->second) ||
+          std::get<std::string>(extension->second) != "xls") {
+        result->Error("readFailed", "Orientación no reconocida.");
+        return;
+      }
+      xls = true;
+    }
     pending_ = std::move(result);
     // Diálogo modal del sistema: bombea mensajes. La lectura se hace fuera
     // del hilo de Flutter, y el resultado vuelve por la cola de la ventana.
@@ -54,9 +70,11 @@ LocalCsvChannel::LocalCsvChannel(flutter::BinaryMessenger* messenger, HWND owner
         (options | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST | FOS_FORCEFILESYSTEM |
          FOS_NOCHANGEDIR | FOS_DONTADDTORECENT) & ~FOS_ALLOWMULTISELECT);
     const COMDLG_FILTERSPEC filters[] = {
-        {L"CSV (*.csv)", L"*.csv"}, {L"Todos los archivos", L"*.*"}};
+        {xls ? L"Extracto Openbank (*.xls)" : L"CSV (*.csv)",
+         xls ? L"*.xls" : L"*.csv"}, {L"Todos los archivos", L"*.*"}};
     if (SUCCEEDED(hr)) hr = dialog->SetFileTypes(2, filters);
-    if (SUCCEEDED(hr)) hr = dialog->SetTitle(L"Seleccionar CSV");
+    if (SUCCEEDED(hr)) hr = dialog->SetTitle(
+        xls ? L"Seleccionar extracto Openbank" : L"Seleccionar CSV");
     if (SUCCEEDED(hr)) hr = dialog->Show(owner_);
     if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
       pending_->Success();

@@ -3,6 +3,7 @@ export 'domain/import_batch_repository.dart';
 export 'domain/import_history.dart';
 export 'domain/import_file.dart';
 export 'domain/local_csv_selection.dart';
+export 'domain/local_file_selection.dart';
 export 'domain/import_creation.dart';
 export 'domain/import_preview.dart';
 export 'domain/import_session.dart';

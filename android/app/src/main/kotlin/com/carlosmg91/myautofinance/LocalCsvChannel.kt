@@ -21,16 +21,22 @@ class LocalCsvChannel(private val activity: Activity, messenger: BinaryMessenger
                 result.notImplemented()
             } else if (pending != null) {
                 result.error("busy", "Selección en curso.", null)
+            } else if (call.arguments != null &&
+                (call.arguments !is Map<*, *> ||
+                 (call.arguments as Map<*, *>)["extension"] != "xls")) {
+                result.error("readFailed", "Orientación no reconocida.", null)
             } else {
+                val xls = call.arguments != null
                 pending = result
                 try {
-                    // El proveedor puede etiquetar CSV como texto u octet-stream.
-                    // Todos los documentos son elegibles: valida el lector CSV.
+                    // XLS no prueba formato ni garantiza el MIME del proveedor.
+                    // Todos los documentos son elegibles: valida el lector.
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                         addCategory(Intent.CATEGORY_OPENABLE)
                         type = "*/*"
                         putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
-                        putExtra(Intent.EXTRA_TITLE, "Seleccionar CSV")
+                        putExtra(Intent.EXTRA_TITLE, if (xls)
+                            "Seleccionar extracto Openbank (*.xls)" else "Seleccionar CSV")
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
                     activity.startActivityForResult(intent, REQUEST)
