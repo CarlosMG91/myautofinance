@@ -47,7 +47,10 @@ class _PendingMovementRouteState extends State<PendingMovementRoute> {
         : Navigator.of(context).pushReplacementNamed(origin.route);
     try {
       final uri = Uri.parse(widget.settings.name!);
-      if (uri.path != AppRoutes.pendingMovements ||
+      if (uri.hasScheme ||
+          uri.hasAuthority ||
+          uri.hasFragment ||
+          uri.path != AppRoutes.pendingMovements ||
           uri.queryParameters.keys.any((k) => k != 'lote') ||
           uri.queryParametersAll.values.any((v) => v.length != 1)) {
         throw const MovementFailure('Ruta de pendientes inválida.');

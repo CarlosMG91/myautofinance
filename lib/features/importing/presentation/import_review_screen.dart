@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 
 import 'dart:ui' show AppExitResponse;
@@ -15,14 +18,18 @@ class ImportReviewScreen extends StatefulWidget {
     required this.onReturn,
     required this.onHistory,
     required this.onBatch,
+    this.onPending,
+    this.pendingCount,
     required this.onPeriod,
     this.returnLabel = 'Volver al origen',
   });
   final ImportController controller;
   final VoidCallback onReturn, onHistory;
-  final void Function(String) onBatch;
+  final FutureOr<void> Function(String) onBatch;
   final void Function(String, String) onPeriod;
   final String returnLabel;
+  final Future<void> Function(String)? onPending;
+  final Future<int> Function(String)? pendingCount;
   @override
   State<ImportReviewScreen> createState() => _ImportReviewScreenState();
 }
@@ -33,6 +40,8 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
   bool _dialog = false;
   ImportSession? _displayedSession;
   final _headingFocus = FocusNode();
+  final _batchFocus = FocusNode();
+  int _pendingRevision = 0;
   ImportPhase? _lastPhase;
   String? _lastSelectionMessage;
   ImportController get c => widget.controller;
@@ -46,6 +55,7 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _headingFocus.dispose();
+    _batchFocus.dispose();
     super.dispose();
   }
 
@@ -361,13 +371,29 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
                       ),
                     ],
                     if (batch != null) ...[
+                      if (widget.onPending != null &&
+                          widget.pendingCount != null)
+                        ImportPendingLink(
+                          key: ValueKey((batch.id, _pendingRevision)),
+                          batchId: batch.id,
+                          open: widget.onPending!,
+                          count: widget.pendingCount!,
+                        ),
                       Text(
                         c.result is ImportConfirmed
                             ? 'Lote guardado en la base local: ${batch.movementCount} reales y ${batch.budgetCount} presupuestos.'
                             : 'Estos bytes ya se importaron. Cero altas; los registros corregidos o borrados se conservan.',
                       ),
                       TextButton(
-                        onPressed: () => widget.onBatch(batch.id),
+                        focusNode: _batchFocus,
+                        onPressed: () async {
+                          await widget.onBatch(batch.id);
+                          if (!mounted) return;
+                          setState(() {
+                            _pendingRevision++;
+                          });
+                          _batchFocus.requestFocus();
+                        },
                         child: const Text('Consultar lote y origen'),
                       ),
                       for (final period in periods)

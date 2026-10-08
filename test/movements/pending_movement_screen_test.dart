@@ -8,6 +8,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/app/import_factory.dart';
+import 'package:myautofinance/app/wealth_management_factory.dart';
+import 'package:myautofinance/app/budget_factory.dart';
+import 'package:myautofinance/features/importing/presentation/import_history_screen.dart';
 import 'package:myautofinance/app/category_management_factory.dart';
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
 import 'package:myautofinance/app/data/sqlite/schema_policy.dart';
@@ -579,6 +583,157 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  Future<NavigatorState> bootLinks(WidgetTester tester) async {
+    await tester.pumpWidget(
+      AutofinanceApp(
+        pendingMovements: () async =>
+            createPendingMovementSource(db, invalidation),
+        imports: () async => createImportServices(db),
+        wealth: () async => createWealthManagement(database: db),
+        budgets: () async => createBudgetSource(db, invalidation),
+        movements: () async => createMovementListSource(db, invalidation),
+        categories: () async =>
+            createCategoryManagement(database: db, invalidation: invalidation),
+      ),
+    );
+    await settle(tester);
+    return tester.state<NavigatorState>(find.byType(Navigator));
+  }
+
+  testWidgets('Gestión abre todos los periodos y vuelve al destino exacto', (
+    tester,
+  ) async {
+    final nav = await bootLinks(tester);
+    nav.pushNamed('${AppRoutes.actualSpending}?a=2020&m=2');
+    await settle(tester);
+    await tester.tap(find.text('Gestión'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pendientes de categorizar'));
+    await settle(tester);
+    expect(
+      find.text('Total pendiente del ámbito filtrado: 4 movimientos'),
+      findsOneWidget,
+    );
+    nav.pop();
+    await settle(tester);
+    expect(
+      ModalRoute.of(tester.element(find.text('Real anual')))?.settings.name,
+      '${AppRoutes.actualSpending}?a=2020&m=2',
+    );
+  });
+
+  for (final width in [1440.0, 412.0]) {
+    testWidgets(
+      'Lote → bandeja → lote actualiza contador y conserva origen $width',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 1200);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final nav = await bootLinks(tester);
+        nav.pushNamed('${AppRoutes.importBatches}/$batch');
+        await settle(tester);
+        final originalState = tester.state(find.byType(ImportHistoryScreen));
+        expect(find.text('Pendientes de categorizar: 4'), findsOneWidget);
+        await tester.ensureVisible(find.text('Revisar pendientes del lote'));
+        await tester.tap(find.text('Revisar pendientes del lote'));
+        await settle(tester);
+        expect(
+          find.text('Total pendiente del ámbito filtrado: 4 movimientos'),
+          findsOneWidget,
+        );
+        final screen = tester.widget<PendingMovementScreen>(
+          find.byType(PendingMovementScreen),
+        );
+        expect(screen.controller.query.batchId, batch);
+        screen.controller.selectPage();
+        await tester.ensureVisible(find.text('Ver lote').first);
+        await tester.tap(find.text('Ver lote').first);
+        await settle(tester);
+        expect(find.text('Detalle del lote'), findsOneWidget);
+        nav.pop();
+        await settle(tester);
+        expect(screen.controller.query.batchId, batch);
+        expect(screen.controller.selected, hasLength(4));
+        final request = screen.controller.beginAssignment()!;
+        await tester.runAsync(() => screen.controller.assign(request, leaf));
+        await settle(tester);
+        expect(
+          find.text('Total pendiente del ámbito filtrado: 0 movimientos'),
+          findsOneWidget,
+        );
+        nav.pop();
+        await settle(tester);
+        expect(
+          tester.state(find.byType(ImportHistoryScreen)),
+          same(originalState),
+        );
+        expect(find.text('Pendientes de categorizar: 0'), findsOneWidget);
+        final button = tester.widget<TextButton>(
+          find.widgetWithText(TextButton, 'Revisar pendientes del lote'),
+        );
+        expect(button.focusNode!.hasFocus, isTrue);
+        await tester.tap(find.text('Revisar pendientes del lote'));
+        await settle(tester);
+        expect(find.textContaining('No hay pendientes'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('Lote inexistente y parámetros inválidos no escriben', (
+    tester,
+  ) async {
+    final nav = await bootLinks(tester);
+    final before = (await db.readState()).revision;
+    nav.pushNamed(
+      '${AppRoutes.pendingMovements}?lote=aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    );
+    await settle(tester);
+    expect(find.textContaining('Lote no encontrado.'), findsOneWidget);
+    nav.pop();
+    await settle(tester);
+    for (final query in [
+      'lote=no-uuid',
+      'a=2026',
+      'lote=$batch&lote=$batch',
+      'lote=$batch#fragmento',
+    ]) {
+      nav.pushNamed('${AppRoutes.pendingMovements}?$query');
+      await settle(tester);
+      expect(find.text('No se pudo abrir la bandeja'), findsOneWidget);
+      nav.pop();
+      await settle(tester);
+    }
+    expect((await db.readState()).revision, before);
+  });
+
+  for (final path in [AppRoutes.wealth, AppRoutes.budget]) {
+    testWidgets('Gestión de $path no impone periodo a pendientes', (
+      tester,
+    ) async {
+      final nav = await bootLinks(tester);
+      nav.pushNamed('$path?a=2020&m=02');
+      await settle(tester);
+      final origin = ModalRoute.of(tester.element(find.byTooltip('Gestión')));
+      await tester.tap(find.byTooltip('Gestión'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pendientes de categorizar'));
+      await settle(tester);
+      expect(
+        find.text('Total pendiente del ámbito filtrado: 4 movimientos'),
+        findsOneWidget,
+      );
+      nav.pop();
+      await settle(tester);
+      expect(
+        ModalRoute.of(tester.element(find.byTooltip('Gestión'))),
+        same(origin),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   for (final (width, scale) in [(1440.0, 1.0), (412.0, 1.0), (412.0, 2.0)]) {
     testWidgets('Composición real con navegación $width × $scale', (

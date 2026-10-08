@@ -10,6 +10,8 @@ class ImportHistoryScreen extends StatefulWidget {
     required this.load,
     required this.onReturn,
     required this.onBatch,
+    this.onPending,
+    this.pendingCount,
     required this.onRow,
     required this.onRecord,
     this.batchId,
@@ -20,6 +22,8 @@ class ImportHistoryScreen extends StatefulWidget {
   final void Function(String) onBatch, onRow;
   final Future<void> Function(ImportRowHistory) onRecord;
   final String? batchId, rowId;
+  final Future<void> Function(String)? onPending;
+  final Future<int> Function(String)? pendingCount;
   @override
   State<ImportHistoryScreen> createState() => _ImportHistoryScreenState();
 }
@@ -42,7 +46,7 @@ class _ImportHistoryScreenState extends State<ImportHistoryScreen> {
     _load();
   }
 
-  Future<void> _load({bool reset = false}) async {
+  Future<void> _load({bool reset = false, bool silent = false}) async {
     if (reset) {
       _page = 0;
       _batchCursors
@@ -53,7 +57,7 @@ class _ImportHistoryScreenState extends State<ImportHistoryScreen> {
         ..add(null);
     }
     setState(() {
-      _busy = true;
+      if (!silent) _busy = true;
       _error = null;
     });
     try {
@@ -107,6 +111,13 @@ class _ImportHistoryScreenState extends State<ImportHistoryScreen> {
       ),
       SelectableText('SHA-256: ${batch.sha256}'),
       SelectableText('Lote: ${batch.id}'),
+      if (widget.onPending != null && widget.pendingCount != null)
+        ImportPendingLink(
+          batchId: batch.id,
+          open: widget.onPending!,
+          count: widget.pendingCount!,
+          onReturned: () => _load(silent: true),
+        ),
       Text('REAL: ${batch.movementCount} · PRESUPUESTO: ${batch.budgetCount}'),
     ],
   );

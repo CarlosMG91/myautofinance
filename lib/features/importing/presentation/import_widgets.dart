@@ -3,6 +3,81 @@ import 'package:flutter/material.dart';
 import '../importing.dart';
 import '../../movements/movements.dart';
 
+/// Relee los pendientes actuales sin alterar los conteos originales del lote.
+class ImportPendingLink extends StatefulWidget {
+  const ImportPendingLink({
+    super.key,
+    required this.batchId,
+    required this.open,
+    required this.count,
+    this.onReturned,
+  });
+  final String batchId;
+  final Future<void> Function(String) open;
+  final Future<int> Function(String) count;
+  final Future<void> Function()? onReturned;
+  @override
+  State<ImportPendingLink> createState() => _ImportPendingLinkState();
+}
+
+class _ImportPendingLinkState extends State<ImportPendingLink> {
+  late Future<int> _count;
+  final _focus = FocusNode();
+  @override
+  void initState() {
+    super.initState();
+    _count = widget.count(widget.batchId);
+  }
+
+  @override
+  void didUpdateWidget(ImportPendingLink oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.batchId != widget.batchId) {
+      _count = widget.count(widget.batchId);
+    }
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<int>(
+    future: _count,
+    builder: (context, snapshot) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (snapshot.connectionState != ConnectionState.done)
+          const LinearProgressIndicator(
+            semanticsLabel: 'Consultando pendientes',
+          ),
+        Text(
+          snapshot.hasError
+              ? 'Pendientes: contador no disponible'
+              : snapshot.connectionState == ConnectionState.done
+              ? 'Pendientes de categorizar: ${snapshot.data}'
+              : 'Consultando pendientes…',
+        ),
+        TextButton(
+          focusNode: _focus,
+          onPressed: () async {
+            await widget.open(widget.batchId);
+            if (!mounted) return;
+            setState(() {
+              _count = widget.count(widget.batchId);
+            });
+            _focus.requestFocus();
+            await widget.onReturned?.call();
+          },
+          child: const Text('Revisar pendientes del lote'),
+        ),
+      ],
+    ),
+  );
+}
+
 String importMoney(Object cents) {
   final value = cents is BigInt ? cents : BigInt.from(cents as int);
   final digits = (value.abs() ~/ BigInt.from(100)).toString().replaceAllMapped(

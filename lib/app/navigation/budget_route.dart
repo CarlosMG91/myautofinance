@@ -7,6 +7,7 @@ import '../../features/budget/presentation/budget_form_screen.dart';
 import '../../features/movements/presentation/category_tree_screen.dart';
 import '../category_selector_navigation.dart';
 import 'app_routes.dart';
+import 'pending_movement_route.dart';
 import 'wealth_route.dart';
 import 'category_navigation_context.dart';
 import 'import_route.dart';
@@ -24,11 +25,13 @@ class BudgetRoute extends StatefulWidget {
     required this.load,
     this.categories,
     this.importsAvailable = false,
+    this.pendingAvailable = false,
   });
   final RouteSettings settings;
   final BudgetLoader load;
   final CategoryManagementLoader? categories;
   final bool importsAvailable;
+  final bool pendingAvailable;
   @override
   State<BudgetRoute> createState() => _BudgetRouteState();
 }
@@ -96,7 +99,13 @@ class _BudgetRouteState extends State<BudgetRoute> {
               if (!await canOpen() || !mounted) return;
               await navigator.pushNamed(
                 path,
-                arguments: path == AppRoutes.importCsv
+                arguments: path == AppRoutes.pendingMovements
+                    ? PendingMovementOrigin(
+                        route: "${AppRoutes.budget}?${_period(selected)}",
+                        label:
+                            "Volver a Presupuesto, ${selected.value.substring(0, 7)}",
+                      )
+                    : path == AppRoutes.importCsv
                     ? CsvImportOrigin(
                         '${AppRoutes.budget}?${_period(selected)}',
                         'Volver a Presupuesto, ${selected.value.substring(0, 7)}',
@@ -109,6 +118,11 @@ class _BudgetRouteState extends State<BudgetRoute> {
               if (mounted) await refresh();
             },
             itemBuilder: (_) => [
+              PopupMenuItem(
+                value: AppRoutes.pendingMovements,
+                enabled: widget.pendingAvailable,
+                child: const Text("Pendientes de categorizar"),
+              ),
               const PopupMenuItem(
                 value: AppRoutes.importHistory,
                 child: Text('Historial de importaciones'),

@@ -7,6 +7,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/app/category_management_factory.dart';
+import 'package:myautofinance/app/pending_movement_factory.dart';
+import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_category_repository.dart';
@@ -262,6 +265,8 @@ void main() {
     'Origen/periodo, historial, paginación y retorno a sesión por rutas reales',
     (tester) async {
       final rows = [for (var i = 0; i < 51; i++) fixture.real(ordinal: i + 2)];
+      final invalidation = CategoryReadInvalidation();
+      addTearDown(invalidation.close);
       final launch = ImportReviewLaunch(
         file: fixture.draft(rows).file,
         adapter: SyntheticUiAdapter(rows),
@@ -274,12 +279,24 @@ void main() {
               RouteSettings(name: AppRoutes.importReview, arguments: launch),
               imports: () async => services,
               allowTestImports: true,
+              pendingMovements: () async =>
+                  createPendingMovementSource(db, invalidation),
+              categories: () async => createCategoryManagement(
+                database: db,
+                invalidation: invalidation,
+              ),
             ),
           ],
           onGenerateRoute: (s) => AppRouter.generateRoute(
             s,
             imports: () async => services,
             allowTestImports: true,
+            pendingMovements: () async =>
+                createPendingMovementSource(db, invalidation),
+            categories: () async => createCategoryManagement(
+              database: db,
+              invalidation: invalidation,
+            ),
           ),
         ),
       );
@@ -290,6 +307,17 @@ void main() {
       expect(find.text('Revisión'), findsOneWidget);
       await tap(tester, find.text('Confirmar lote completo'));
       await tap(tester, find.text('Importar todo'));
+      expect(find.text('Pendientes de categorizar: 51'), findsOneWidget);
+      await tap(tester, find.text('Revisar pendientes del lote'));
+      expect(
+        find.text('Total pendiente del ámbito filtrado: 51 movimientos'),
+        findsOneWidget,
+      );
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      navigator.pop();
+      await settle(tester);
+      expect(find.text('Importado'), findsOneWidget);
+      expect(find.text('Pendientes de categorizar: 51'), findsOneWidget);
       await tap(tester, find.text('Real · 2026-01'));
       expect(find.text('Real anual'), findsOneWidget);
       await tap(tester, find.text('Volver'));

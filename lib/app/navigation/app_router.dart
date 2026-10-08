@@ -59,6 +59,7 @@ abstract final class AppRouter {
               load: imports,
               allowTestLaunch: allowTestImports,
               csvSelector: csvSelector,
+              pendingMovements: categories == null ? null : pendingMovements,
             );
     } else if (budgets != null &&
         (uri?.path == AppRoutes.budget ||
@@ -68,6 +69,7 @@ abstract final class AppRouter {
         load: budgets,
         categories: categories,
         importsAvailable: imports != null,
+        pendingAvailable: pendingMovements != null && categories != null,
       );
     } else if (uri?.path == AppRoutes.pendingMovements) {
       page = pendingMovements == null || categories == null
@@ -79,6 +81,13 @@ abstract final class AppRouter {
               settings: settings,
               load: pendingMovements,
               categories: categories,
+              onBatch: imports == null
+                  ? null
+                  : (context, id) async {
+                      await Navigator.of(context).pushNamed(
+                        "${AppRoutes.importBatches}/${Uri.encodeComponent(id)}",
+                      );
+                    },
             );
     } else if (uri?.path == AppRoutes.movements && movements != null) {
       page = MovementListRoute(
@@ -100,6 +109,7 @@ abstract final class AppRouter {
         settings: settings,
         loadManagement: wealth,
         categoriesAvailable: categories != null,
+        pendingAvailable: pendingMovements != null && categories != null,
       );
     } else if (uri?.path == AppRoutes.categories ||
         uri?.path.startsWith('${AppRoutes.categories}/') == true) {
@@ -130,6 +140,7 @@ abstract final class AppRouter {
             imports != null,
         categoriesAvailable: categories != null,
         wealthAvailable: wealth != null,
+        pendingAvailable: pendingMovements != null && categories != null,
       );
     } else {
       TechnicalDestination? destination;
@@ -149,6 +160,7 @@ abstract final class AppRouter {
             imports != null,
         categoriesAvailable: categories != null,
         wealthAvailable: wealth != null,
+        pendingAvailable: pendingMovements != null && categories != null,
         title: destination?.label ?? 'Error de navegación',
         message: destination == null
             ? 'Destino desconocido · ${settings.name ?? "(sin ruta)"}'
@@ -183,10 +195,12 @@ class _WealthRoute extends StatefulWidget {
     required this.settings,
     required this.loadManagement,
     this.categoriesAvailable = false,
+    this.pendingAvailable = false,
   });
   final RouteSettings settings;
   final WealthManagementLoader loadManagement;
   final bool categoriesAvailable;
+  final bool pendingAvailable;
 
   @override
   State<_WealthRoute> createState() => _WealthRouteState();
@@ -219,8 +233,16 @@ class _WealthRouteState extends State<_WealthRoute> {
         Future<void> open(String path, Month month) async {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           final saved = await Navigator.of(context).pushNamed<Object?>(
-            '$path?${period(month)}',
-            arguments: path == AppRoutes.importCsv
+            path == AppRoutes.pendingMovements
+                ? path
+                : '$path?${period(month)}',
+            arguments: path == AppRoutes.pendingMovements
+                ? PendingMovementOrigin(
+                    route: "${AppRoutes.wealth}?${period(month)}",
+                    label:
+                        "Volver a Patrimonio, ${month.value.substring(0, 7)}",
+                  )
+                : path == AppRoutes.importCsv
                 ? CsvImportOrigin(
                     '${AppRoutes.wealth}?${period(month)}',
                     'Volver a Patrimonio, ${month.value.substring(0, 7)}',
@@ -259,6 +281,7 @@ class _WealthRouteState extends State<_WealthRoute> {
           management: (month, refresh) => _ManagementMenu(
             categoriesAvailable: widget.categoriesAvailable,
             wealthAvailable: true,
+            pendingAvailable: widget.pendingAvailable,
             onOpen: (path) async {
               await open(path, month);
               if (context.mounted) await refresh();
@@ -685,10 +708,12 @@ class _TechnicalIndex extends StatelessWidget {
     this.showManagement = false,
     this.categoriesAvailable = false,
     this.wealthAvailable = false,
+    this.pendingAvailable = false,
   });
   final bool showManagement;
   final bool categoriesAvailable;
   final bool wealthAvailable;
+  final bool pendingAvailable;
 
   @override
   Widget build(BuildContext context) {
@@ -700,6 +725,7 @@ class _TechnicalIndex extends StatelessWidget {
             _ManagementMenu(
               categoriesAvailable: categoriesAvailable,
               wealthAvailable: wealthAvailable,
+              pendingAvailable: pendingAvailable,
             ),
         ],
       ),
@@ -730,10 +756,12 @@ class _TechnicalPlaceholder extends StatelessWidget {
     this.showManagement = false,
     this.categoriesAvailable = false,
     this.wealthAvailable = false,
+    this.pendingAvailable = false,
   });
   final bool showManagement;
   final bool categoriesAvailable;
   final bool wealthAvailable;
+  final bool pendingAvailable;
 
   final String title;
   final String message;
@@ -748,6 +776,7 @@ class _TechnicalPlaceholder extends StatelessWidget {
             _ManagementMenu(
               categoriesAvailable: categoriesAvailable,
               wealthAvailable: wealthAvailable,
+              pendingAvailable: pendingAvailable,
             ),
         ],
       ),
@@ -796,16 +825,20 @@ class _ManagementMenu extends StatelessWidget {
   const _ManagementMenu({
     this.categoriesAvailable = false,
     this.wealthAvailable = false,
+    this.pendingAvailable = false,
     this.onOpen,
   });
   final bool categoriesAvailable;
   final bool wealthAvailable;
+  final bool pendingAvailable;
   final Future<void> Function(String path)? onOpen;
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     tooltip: 'Gestión',
     onSelected: (value) {
-      final path = value == 'movements'
+      final path = value == 'pending'
+          ? AppRoutes.pendingMovements
+          : value == 'movements'
           ? AppRoutes.movements
           : value == 'csv'
           ? AppRoutes.importCsv
@@ -828,7 +861,14 @@ class _ManagementMenu extends StatelessWidget {
                   defaultMonth: madridMonth(DateTime.now()),
                 )
               : path,
-          arguments: path == AppRoutes.importCsv
+          arguments: path == AppRoutes.pendingMovements
+              ? PendingMovementOrigin(
+                  route:
+                      ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
+                  label:
+                      "Volver a ${_BackupOrigin(ModalRoute.of(context)?.settings.name ?? AppRoutes.home).label}",
+                )
+              : path == AppRoutes.importCsv
               ? CsvImportOrigin(
                   ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
                   'Volver a ${_BackupOrigin(ModalRoute.of(context)?.settings.name ?? AppRoutes.home).label}',
@@ -851,6 +891,11 @@ class _ManagementMenu extends StatelessWidget {
         child: Text('Historial de importaciones'),
       ),
       const PopupMenuItem(value: 'movements', child: Text('Movimientos')),
+      PopupMenuItem(
+        value: 'pending',
+        enabled: pendingAvailable,
+        child: const Text('Pendientes de categorizar'),
+      ),
       PopupMenuItem(
         value: 'categories',
         enabled: categoriesAvailable,

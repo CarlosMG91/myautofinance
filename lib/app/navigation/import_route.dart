@@ -5,6 +5,9 @@ import '../../features/importing/presentation/import_controller.dart';
 import '../../features/importing/presentation/import_history_screen.dart';
 import '../../features/importing/presentation/import_review_screen.dart';
 import 'app_routes.dart';
+import 'pending_movement_route.dart';
+import '../../features/movements/movements.dart';
+import '../../features/movements/presentation/pending_movement_controller.dart';
 import 'movement_list_route.dart';
 import '../csv_import_factory.dart';
 
@@ -32,11 +35,13 @@ class ImportRoute extends StatefulWidget {
     required this.load,
     this.allowTestLaunch = false,
     this.csvSelector,
+    this.pendingMovements,
   });
   final RouteSettings settings;
   final ImportServicesLoader load;
   final bool allowTestLaunch;
   final LocalCsvSelector? csvSelector;
+  final PendingMovementLoader? pendingMovements;
   @override
   State<ImportRoute> createState() => _ImportRouteState();
 }
@@ -80,9 +85,34 @@ class _ImportRouteState extends State<ImportRoute> {
   Widget build(BuildContext context) {
     final uri = Uri.parse(widget.settings.name!);
     final navigator = Navigator.of(context);
-    void batch(String id) => navigator.pushNamed(
-      '${AppRoutes.importBatches}/${Uri.encodeComponent(id)}',
-    );
+    Future<void> batch(String id) async {
+      await navigator.pushNamed(
+        '${AppRoutes.importBatches}/${Uri.encodeComponent(id)}',
+      );
+    }
+
+    Future<void> pending(String id) async {
+      await navigator.pushNamed(
+        Uri(
+          path: AppRoutes.pendingMovements,
+          queryParameters: {"lote": id},
+        ).toString(),
+        arguments: PendingMovementOrigin(
+          route: widget.settings.name!,
+          label: "Volver al ${_controller != null ? 'resultado' : 'lote'}",
+        ),
+      );
+    }
+
+    Future<int> count(String id) async {
+      final source = await widget.pendingMovements!();
+      final page = await source.management.readPage(
+        query: PendingMovementQuery(batchId: id),
+        limit: 1,
+      );
+      return page.totalCount;
+    }
+
     if (_controller != null) {
       final args = widget.settings.arguments;
       final origin = args is ImportReviewLaunch
@@ -105,6 +135,8 @@ class _ImportRouteState extends State<ImportRoute> {
         returnLabel: returnLabel,
         onHistory: () => navigator.pushNamed(AppRoutes.importHistory),
         onBatch: batch,
+        onPending: widget.pendingMovements == null ? null : pending,
+        pendingCount: widget.pendingMovements == null ? null : count,
         onPeriod: (label, period) => navigator.pushNamed(
           '${switch (label) {
             'Estado' => AppRoutes.monthlyStatus,
@@ -125,6 +157,8 @@ class _ImportRouteState extends State<ImportRoute> {
         batchId: parts.length == 3 && parts[1] == 'lotes' ? parts.last : null,
         rowId: parts.length == 3 && parts[1] == 'origen' ? parts.last : null,
         onBatch: batch,
+        onPending: widget.pendingMovements == null ? null : pending,
+        pendingCount: widget.pendingMovements == null ? null : count,
         onRow: (id) => navigator.pushNamed(
           '${AppRoutes.importRows}/${Uri.encodeComponent(id)}',
         ),

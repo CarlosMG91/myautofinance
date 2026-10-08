@@ -85,6 +85,11 @@ class PendingMovementController extends ChangeNotifier {
       }
       final labels = await source.accounts();
       final batchLabels = await source.batches();
+      if (query.batchId != null && !batchLabels.containsKey(query.batchId)) {
+        throw const MovementFailure(
+          "Lote no encontrado. Vuelve al origen o elige otro lote.",
+        );
+      }
       var result = await source.management.readPage(
         query: query,
         after: _cursors[pageIndex],
@@ -118,9 +123,9 @@ class PendingMovementController extends ChangeNotifier {
       _dataset = result.datasetId;
       selected.retainAll(result.records.map((r) => r.id));
       if (clearSelection) requiresRefresh = false;
-    } catch (_) {
+    } catch (failure) {
       if (_disposed || generation != _generation) return;
-      error = 'No se pudieron consultar los pendientes. Filtros y selección conservados; contador no disponible.';
+      error = failure is MovementFailure ? failure.message : 'No se pudieron consultar los pendientes. Filtros y selección conservados; contador no disponible.';
     }
     if (_disposed || generation != _generation) return;
     loading = false;
