@@ -118,11 +118,16 @@ Comprobaciones de esta entrega documental:
   Resolución con `--enforce-lockfile` correcta tras reintentar con acceso
   de red; no se modifica `pubspec.lock`.
 - `scripts/check-quality.ps1`: formato sin cambios y análisis sin incidencias.
-  La suite general registra un fallo por timeout de 45 segundos en
-  `test/budget/budget_lifecycle_test.dart`, caso «EP-011 recorrido SQLite de
-  archivo: windows», y el log incluye una base SQLite ya cerrada. No se
-  acredita calidad completa ni las variantes de arranque posteriores al
-  fallo. Esta entrega no modifica código de presupuesto ni de SQLite.
+  La suite general termina con 1.285 pruebas aprobadas y tres fallidas.
+  Registra fallos por timeout de 45 segundos en
+  `test/budget/budget_lifecycle_test.dart`, casos «EP-011 recorrido SQLite de
+  archivo: windows» y «android»; el log incluye una base SQLite ya cerrada.
+  También falla el caso «EP-001: dos manuales, restauración y recuperación
+  de la anterior tras reinicios» de
+  `test/synchronization/local_recovery_journey_test.dart`, con timeout de
+  30 segundos y resultado `rejected` frente a `restored`. No se acredita
+  calidad completa; no se ejecutan las variantes de arranque posteriores al fallo.
+  Esta entrega no modifica código de presupuesto, recuperación ni SQLite.
 - No se ejecutan compilaciones ni pruebas nativas Windows/Android: no hay
   cambios de plataforma ni implementación del lector que puedan verificarse.
 
