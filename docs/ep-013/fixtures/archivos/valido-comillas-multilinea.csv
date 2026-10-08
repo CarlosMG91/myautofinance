@@ -1,0 +1,4 @@
+fecha;concepto;importe_eur;tipo;categoria;subcategoria;subsubcategoria;cuenta_origen;discrecionalidad
+2026-01-05;Compra "especial"; con detalle
+y nota;-20.00;REAL;Ocio;;;Cuenta principal;Necesario
+2026-01-01;Presupuesto con ; y "comillas";25.00;PRESUPUESTO;Vivienda;Alquiler;;;
