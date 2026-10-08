@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "syntheticOnly": true,
+  "files": [
+    {
+      "file": "valido-lf.csv",
+      "purpose": "Válido: tres REAL y dos PRESUPUESTO, incluye cero presupuestario."
+    },
+    {
+      "file": "valido-crlf-bom.csv",
+      "purpose": "Los mismos registros con BOM UTF-8 y CRLF."
+    },
+    {
+      "file": "valido-comillas-multilinea.csv",
+      "purpose": "Válido: ;, comillas duplicadas y salto de línea embebidos."
+    },
+    {
+      "file": "tipo-minusculas-y-espacios.csv",
+      "purpose": "Válido: tipo minúsculo y espacios externos eliminables."
+    },
+    {
+      "file": "referencias-renombradas.csv",
+      "purpose": "Repetición exacta para comprobar huella idéntica aunque cambie el nombre."
+    },
+    {
+      "file": "dos-reales-iguales.csv",
+      "purpose": "Dos movimientos reales idénticos que deben conservar ordinales distintos."
+    },
+    {
+      "file": "bytes-distintos-contenido-similar.csv",
+      "purpose": "Bytes distintos con filas visualmente coincidentes para revisión de solapamiento."
+    },
+    {
+      "file": "referencia-ambigua.csv",
+      "purpose": "La ruta necesita resolución expresa si coincide con varias referencias."
+    },
+    {
+      "file": "conflicto-padre-descendiente.csv",
+      "purpose": "Dos partidas del mismo mes en padre y descendiente: conflicto."
+    },
+    {
+      "file": "conflicto-mes-y-nodo.csv",
+      "purpose": "Dos partidas del mismo mes y nodo: conflicto."
+    },
+    {
+      "file": "presupuesto-cuenta-no-permitida.csv",
+      "purpose": "PRESUPUESTO con cuenta: error de campo."
+    },
+    {
+      "file": "presupuesto-categoria-ausente.csv",
+      "purpose": "PRESUPUESTO sin categoría: error de campo."
+    },
+    {
+      "file": "arbol-incompleto.csv",
+      "purpose": "Subcategoría sin categoría raíz: error de jerarquía."
+    },
+    {
+      "file": "fecha-imposible.csv",
+      "purpose": "Fecha no existente en el calendario."
+    },
+    {
+      "file": "presupuesto-no-dia-uno.csv",
+      "purpose": "PRESUPUESTO fuera del primer día del mes."
+    },
+    {
+      "file": "real-cero-rechazado.csv",
+      "purpose": "REAL cero: inválido."
+    },
+    {
+      "file": "presupuesto-cero-admitido.csv",
+      "purpose": "PRESUPUESTO cero: válido."
+    },
+    {
+      "file": "cabecera-incorrecta.csv",
+      "purpose": "Nombre de cabecera incorrecto."
+    },
+    {
+      "file": "columna-de-mas.csv",
+      "purpose": "Registro con diez campos."
+    },
+    {
+      "file": "columna-de-menos.csv",
+      "purpose": "Registro con ocho campos."
+    },
+    {
+      "file": "comillas-mal-cerradas.csv",
+      "purpose": "Sintaxis CSV no delimitable."
+    },
+    {
+      "file": "fila-vacia-intermedia.csv",
+      "purpose": "Registro vacío intermedio."
+    },
+    {
+      "file": "fila-final-vacia.csv",
+      "purpose": "Registro vacío tras un salto adicional al final."
+    },
+    {
+      "file": "utf8-invalido.csv",
+      "purpose": "Secuencia de bytes UTF-8 inválida."
+    }
+  ]
+}

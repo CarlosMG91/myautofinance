@@ -1,0 +1,6 @@
+fecha;concepto;importe_eur;tipo;categoria;subcategoria;subsubcategoria;cuenta_origen;discrecionalidad
+2026-01-05;Café;-10.00;REAL;Ocio;;;Cuenta principal;Discrecional
+2026-01-06;Compra; urgente;-20.00;REAL;Alimentación;Supermercado;;Cuenta principal; Discrecional 
+2026-01-07;Ajuste;-25.25;REAL;Vivienda;Alquiler;;Cuenta principal;
+2026-01-01;Presupuesto alquiler;400.00;PRESUPUESTO;Vivienda;Alquiler;;;
+2026-01-01;Presupuesto cero;-0.00;PRESUPUESTO;Ahorro;Cuenta de ahorro;;;
