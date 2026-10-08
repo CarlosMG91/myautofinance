@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root = dirname(fileURLToPath(import.meta.url));
 const out = join(root, 'archivos');
 const header = 'fecha;concepto;importe_eur;tipo;categoria;subcategoria;subsubcategoria;cuenta_origen;discrecionalidad';
-const row = (...fields) => fields.join(';');
+const row = (...fields) => fields.map(field => /[;"\r\n]/.test(field) ? `"${field.replaceAll('"', '""')}"` : field).join(';');
 const real = (date, concept, amount, category = '', subcategory = '', subsubcategory = '', account = 'Cuenta principal', discretionary = '') => row(date, concept, amount, 'REAL', category, subcategory, subsubcategory, account, discretionary);
 const budget = (date, concept, amount, category = 'Vivienda', subcategory = 'Alquiler', subsubcategory = '', account = '', discretionary = '') => row(date, concept, amount, 'PRESUPUESTO', category, subcategory, subsubcategory, account, discretionary);
 const csv = (...rows) => `${header}\n${rows.join('\n')}\n`;
@@ -25,10 +25,7 @@ cases.set('valido-comillas-multilinea.csv', csv(
   budget('2026-01-01', 'Presupuesto con ; y "comillas"', '25.00', 'Vivienda', 'Alquiler'),
 ));
 cases.set('tipo-minusculas-y-espacios.csv', `${header}\n${row(' 2026-01-05 ', ' Café ', ' -10.00 ', ' real ', ' Ocio ', '', '', ' Cuenta principal ', ' Discrecional ')}\n`);
-cases.set('referencias-renombradas.csv', csv(
-  real('2026-01-05', 'Nómina', '3100.00', 'Ingresos', 'Salario'),
-  real('2026-01-06', 'Alquiler', '-1000.00', 'Vivienda', 'Alquiler'),
-));
+cases.set('referencias-renombradas.csv', cases.get('valido-lf.csv'));
 cases.set('dos-reales-iguales.csv', csv(
   real('2026-01-09', 'Café', '-10.00', 'Ocio', '', '', 'Cuenta principal', 'Discrecional'),
   real('2026-01-09', 'Café', '-10.00', 'Ocio', '', '', 'Cuenta principal', 'Discrecional'),
@@ -61,9 +58,6 @@ cases.set('fila-vacia-intermedia.csv', `${header}\n${real('2026-01-05', 'Compra'
 cases.set('fila-final-vacia.csv', `${header}\n${real('2026-01-05', 'Compra', '-8.00', 'Ocio')}\n\n`);
 cases.set('utf8-invalido.csv', Buffer.concat([Buffer.from(`${header}\n2026-01-05;`), Buffer.from([0xc3, 0x28]), Buffer.from('; -8.00;REAL;Ocio;;;;\n')]));
 
-await mkdir(out, { recursive: true });
-for (const [name, content] of cases) await writeFile(join(out, name), content);
-
 // Guarda un manifiesto conciso y legible para que cada archivo tenga intención explícita.
 const manifest = {
   version: 1,
@@ -95,7 +89,7 @@ const manifest = {
     ['utf8-invalido.csv', 'Secuencia de bytes UTF-8 inválida.'],
   ].map(([file, purpose]) => ({ file, purpose })),
 };
-await writeFile(join(root, 'manifiesto.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+const manifestBytes = Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`);
 
 // El modo --check compara la generación determinista y detecta archivos faltantes o alterados.
 if (process.argv.includes('--check')) {
@@ -105,5 +99,10 @@ if (process.argv.includes('--check')) {
     if (!actual.equals(expectedBytes)) throw new Error(`Fixture alterado: ${name}`);
   }
   if (cases.get('valido-lf.csv').split('\n').length !== 7) throw new Error('El fixture válido debe tener cinco registros más cabecera y línea final.');
+  if (!(await readFile(join(root, 'manifiesto.json'))).equals(manifestBytes)) throw new Error('Manifiesto alterado');
   console.log(`OK: ${cases.size} fixtures sintéticos reproducibles; huellas/listado listos para revisar.`);
+} else {
+  await mkdir(out, { recursive: true });
+  for (const [name, content] of cases) await writeFile(join(out, name), content);
+  await writeFile(join(root, 'manifiesto.json'), manifestBytes);
 }

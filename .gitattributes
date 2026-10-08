@@ -1,0 +1,5 @@
+# Los fixtures verifican huellas de bytes, incluido BOM y saltos.
+docs/ep-013/fixtures/archivos/*.csv -text whitespace=-blank-at-eol,cr-at-eol
+docs/ep-013/fixtures/manifiesto.json text eol=lf
+docs/ep-001/historico-ejemplo.csv text eol=lf
+test/support/csv_test_bundle.dart text eol=lf
