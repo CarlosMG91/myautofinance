@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'dart:ui' show AppExitResponse;
 
@@ -30,6 +31,10 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
     with WidgetsBindingObserver {
   int _page = 0;
   bool _dialog = false;
+  ImportSession? _displayedSession;
+  final _headingFocus = FocusNode();
+  ImportPhase? _lastPhase;
+  String? _lastSelectionMessage;
   ImportController get c => widget.controller;
   @override
   void initState() {
@@ -40,6 +45,7 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _headingFocus.dispose();
     super.dispose();
   }
 
@@ -48,6 +54,10 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
       await _allowLeave() ? AppExitResponse.exit : AppExitResponse.cancel;
   Future<bool> _allowLeave() async {
     if (c.phase == ImportPhase.confirming || _dialog) return false;
+    if (c.selecting) {
+      c.cancelSelection();
+      return false;
+    }
     if (c.hasSession) {
       _dialog = true;
       final discard = await showDialog<bool>(
@@ -78,6 +88,32 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
   Future<void> _leave() async {
     if (!await _allowLeave() || !mounted) return;
     widget.onReturn();
+  }
+
+  Future<bool> _approveReplacement() async {
+    if (_dialog || !mounted) return false;
+    _dialog = true;
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Descartar la revisión?'),
+        content: const Text(
+          'El nuevo CSV iniciará otra revisión. Se perderán las asignaciones y los solapamientos revisados.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Conservar revisión'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Descartar y cargar'),
+          ),
+        ],
+      ),
+    );
+    _dialog = false;
+    return mounted && approved == true;
   }
 
   Future<void> _confirm() async {
@@ -187,6 +223,18 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: c,
     builder: (context, _) {
+      if (_lastPhase != c.phase ||
+          _lastSelectionMessage != c.selectionMessage) {
+        _lastPhase = c.phase;
+        _lastSelectionMessage = c.selectionMessage;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_dialog) _headingFocus.requestFocus();
+        });
+      }
+      if (_displayedSession != c.session) {
+        _displayedSession = c.session;
+        _page = 0;
+      }
       final review = c.review;
       final rows = c.session?.interpretation.rows ?? <InterpretedImportRow>[];
       final accountRefs = rows
@@ -219,206 +267,268 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
               .toList()
             ..sort();
       return PopScope(
-        canPop: !c.hasSession && c.phase != ImportPhase.confirming,
+        canPop:
+            !c.selecting && !c.hasSession && c.phase != ImportPhase.confirming,
         onPopInvokedWithResult: (didPop, _) {
           if (!didPop) _leave();
         },
-        child: Scaffold(
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: const Text('Revisión de importación'),
-          ),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Wrap(
-                    spacing: 12,
-                    children: [
-                      TextButton(
-                        onPressed: c.phase == ImportPhase.confirming
-                            ? null
-                            : _leave,
-                        child: Text(widget.returnLabel),
-                      ),
-                      TextButton(
-                        onPressed: c.busy ? null : widget.onHistory,
-                        child: const Text('Historial de lotes'),
-                      ),
-                    ],
-                  ),
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      _phase,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  if (c.busy) ...[
-                    const LinearProgressIndicator(),
-                    Text(
-                      c.phase == ImportPhase.confirming
-                          ? 'Esperando el resultado de SQLite. No se puede cancelar la confirmación.'
-                          : 'Leyendo y validando el lote completo…',
-                    ),
-                  ],
-                  if (c.message != null)
-                    Semantics(liveRegion: true, child: Text(c.message!)),
-                  if (c.session != null) ...[
-                    Text(c.session!.file.originalName),
-                    Text(
-                      'Origen: ${importSourceLabel(c.session!.file.source)}',
-                    ),
-                  ],
-                  if (batch != null) ...[
-                    Text(
-                      c.result is ImportConfirmed
-                          ? 'Lote guardado en la base local: ${batch.movementCount} reales y ${batch.budgetCount} presupuestos.'
-                          : 'Estos bytes ya se importaron. Cero altas; los registros corregidos o borrados se conservan.',
-                    ),
-                    TextButton(
-                      onPressed: () => widget.onBatch(batch.id),
-                      child: const Text('Consultar lote y origen'),
-                    ),
-                    for (final period in periods)
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          for (final destination in [
-                            'Estado',
-                            'Presupuesto',
-                            'Real',
-                          ])
-                            TextButton(
-                              onPressed: () =>
-                                  widget.onPeriod(destination, period),
-                              child: Text('$destination · $period'),
-                            ),
-                        ],
-                      ),
-                  ] else ...[
-                    for (final issue in [...?review?.issues, ...c.failures])
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          '${issue.sourceOrdinal == null ? 'Lote' : 'Fila ${issue.sourceOrdinal}'}${issue.field == null ? '' : ' · ${issue.field}'}: ${issue.reason}',
-                        ),
-                      ),
-                    if (review != null) ...[
-                      Text(
-                        'REAL: ${review.movementCount} · original ${importMoney(review.totalCents(budgets: false, original: true))} · interno ${importMoney(review.totalCents(budgets: false, original: false))}',
-                      ),
-                      Text(
-                        'PRESUPUESTO: ${review.budgetCount} · original ${importMoney(review.totalCents(budgets: true, original: true))} · interno ${importMoney(review.totalCents(budgets: true, original: false))}',
-                      ),
-                      for (final pending in review.pendingReferences)
-                        Text(
-                          'Pendiente · filas ${pending.sourceOrdinals.join(', ')}: ${pending.reason}',
-                        ),
-                      for (final ref in accountRefs)
-                        OutlinedButton(
-                          onPressed: c.busy
-                              ? null
-                              : () => _resolve(PendingImportAccount(ref)),
-                          child: Text(
-                            'Resolver cuenta: ${ref.name ?? 'selección global'}',
-                          ),
-                        ),
-                      for (final ref in categoryRefs)
-                        OutlinedButton(
-                          onPressed: c.busy
-                              ? null
-                              : () => _resolve(PendingImportCategory(ref)),
-                          child: Text(
-                            'Resolver categoría: ${ref.path.join(' / ')}',
-                          ),
-                        ),
-                      for (final overlap in review.overlaps)
-                        Card(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                'Posible duplicado · fila ${overlap.sourceOrdinal}. Se conservarán ambos registros.',
-                              ),
-                              for (final existing
-                                  in c.snapshot!.movements.where(
-                                    (m) => m.id == overlap.existingMovementId,
-                                  ))
-                                Text(
-                                  'Registro actual ${existing.id}: ${existing.data.valueDate.value} · ${existing.data.concept} · ${importMoney(existing.data.amountCents)} · cuenta ${existing.data.accountId}',
-                                ),
-                              CheckboxListTile(
-                                title: Text(
-                                  'He comparado la fila ${overlap.sourceOrdinal} con ${overlap.existingMovementId}',
-                                ),
-                                value: c.reviewedOverlaps.contains(overlap.key),
-                                onChanged: c.busy
-                                    ? null
-                                    : (v) => c.markOverlap(
-                                        overlap.key,
-                                        v ?? false,
-                                      ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ImportRowsView(
-                        rows: rows.skip(_page * 50).take(50).toList(),
-                        accountLabel: _account,
-                        categoryLabel: _category,
-                        statusLabel: _rowStatus,
-                        onOriginal: c.busy
-                            ? null
-                            : (r) => showImportOriginal(context, r),
-                      ),
-                      if (rows.length > 50)
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            TextButton(
-                              onPressed: c.busy || _page == 0
-                                  ? null
-                                  : () => setState(() => _page--),
-                              child: const Text('Página anterior'),
-                            ),
-                            Text(
-                              'Página ${_page + 1} de ${(rows.length / 50).ceil()}',
-                            ),
-                            TextButton(
-                              onPressed:
-                                  c.busy || (_page + 1) * 50 >= rows.length
-                                  ? null
-                                  : () => setState(() => _page++),
-                              child: const Text('Página siguiente'),
-                            ),
-                          ],
-                        ),
-                    ],
+        child: CallbackShortcuts(
+          bindings: {const SingleActivator(LogicalKeyboardKey.escape): _leave},
+          child: Scaffold(
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text('Revisión de importación'),
+            ),
+            body: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                     Wrap(
                       spacing: 12,
                       children: [
-                        FilledButton(
-                          onPressed: c.canConfirm ? _confirm : null,
-                          child: const Text('Confirmar lote completo'),
-                        ),
-                        OutlinedButton(
-                          onPressed: c.busy
+                        TextButton(
+                          onPressed: c.phase == ImportPhase.confirming
                               ? null
-                              : c.session == null
-                              ? c.retryRead
-                              : c.refresh,
-                          child: const Text('Revalidar / reintentar'),
+                              : _leave,
+                          child: Text(widget.returnLabel),
+                        ),
+                        TextButton(
+                          onPressed: c.busy ? null : widget.onHistory,
+                          child: const Text('Historial de lotes'),
                         ),
                       ],
                     ),
-                    const Text(
-                      'Solo se confirma el lote válido completo. Revisar y cancelar no guarda datos.',
+                    Semantics(
+                      liveRegion: true,
+                      header: true,
+                      child: Focus(
+                        focusNode: _headingFocus,
+                        child: Text(
+                          _phase,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
                     ),
+                    if (c.supportsCsv) ...[
+                      const Text(
+                        'CSV histórico · UTF-8 · separador ; · cabeceras exactas. Un archivo por carga.',
+                      ),
+                      const Text(
+                        'Fila indica el ordinal del registro CSV. En textos multilínea puede diferir de la línea física.',
+                      ),
+                      OutlinedButton(
+                        onPressed:
+                            c.selecting ||
+                                c.phase == ImportPhase.confirming ||
+                                _dialog
+                            ? null
+                            : () => c.selectCsv(
+                                approveReplacement: _approveReplacement,
+                              ),
+                        child: Text(
+                          c.session == null
+                              ? 'Seleccionar CSV'
+                              : 'Volver a cargar CSV',
+                        ),
+                      ),
+                      if (c.selecting)
+                        const Text('Seleccionando y leyendo el archivo…'),
+                      if (c.selectionMessage != null)
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(c.selectionMessage!),
+                        ),
+                      const Text(
+                        'Los errores se corrigen en el archivo original y se vuelve a cargar. No se editan filas aquí.',
+                      ),
+                    ],
+                    if (c.busy) ...[
+                      const LinearProgressIndicator(),
+                      Text(
+                        c.phase == ImportPhase.confirming
+                            ? 'Esperando el resultado de SQLite. No se puede cancelar la confirmación.'
+                            : 'Leyendo y validando el lote completo…',
+                      ),
+                    ],
+                    if (c.message != null)
+                      Semantics(liveRegion: true, child: Text(c.message!)),
+                    if (c.session != null) ...[
+                      Text(c.session!.file.originalName),
+                      Text(
+                        'Origen: ${importSourceLabel(c.session!.file.source)}',
+                      ),
+                    ],
+                    if (batch != null) ...[
+                      Text(
+                        c.result is ImportConfirmed
+                            ? 'Lote guardado en la base local: ${batch.movementCount} reales y ${batch.budgetCount} presupuestos.'
+                            : 'Estos bytes ya se importaron. Cero altas; los registros corregidos o borrados se conservan.',
+                      ),
+                      TextButton(
+                        onPressed: () => widget.onBatch(batch.id),
+                        child: const Text('Consultar lote y origen'),
+                      ),
+                      for (final period in periods)
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            for (final destination in [
+                              'Estado',
+                              'Presupuesto',
+                              'Real',
+                            ])
+                              TextButton(
+                                onPressed: () =>
+                                    widget.onPeriod(destination, period),
+                                child: Text('$destination · $period'),
+                              ),
+                          ],
+                        ),
+                    ] else ...[
+                      for (final issue in [...?review?.issues, ...c.failures])
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            '${issue.sourceOrdinal == null
+                                ? 'Lote'
+                                : issue.sourceOrdinal == 1
+                                ? 'Cabecera · registro 1'
+                                : 'Fila ${issue.sourceOrdinal}'}${issue.field == null ? '' : ' · ${issue.field}'}: ${issue.reason}',
+                          ),
+                        ),
+                      if (review != null) ...[
+                        if (c.session!.interpretation.issues.isNotEmpty) ...[
+                          const Text(
+                            'REAL: conteo y totales CSV/interno no disponibles.',
+                          ),
+                          const Text(
+                            'PRESUPUESTO: conteo y totales CSV/interno no disponibles.',
+                          ),
+                          const Text(
+                            'El archivo contiene errores. Cero cambios en la base local.',
+                          ),
+                        ] else ...[
+                          Text(
+                            'REAL: ${review.movementCount} · original ${importMoney(review.totalCents(budgets: false, original: true))} · interno ${importMoney(review.totalCents(budgets: false, original: false))}',
+                          ),
+                          Text(
+                            'PRESUPUESTO: ${review.budgetCount} · original ${importMoney(review.totalCents(budgets: true, original: true))} · interno ${importMoney(review.totalCents(budgets: true, original: false))}',
+                          ),
+                        ],
+                        for (final pending in review.pendingReferences)
+                          Text(
+                            'Pendiente · filas ${pending.sourceOrdinals.join(', ')}: ${pending.reason}',
+                          ),
+                        for (final ref in accountRefs)
+                          OutlinedButton(
+                            onPressed: c.busy
+                                ? null
+                                : () => _resolve(PendingImportAccount(ref)),
+                            child: Text(
+                              'Resolver cuenta: ${ref.name ?? 'selección global'}',
+                            ),
+                          ),
+                        for (final ref in categoryRefs)
+                          OutlinedButton(
+                            onPressed: c.busy
+                                ? null
+                                : () => _resolve(PendingImportCategory(ref)),
+                            child: Text(
+                              'Resolver categoría: ${ref.path.join(' / ')}',
+                            ),
+                          ),
+                        for (final overlap in review.overlaps)
+                          Card(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  'Posible duplicado · fila ${overlap.sourceOrdinal}. Se conservarán ambos registros.',
+                                ),
+                                for (final existing
+                                    in c.snapshot!.movements.where(
+                                      (m) => m.id == overlap.existingMovementId,
+                                    ))
+                                  Text(
+                                    'Registro actual ${existing.id}: ${existing.data.valueDate.value} · ${existing.data.concept} · ${importMoney(existing.data.amountCents)} · cuenta ${existing.data.accountId}',
+                                  ),
+                                CheckboxListTile(
+                                  title: Text(
+                                    'He comparado la fila ${overlap.sourceOrdinal} con ${overlap.existingMovementId}',
+                                  ),
+                                  value: c.reviewedOverlaps.contains(
+                                    overlap.key,
+                                  ),
+                                  onChanged: c.busy
+                                      ? null
+                                      : (v) => c.markOverlap(
+                                          overlap.key,
+                                          v ?? false,
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ImportRowsView(
+                          originalLabel: c.supportsCsv
+                              ? 'Importe CSV'
+                              : 'Original',
+                          rows: rows.skip(_page * 50).take(50).toList(),
+                          accountLabel: _account,
+                          categoryLabel: _category,
+                          statusLabel: _rowStatus,
+                          onOriginal: c.busy
+                              ? null
+                              : (r) => showImportOriginal(context, r),
+                        ),
+                        if (rows.length > 50)
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              TextButton(
+                                onPressed: c.busy || _page == 0
+                                    ? null
+                                    : () => setState(() => _page--),
+                                child: const Text('Página anterior'),
+                              ),
+                              Text(
+                                'Página ${_page + 1} de ${(rows.length / 50).ceil()}',
+                              ),
+                              TextButton(
+                                onPressed:
+                                    c.busy || (_page + 1) * 50 >= rows.length
+                                    ? null
+                                    : () => setState(() => _page++),
+                                child: const Text('Página siguiente'),
+                              ),
+                            ],
+                          ),
+                      ],
+                      Wrap(
+                        spacing: 12,
+                        children: [
+                          FilledButton(
+                            onPressed: c.canConfirm ? _confirm : null,
+                            child: const Text('Confirmar lote completo'),
+                          ),
+                          OutlinedButton(
+                            onPressed: c.busy
+                                ? null
+                                : c.session == null
+                                ? c.retryRead
+                                : c.refresh,
+                            child: const Text('Revalidar / reintentar'),
+                          ),
+                        ],
+                      ),
+                      const Text(
+                        'Solo se confirma el lote válido completo. Revisar y cancelar no guarda datos.',
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

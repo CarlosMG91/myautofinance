@@ -9,6 +9,7 @@ import '../category_selector_navigation.dart';
 import 'app_routes.dart';
 import 'wealth_route.dart';
 import 'category_navigation_context.dart';
+import 'import_route.dart';
 
 class BudgetEditorOrigin {
   const BudgetEditorOrigin(this.month, this.categoryId);
@@ -22,10 +23,12 @@ class BudgetRoute extends StatefulWidget {
     required this.settings,
     required this.load,
     this.categories,
+    this.importsAvailable = false,
   });
   final RouteSettings settings;
   final BudgetLoader load;
   final CategoryManagementLoader? categories;
+  final bool importsAvailable;
   @override
   State<BudgetRoute> createState() => _BudgetRouteState();
 }
@@ -93,10 +96,15 @@ class _BudgetRouteState extends State<BudgetRoute> {
               if (!await canOpen() || !mounted) return;
               await navigator.pushNamed(
                 path,
-                arguments: CategoryNavigationContext(
-                  returnLabel:
-                      'Volver a Presupuesto, ${selected.value.substring(0, 7)}',
-                ),
+                arguments: path == AppRoutes.importCsv
+                    ? CsvImportOrigin(
+                        '${AppRoutes.budget}?${_period(selected)}',
+                        'Volver a Presupuesto, ${selected.value.substring(0, 7)}',
+                      )
+                    : CategoryNavigationContext(
+                        returnLabel:
+                            'Volver a Presupuesto, ${selected.value.substring(0, 7)}',
+                      ),
               );
               if (mounted) await refresh();
             },
@@ -105,10 +113,10 @@ class _BudgetRouteState extends State<BudgetRoute> {
                 value: AppRoutes.importHistory,
                 child: Text('Historial de importaciones'),
               ),
-              const PopupMenuItem(
-                value: '/importar/csv',
-                enabled: false,
-                child: Text('Importar CSV · pendiente'),
+              PopupMenuItem(
+                value: AppRoutes.importCsv,
+                enabled: widget.importsAvailable,
+                child: const Text('Importar CSV'),
               ),
               if (widget.categories != null)
                 const PopupMenuItem(

@@ -1,5 +1,6 @@
 import 'movement_list_route.dart';
 import 'import_route.dart';
+import '../../features/importing/importing.dart' show LocalCsvSelector;
 import '../../features/importing/presentation/import_controller.dart';
 import 'budget_route.dart';
 import '../../features/budget/presentation/budget_source.dart';
@@ -38,6 +39,7 @@ abstract final class AppRouter {
     MovementListLoader? movements,
     BudgetLoader? budgets,
     ImportServicesLoader? imports,
+    LocalCsvSelector? csvSelector,
     bool allowTestImports = false,
   }) {
     Widget page;
@@ -53,6 +55,7 @@ abstract final class AppRouter {
               settings: settings,
               load: imports,
               allowTestLaunch: allowTestImports,
+              csvSelector: csvSelector,
             );
     } else if (budgets != null &&
         (uri?.path == AppRoutes.budget ||
@@ -61,6 +64,7 @@ abstract final class AppRouter {
         settings: settings,
         load: budgets,
         categories: categories,
+        importsAvailable: imports != null,
       );
     } else if (uri?.path == AppRoutes.movements && movements != null) {
       page = MovementListRoute(
@@ -202,7 +206,12 @@ class _WealthRouteState extends State<_WealthRoute> {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           final saved = await Navigator.of(context).pushNamed<Object?>(
             '$path?${period(month)}',
-            arguments: path == AppRoutes.movements
+            arguments: path == AppRoutes.importCsv
+                ? CsvImportOrigin(
+                    '${AppRoutes.wealth}?${period(month)}',
+                    'Volver a Patrimonio, ${month.value.substring(0, 7)}',
+                  )
+                : path == AppRoutes.movements
                 ? MovementListOrigin('${AppRoutes.wealth}?${period(month)}')
                 : path.startsWith(AppRoutes.accounts)
                 ? _WealthOrigin(month)
@@ -784,6 +793,8 @@ class _ManagementMenu extends StatelessWidget {
     onSelected: (value) {
       final path = value == 'movements'
           ? AppRoutes.movements
+          : value == 'csv'
+          ? AppRoutes.importCsv
           : value == 'imports'
           ? AppRoutes.importHistory
           : value == 'categories'
@@ -803,7 +814,12 @@ class _ManagementMenu extends StatelessWidget {
                   defaultMonth: madridMonth(DateTime.now()),
                 )
               : path,
-          arguments: path == AppRoutes.movements
+          arguments: path == AppRoutes.importCsv
+              ? CsvImportOrigin(
+                  ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
+                  'Volver a ${_BackupOrigin(ModalRoute.of(context)?.settings.name ?? AppRoutes.home).label}',
+                )
+              : path == AppRoutes.movements
               ? MovementListOrigin(
                   ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
                 )
@@ -814,7 +830,7 @@ class _ManagementMenu extends StatelessWidget {
       }
     },
     itemBuilder: (_) => [
-      const PopupMenuItem(enabled: false, child: Text('Importar CSV')),
+      const PopupMenuItem(value: 'csv', child: Text('Importar CSV')),
       const PopupMenuItem(enabled: false, child: Text('Importar XLS')),
       const PopupMenuItem(
         value: 'imports',

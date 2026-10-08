@@ -6,6 +6,7 @@ import '../../features/importing/presentation/import_history_screen.dart';
 import '../../features/importing/presentation/import_review_screen.dart';
 import 'app_routes.dart';
 import 'movement_list_route.dart';
+import '../csv_import_factory.dart';
 
 /// Entrada del recorrido de pruebas. Ningún selector de producción la genera.
 class ImportReviewLaunch {
@@ -19,16 +20,23 @@ class ImportReviewLaunch {
   final String origin;
 }
 
+class CsvImportOrigin {
+  const CsvImportOrigin(this.route, this.returnLabel);
+  final String route, returnLabel;
+}
+
 class ImportRoute extends StatefulWidget {
   const ImportRoute({
     super.key,
     required this.settings,
     required this.load,
     this.allowTestLaunch = false,
+    this.csvSelector,
   });
   final RouteSettings settings;
   final ImportServicesLoader load;
   final bool allowTestLaunch;
+  final LocalCsvSelector? csvSelector;
   @override
   State<ImportRoute> createState() => _ImportRouteState();
 }
@@ -38,6 +46,12 @@ class _ImportRouteState extends State<ImportRoute> {
   @override
   void initState() {
     super.initState();
+    if (Uri.parse(widget.settings.name!).path == AppRoutes.importCsv) {
+      _controller = createCsvImportController(
+        widget.load,
+        selector: widget.csvSelector,
+      );
+    }
     if (Uri.parse(widget.settings.name!).path == AppRoutes.importReview &&
         widget.allowTestLaunch &&
         widget.settings.arguments is ImportReviewLaunch) {
@@ -70,17 +84,25 @@ class _ImportRouteState extends State<ImportRoute> {
       '${AppRoutes.importBatches}/${Uri.encodeComponent(id)}',
     );
     if (_controller != null) {
-      final launch = widget.settings.arguments as ImportReviewLaunch;
+      final args = widget.settings.arguments;
+      final origin = args is ImportReviewLaunch
+          ? args.origin
+          : args is CsvImportOrigin
+          ? args.route
+          : AppRoutes.home;
+      final returnLabel = args is CsvImportOrigin
+          ? args.returnLabel
+          : 'Volver a ${MovementListOrigin(origin).label}';
       return ImportReviewScreen(
         controller: _controller!,
         onReturn: () {
           if (navigator.canPop()) {
             navigator.pop();
           } else {
-            navigator.pushReplacementNamed(launch.origin);
+            navigator.pushReplacementNamed(origin);
           }
         },
-        returnLabel: 'Volver a ${MovementListOrigin(launch.origin).label}',
+        returnLabel: returnLabel,
         onHistory: () => navigator.pushNamed(AppRoutes.importHistory),
         onBatch: batch,
         onPeriod: (label, period) => navigator.pushNamed(

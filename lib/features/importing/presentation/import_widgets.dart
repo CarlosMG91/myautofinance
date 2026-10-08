@@ -69,12 +69,14 @@ class ImportRowsView extends StatelessWidget {
     this.categoryLabel,
     this.onOriginal,
     this.statusLabel,
+    this.originalLabel = 'Original',
   });
   final List<InterpretedImportRow> rows;
   final String Function(InterpretedMovement)? accountLabel;
   final String Function(ImportCategoryReference)? categoryLabel;
   final void Function(InterpretedImportRow)? onOriginal;
   final String Function(InterpretedImportRow)? statusLabel;
+  final String originalLabel;
 
   List<String> values(InterpretedImportRow row) {
     final ref = switch (row) {
@@ -86,7 +88,7 @@ class ImportRowsView extends StatelessWidget {
       row is InterpretedMovement ? 'REAL' : 'PRESUPUESTO',
       switch (row) {
         InterpretedMovement() => row.valueDate.value,
-        InterpretedBudget() => row.month.value.substring(0, 7),
+        InterpretedBudget() => row.month.value,
       },
       row.concept,
       importMoney(row.amount.originalCents),
@@ -106,7 +108,7 @@ class ImportRowsView extends StatelessWidget {
     'Tipo',
     'Fecha / mes',
     'Concepto',
-    'Original',
+    originalLabel,
     'Interno',
     'Categoría',
     'Cuenta',

@@ -255,33 +255,36 @@ void main() {
     ),
   };
   for (final entry in invalidFiles.entries) {
-    test(
-      'Errores de ${entry.key}: conserva todos los diagnósticos y bloquea el lote',
-      () async {
-        final diagnostics = const HistoricalCsvReader()
-            .read(entry.value)
-            .diagnostics;
-        expect(diagnostics, isNotEmpty);
-        final session = await _fromFile(_file(entry.value));
-        final interpretation = session.interpretation;
-        expect(interpretation.rows, isEmpty);
-        expect(interpretation.issues, hasLength(diagnostics.length));
-        for (var i = 0; i < diagnostics.length; i++) {
-          final issue = interpretation.issues[i];
-          expect(issue.sourceOrdinal, diagnostics[i].sourceOrdinal);
-          expect(issue.field, diagnostics[i].field);
-          expect(issue.reason, diagnostics[i].reason);
-          expect(
-            issue.code,
-            entry.key == 'campos y registros' ||
-                    entry.key == 'presupuesto int64 mínimo'
-                ? ImportIssueCode.invalidField
-                : ImportIssueCode.invalidFile,
-          );
-        }
-        _blocked(ImportReview(session: session));
-      },
-    );
+    test('Errores de ${entry.key}: conserva todos los diagnósticos y bloquea el lote', () async {
+      final diagnostics = const HistoricalCsvReader()
+          .read(entry.value)
+          .diagnostics;
+      expect(diagnostics, isNotEmpty);
+      final session = await _fromFile(_file(entry.value));
+      final interpretation = session.interpretation;
+      expect(interpretation.rows, isEmpty);
+      expect(interpretation.issues, hasLength(diagnostics.length));
+      for (var i = 0; i < diagnostics.length; i++) {
+        final issue = interpretation.issues[i];
+        expect(issue.sourceOrdinal, diagnostics[i].sourceOrdinal);
+        expect(issue.field, diagnostics[i].field);
+        final diagnostic = diagnostics[i];
+        expect(
+          issue.reason,
+          '${diagnostic.reason}'
+          '${diagnostic.physicalLine == null ? '' : ' · línea física ${diagnostic.physicalLine}'}'
+          '${diagnostic.byteOffset == null ? '' : ' · byte ${diagnostic.byteOffset}'}',
+        );
+        expect(
+          issue.code,
+          entry.key == 'campos y registros' ||
+                  entry.key == 'presupuesto int64 mínimo'
+              ? ImportIssueCode.invalidField
+              : ImportIssueCode.invalidFile,
+        );
+      }
+      _blocked(ImportReview(session: session));
+    });
   }
 
   test('Origen ajeno y cabecera sin registros son errores de lote', () async {

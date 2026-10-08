@@ -87,6 +87,9 @@ final class HistoricalCsvImportAdapter implements ImportAdapter {
     },
     sourceOrdinal: diagnostic.sourceOrdinal,
     field: diagnostic.field,
-    reason: diagnostic.reason,
+    reason:
+        '${diagnostic.reason}'
+        '${diagnostic.physicalLine == null ? '' : ' · línea física ${diagnostic.physicalLine}'}'
+        '${diagnostic.byteOffset == null ? '' : ' · byte ${diagnostic.byteOffset}'}',
   );
 }

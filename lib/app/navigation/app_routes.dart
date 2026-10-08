@@ -13,6 +13,7 @@ abstract final class AppRoutes {
   static const home = '/';
   static const importHistory = '/importaciones';
   static const importReview = '/importaciones/revision';
+  static const importCsv = '/importaciones/csv';
   static const importBatches = '/importaciones/lotes';
   static const importRows = '/importaciones/origen';
   static const movements = '/movimientos';

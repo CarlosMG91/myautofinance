@@ -1,5 +1,6 @@
 import '../features/movements/presentation/movement_list_controller.dart';
 import '../features/importing/presentation/import_controller.dart';
+import '../features/importing/importing.dart' show LocalCsvSelector;
 import '../features/budget/presentation/budget_source.dart';
 
 import 'package:flutter/material.dart';
@@ -29,6 +30,7 @@ class AutofinanceApp extends StatelessWidget {
     this.movements,
     this.budgets,
     this.imports,
+    this.csvSelector,
   });
 
   final AppConfig config;
@@ -42,6 +44,7 @@ class AutofinanceApp extends StatelessWidget {
   final MovementListLoader? movements;
   final BudgetLoader? budgets;
   final ImportServicesLoader? imports;
+  final LocalCsvSelector? csvSelector;
 
   /// Entradas técnicas disponibles para conectar las futuras funcionalidades.
   static const modules = applicationModules;
@@ -114,6 +117,7 @@ class AutofinanceApp extends StatelessWidget {
           movements: movements ?? localSession?.movements,
           budgets: budgets ?? localSession?.budgets,
           imports: imports ?? localSession?.imports,
+          csvSelector: csvSelector,
           allowTestImports: config.environment == AppEnvironment.test,
         ),
       ],
@@ -126,6 +130,7 @@ class AutofinanceApp extends StatelessWidget {
         movements: movements ?? localSession?.movements,
         budgets: budgets ?? localSession?.budgets,
         imports: imports ?? localSession?.imports,
+        csvSelector: csvSelector,
         allowTestImports: config.environment == AppEnvironment.test,
       ),
     );
