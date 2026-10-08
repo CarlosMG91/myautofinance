@@ -10,7 +10,8 @@ String movementTimestamp() => DateTime.fromMillisecondsSinceEpoch(
   isUtc: true,
 ).toIso8601String();
 
-final class SqliteMovementRepository implements MovementRepository {
+final class SqliteMovementRepository
+    implements MovementRepository, PendingMovementRepository {
   SqliteMovementRepository(this.database);
   final LocalDatabase database;
   static const _select =
@@ -239,6 +240,97 @@ final class SqliteMovementRepository implements MovementRepository {
     });
   }
 
+  @override
+  Future<void> assignPendingCategory(
+    PendingMovementSelection selection,
+    String categoryId,
+  ) {
+    MovementSelection([categoryId]);
+    return database.writeTransaction(() async {
+      if (!identical(selection.databaseIdentity, database) ||
+          selection.datasetId != (await database.readState()).datasetId) {
+        throw const MovementFailure(
+          'La base local ha cambiado. Selecciona de nuevo los pendientes.',
+        );
+      }
+      final records = await _requireSelection(selection.movements);
+      if (records.any(
+        (record) =>
+            record.importRowId == null || record.data.categoryId != null,
+      )) {
+        throw const MovementFailure(
+          'Algún movimiento ya no es un importado pendiente. Revisa la selección.',
+        );
+      }
+      final category = await database
+          .customSelect(
+            'SELECT archived FROM categories WHERE id=?',
+            variables: [Variable(categoryId)],
+          )
+          .getSingleOrNull();
+      if (category == null || category.read<int>('archived') != 0) {
+        throw const MovementFailure('La categoría no existe o está archivada.');
+      }
+      final now = movementTimestamp();
+      for (final record in records) {
+        // El predicado protege también frente a un cambio durante la escritura.
+        final changed = await database.customUpdate(
+          'UPDATE movements SET category_id=?,updated_at=? '
+          'WHERE id=? AND import_row_id IS NOT NULL AND category_id IS NULL',
+          variables: [Variable(categoryId), Variable(now), Variable(record.id)],
+        );
+        if (changed != 1) {
+          throw const MovementFailure(
+            'No se pudo categorizar todo el lote pendiente.',
+          );
+        }
+      }
+    });
+  }
+
+  @override
+  Future<PendingMovementPage> readPendingPage({
+    PendingMovementQuery? query,
+    MovementCursor? after,
+    int limit = 100,
+  }) async {
+    _validateLimit(limit);
+    final filters = query ?? PendingMovementQuery();
+    final filter = _filter(
+      from: filters.from,
+      until: filters.until,
+      accountId: filters.accountId,
+      concept: filters.concept,
+      unclassifiedOnly: true,
+      importedOnly: true,
+      batchId: filters.batchId,
+      openPeriod: true,
+    );
+    return database.transaction(() async {
+      final state = await database.readState();
+      final count =
+          (await database
+                  .customSelect(
+                    'SELECT count(*) AS total FROM movements m WHERE ${filter.where}',
+                    variables: filter.arguments,
+                  )
+                  .getSingle())
+              .read<int>('total');
+      final rows = await _pageRecords(filter, after, limit + 1);
+      final hasMore = rows.length > limit;
+      final visible = hasMore ? rows.sublist(0, limit) : rows;
+      return PendingMovementPage(
+        records: visible,
+        totalCount: count,
+        nextCursor: hasMore
+            ? MovementCursor(visible.last.data.valueDate, visible.last.id)
+            : null,
+        databaseIdentity: database,
+        datasetId: state.datasetId,
+      );
+    });
+  }
+
   Future<List<MovementRecord>> _requireSelection(
     MovementSelection selection,
   ) async {
@@ -333,21 +425,30 @@ final class SqliteMovementRepository implements MovementRepository {
   }
 
   _MovementFilter _filter({
-    required ValueDate from,
+    required ValueDate? from,
     required ValueDate? until,
     String? accountId,
     String? categoryId,
     MovementCategoryScope categoryScope = MovementCategoryScope.direct,
     bool unclassifiedOnly = false,
     String? concept,
+    bool openPeriod = false,
+    bool importedOnly = false,
+    String? batchId,
   }) {
-    if ((until != null && until.compareTo(from) <= 0) ||
-        (until == null && !from.value.startsWith('9999-')) ||
+    if ((from != null && until != null && until.compareTo(from) <= 0) ||
+        (!openPeriod &&
+            (from == null ||
+                until == null && !from.value.startsWith('9999-'))) ||
         (unclassifiedOnly && categoryId != null)) {
       throw const MovementFailure('Rango o filtro de categoría inválidos.');
     }
-    final clauses = ['m.value_date>=?'];
-    final args = <Variable>[Variable(from.value)];
+    final clauses = <String>[];
+    final args = <Variable>[];
+    if (from != null) {
+      clauses.add('m.value_date>=?');
+      args.add(Variable(from.value));
+    }
     if (until != null) {
       clauses.add('m.value_date<?');
       args.add(Variable(until.value));
@@ -368,11 +469,21 @@ UNION ALL SELECT c.id FROM categories c JOIN branch b ON c.parent_id=b.id
       args.add(Variable(categoryId));
     }
     if (unclassifiedOnly) clauses.add('m.category_id IS NULL');
+    if (importedOnly) clauses.add('m.import_row_id IS NOT NULL');
+    if (batchId != null) {
+      clauses.add(
+        'm.import_row_id IN (SELECT id FROM import_rows WHERE batch_id=?)',
+      );
+      args.add(Variable(batchId));
+    }
     if (concept != null && concept.trim().isNotEmpty) {
       clauses.add('instr(movement_search_key(m.concept),?)>0');
       args.add(Variable(conceptSearchKey(concept.trim())));
     }
-    return _MovementFilter(clauses.join(' AND '), args);
+    return _MovementFilter(
+      clauses.isEmpty ? '1=1' : clauses.join(' AND '),
+      args,
+    );
   }
 
   Future<List<MovementRecord>> _pageRecords(

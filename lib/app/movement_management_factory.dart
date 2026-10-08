@@ -11,3 +11,11 @@ MovementManagement createMovementManagement({
   unitOfWork: database,
   errorMessage: (error) => error is DatabaseFailure ? error.message : null,
 );
+
+PendingMovementManagement createPendingMovementManagement({
+  required LocalDatabase database,
+}) => PendingMovementManagement(
+  repository: SqliteMovementRepository(database),
+  unitOfWork: database,
+  errorMessage: (error) => error is DatabaseFailure ? error.message : null,
+);
