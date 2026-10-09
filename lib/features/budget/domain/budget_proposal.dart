@@ -144,6 +144,23 @@ final class BudgetProposalBasis {
   }
 }
 
+enum BudgetProposalSignOrigin { sourceReal, allocation }
+
+/// Un aviso identifica cifra, UUID, ruta y mes; el tipo viene de la raíz.
+final class BudgetProposalSignWarning {
+  const BudgetProposalSignWarning({
+    required this.origin,
+    required this.categoryId,
+    required this.categoryPath,
+    required this.month,
+    required this.amountCents,
+  });
+  final BudgetProposalSignOrigin origin;
+  final String categoryId, categoryPath;
+  final BudgetMonth month;
+  final int amountCents;
+}
+
 /// Borrador solo en memoria. El editor puede construir otra instancia manteniendo
 /// filas fuente, ámbitos y basis, y sustituyendo allocations al editar/desglosar.
 /// El constructor no autoriza guardar: T02/T03 validan signos, categorías activas
@@ -169,7 +186,49 @@ final class BudgetProposalDraft {
   final List<BudgetProposalExcludedReal> excludedReals;
   final BudgetProposalBasis basis;
   final bool signsReviewed;
-  bool get requiresSignReview => sourceRows.any((r) => r.requiresSignReview);
+  List<BudgetProposalSignWarning> get signWarnings {
+    final warnings = <BudgetProposalSignWarning>[
+      for (final row in sourceRows)
+        if (row.requiresSignReview)
+          BudgetProposalSignWarning(
+            origin: BudgetProposalSignOrigin.sourceReal,
+            categoryId: row.categoryId,
+            categoryPath: row.categoryPath,
+            month: row.sourceMonth,
+            amountCents: row.sourceAmountCents,
+          ),
+    ];
+    final categories = {for (final c in basis.categories) c.node.id: c};
+    for (final allocation in allocations) {
+      final category = categories[allocation.categoryId];
+      var root = category;
+      final seen = <String>{};
+      while (root != null && root.node.parentId != null) {
+        if (!seen.add(root.node.id)) {
+          root = null;
+          break;
+        }
+        root = categories[root.node.parentId];
+      }
+      if (root == null || category == null) continue;
+      if (root.node.isIncome
+          ? allocation.amountCents < 0
+          : allocation.amountCents > 0) {
+        warnings.add(
+          BudgetProposalSignWarning(
+            origin: BudgetProposalSignOrigin.allocation,
+            categoryId: allocation.categoryId,
+            categoryPath: category.path,
+            month: allocation.month,
+            amountCents: allocation.amountCents,
+          ),
+        );
+      }
+    }
+    return List.unmodifiable(warnings);
+  }
+
+  bool get requiresSignReview => signWarnings.isNotEmpty;
 }
 
 /// Contrato de comparación para T03; no ejecuta escrituras ni representa una

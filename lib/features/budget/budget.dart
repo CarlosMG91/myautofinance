@@ -4,6 +4,7 @@ export 'domain/budget_management.dart';
 export 'domain/monthly_budget_query.dart';
 export 'domain/budget_proposal.dart';
 export 'domain/budget_proposal_calculator.dart';
+export 'domain/budget_proposal_editor.dart';
 
 const budgetModule = FeatureModule(
   id: ModuleId.budget,
