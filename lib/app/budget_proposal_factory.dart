@@ -17,3 +17,15 @@ BudgetProposalCalculator createBudgetProposalCalculator({
   budgets: SqliteBudgetRepository(database),
   unitOfWork: database,
 );
+
+BudgetProposalSaver createBudgetProposalSaver({
+  required LocalDatabase database,
+  required CategoryReadInvalidation invalidation,
+}) => BudgetProposalSaver(
+  calculator: createBudgetProposalCalculator(
+    database: database,
+    invalidation: invalidation,
+  ),
+  budgets: SqliteBudgetRepository(database),
+  unitOfWork: database,
+);
