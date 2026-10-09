@@ -38,10 +38,14 @@ void main() {
   });
 
   for (final destination in AppRoutes.destinations) {
-    testWidgets('Abre ${destination.path} desde el arranque y vuelve', (
+    testWidgets('Abre ${destination.path} desde el índice técnico y vuelve', (
       tester,
     ) async {
       await tester.pumpWidget(const AutofinanceApp());
+      tester
+          .state<NavigatorState>(find.byType(Navigator))
+          .pushNamed(AppRoutes.home);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('${destination.label} · ${destination.path}'));
       await tester.pumpAndSettle();
 
@@ -82,7 +86,7 @@ void main() {
       );
       await tester.tap(find.text('Volver'));
       await tester.pumpAndSettle();
-      expect(find.text('Autofinance · Base técnica'), findsOneWidget);
+      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
@@ -101,7 +105,7 @@ void main() {
     expect(find.text('Marcador técnico · ${AppRoutes.wealth}'), findsOneWidget);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.text('Autofinance · Base técnica'), findsOneWidget);
+    expect(find.text('Marcador técnico · /estado'), findsOneWidget);
   });
 
   testWidgets('El error sin historial ofrece retorno al índice', (

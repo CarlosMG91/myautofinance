@@ -14,12 +14,15 @@ import '../features/synchronization/presentation/drive_controller.dart';
 import 'modules.dart';
 import 'navigation/app_router.dart';
 import 'navigation/app_routes.dart';
+import 'navigation/navigation_session.dart';
+import 'navigation/navigation_session_scope.dart';
+import 'navigation/session_location.dart';
 import 'local_backup_session.dart';
 import '../features/synchronization/presentation/local_backup_controller.dart';
 import '../features/movements/presentation/category_tree_screen.dart';
 import '../features/wealth/wealth.dart';
 
-class AutofinanceApp extends StatelessWidget {
+class AutofinanceApp extends StatefulWidget {
   const AutofinanceApp({
     super.key,
     this.config = const AppConfig(environment: AppEnvironment.production),
@@ -33,6 +36,8 @@ class AutofinanceApp extends StatelessWidget {
     this.budgets,
     this.imports,
     this.csvSelector,
+    this.navigationSession,
+    this.navigationClock,
   });
 
   final AppConfig config;
@@ -48,95 +53,136 @@ class AutofinanceApp extends StatelessWidget {
   final BudgetLoader? budgets;
   final ImportServicesLoader? imports;
   final LocalCsvSelector? csvSelector;
+  final NavigationSession? navigationSession;
+  final NavigationClock? navigationClock;
 
   /// Entradas técnicas disponibles para conectar las futuras funcionalidades.
   static const modules = applicationModules;
 
   @override
+  State<AutofinanceApp> createState() => _AutofinanceAppState();
+}
+
+class _AutofinanceAppState extends State<AutofinanceApp> {
+  late final NavigationSession _navigation;
+  late final NavigationSessionObserver _navigationObserver;
+  late final bool _ownsNavigation;
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsNavigation = widget.navigationSession == null;
+    _navigation =
+        widget.navigationSession ??
+        NavigationSession(clock: widget.navigationClock);
+    _navigationObserver = NavigationSessionObserver(
+      _navigation,
+      monthlyBudget:
+          widget.budgets != null || widget.localSession?.budgets != null,
+    );
+  }
+
+  @override
+  void dispose() {
+    if (_ownsNavigation) _navigation.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final backups = localBackups ?? localSession?.controller;
-    final driveController = drive ?? localSession?.drive;
-    final categoryLoader = categories ?? localSession?.categories;
-    final wealthLoader = wealth ?? localSession?.wealth;
-    return MaterialApp(
-      title: 'Autofinance',
-      locale: AppRegional.locale,
-      supportedLocales: AppRegional.supportedLocales,
-      localizationsDelegates: AppRegional.delegates,
-      theme: ThemeData(
-        fontFamily: defaultTargetPlatform == TargetPlatform.windows
-            ? 'Segoe UI'
-            : 'Roboto',
-        scaffoldBackgroundColor: const Color(0xfff5f7fa),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff124b7a))
-            .copyWith(
-              primary: const Color(0xff124b7a),
-              surface: Colors.white,
-              onSurface: const Color(0xff17212b),
-              error: const Color(0xff9f2733),
+    final backups = widget.localBackups ?? widget.localSession?.controller;
+    final driveController = widget.drive ?? widget.localSession?.drive;
+    final categoryLoader = widget.categories ?? widget.localSession?.categories;
+    final wealthLoader = widget.wealth ?? widget.localSession?.wealth;
+    return NavigationSessionScope(
+      session: _navigation,
+      child: MaterialApp(
+        navigatorObservers: [_navigationObserver],
+        title: 'Autofinance',
+        locale: AppRegional.locale,
+        supportedLocales: AppRegional.supportedLocales,
+        localizationsDelegates: AppRegional.delegates,
+        theme: ThemeData(
+          fontFamily: defaultTargetPlatform == TargetPlatform.windows
+              ? 'Segoe UI'
+              : 'Roboto',
+          scaffoldBackgroundColor: const Color(0xfff5f7fa),
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff124b7a))
+              .copyWith(
+                primary: const Color(0xff124b7a),
+                surface: Colors.white,
+                onSurface: const Color(0xff17212b),
+                error: const Color(0xff9f2733),
+              ),
+          textTheme: const TextTheme(
+            bodyMedium: TextStyle(fontSize: 16, height: 1.4),
+            titleLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+          ),
+          filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(fontSize: 16, height: 1.4),
-          titleLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-        ),
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(48, 48),
+          ),
+          outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+          ),
+          dialogTheme: DialogThemeData(
+            backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(48, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        // Evita una ruta de datos por debajo de la recuperación de arranque.
+        onGenerateInitialRoutes: (_) => [
+          AppRouter.generateRoute(
+            RouteSettings(
+              name: backups != null && !backups.activeAvailable
+                  ? AppRoutes.localBackups
+                  : SessionLocation.encode(_navigation.context),
+              arguments: _navigation.context,
             ),
+            localBackups: backups,
+            drive: driveController,
+            categories: categoryLoader,
+            wealth: wealthLoader,
+            movements: widget.movements ?? widget.localSession?.movements,
+            pendingMovements:
+                widget.pendingMovements ??
+                widget.localSession?.pendingMovements,
+            budgets: widget.budgets ?? widget.localSession?.budgets,
+            imports: widget.imports ?? widget.localSession?.imports,
+            csvSelector: widget.csvSelector,
+            allowTestImports: widget.config.environment == AppEnvironment.test,
+            navigationSession: _navigation,
           ),
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-        ),
-        dialogTheme: DialogThemeData(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-      // Evita una ruta de datos por debajo de la recuperación de arranque.
-      onGenerateInitialRoutes: (_) => [
-        AppRouter.generateRoute(
-          RouteSettings(
-            name: backups != null && !backups.activeAvailable
-                ? AppRoutes.localBackups
-                : AppRoutes.home,
-          ),
+        ],
+        onGenerateRoute: (settings) => AppRouter.generateRoute(
+          settings,
           localBackups: backups,
           drive: driveController,
           categories: categoryLoader,
           wealth: wealthLoader,
-          movements: movements ?? localSession?.movements,
-          pendingMovements: pendingMovements ?? localSession?.pendingMovements,
-          budgets: budgets ?? localSession?.budgets,
-          imports: imports ?? localSession?.imports,
-          csvSelector: csvSelector,
-          allowTestImports: config.environment == AppEnvironment.test,
+          movements: widget.movements ?? widget.localSession?.movements,
+          pendingMovements:
+              widget.pendingMovements ?? widget.localSession?.pendingMovements,
+          budgets: widget.budgets ?? widget.localSession?.budgets,
+          imports: widget.imports ?? widget.localSession?.imports,
+          csvSelector: widget.csvSelector,
+          allowTestImports: widget.config.environment == AppEnvironment.test,
+          navigationSession: _navigation,
         ),
-      ],
-      onGenerateRoute: (settings) => AppRouter.generateRoute(
-        settings,
-        localBackups: backups,
-        drive: driveController,
-        categories: categoryLoader,
-        wealth: wealthLoader,
-        movements: movements ?? localSession?.movements,
-        pendingMovements: pendingMovements ?? localSession?.pendingMovements,
-        budgets: budgets ?? localSession?.budgets,
-        imports: imports ?? localSession?.imports,
-        csvSelector: csvSelector,
-        allowTestImports: config.environment == AppEnvironment.test,
       ),
     );
   }

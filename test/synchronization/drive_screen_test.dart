@@ -211,7 +211,7 @@ void main() {
       expect(find.text('Sin copia en Drive'), findsOneWidget);
       expect(find.textContaining('Remoto desconocido'), findsNothing);
       expect(download.applied, 0);
-      await tester.tap(find.text('Volver a Autofinance'));
+      await tester.tap(find.textContaining('Volver a Estado del mes'));
       await tester.pumpAndSettle();
       expect(upload.calls, 0);
       expect(download.calls, 1);

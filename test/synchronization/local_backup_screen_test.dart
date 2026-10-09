@@ -132,7 +132,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     if (!recovery) {
-      final context = tester.element(find.text('Autofinance · Base técnica'));
+      final context = tester.element(find.text('Marcador técnico · /estado'));
       Navigator.of(context).pushNamed(AppRoutes.localBackups);
       await tester.pumpAndSettle();
     }

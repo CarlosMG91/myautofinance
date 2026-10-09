@@ -16,6 +16,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'app_routes.dart';
+import 'navigation_context.dart';
+import 'navigation_session.dart';
+import 'session_location.dart';
+import 'session_navigation_error.dart';
 import '../../features/synchronization/presentation/drive_controller.dart';
 import '../../features/synchronization/presentation/drive_screen.dart';
 import '../../features/synchronization/presentation/local_backup_controller.dart';
@@ -44,10 +48,35 @@ abstract final class AppRouter {
     ImportServicesLoader? imports,
     LocalCsvSelector? csvSelector,
     bool allowTestImports = false,
+    NavigationSession? navigationSession,
   }) {
     Widget page;
     final uri = Uri.tryParse(settings.name ?? '');
-    if (uri?.path == AppRoutes.importHistory ||
+    var destinationSettings = settings;
+    NavigationContext? invalidOrigin;
+    if (navigationSession != null &&
+        SessionDestination.fromPath(uri?.path ?? '') != null) {
+      final result = SessionLocation.resolve(
+        settings.name!,
+        navigationSession,
+        view: uri?.path == AppRoutes.budget && budgets != null
+            ? PeriodView.monthly
+            : null,
+      );
+      if (result is InvalidSessionLocation) {
+        invalidOrigin = result.origin;
+      } else {
+        destinationSettings = RouteSettings(
+          name: SessionLocation.encode(
+            (result as ValidSessionLocation).context,
+          ),
+          arguments: settings.arguments,
+        );
+      }
+    }
+    if (invalidOrigin != null) {
+      page = SessionNavigationError(origin: invalidOrigin);
+    } else if (uri?.path == AppRoutes.importHistory ||
         uri?.path.startsWith('${AppRoutes.importHistory}/') == true) {
       page = imports == null
           ? const _TechnicalPlaceholder(
@@ -65,7 +94,7 @@ abstract final class AppRouter {
         (uri?.path == AppRoutes.budget ||
             uri?.path.startsWith('${AppRoutes.budget}/') == true)) {
       page = BudgetRoute(
-        settings: settings,
+        settings: destinationSettings,
         load: budgets,
         categories: categories,
         importsAvailable: imports != null,
@@ -106,7 +135,7 @@ abstract final class AppRouter {
         (uri?.path == AppRoutes.wealth ||
             uri?.path.startsWith('${AppRoutes.wealth}/') == true)) {
       page = _WealthRoute(
-        settings: settings,
+        settings: destinationSettings,
         loadManagement: wealth,
         categoriesAvailable: categories != null,
         pendingAvailable: pendingMovements != null && categories != null,
@@ -165,6 +194,7 @@ abstract final class AppRouter {
         message: destination == null
             ? 'Destino desconocido · ${settings.name ?? "(sin ruta)"}'
             : 'Marcador técnico · ${destination.path}',
+        fallbackOrigin: destination == null ? navigationSession?.context : null,
       );
     }
     // Conserva nombre y argumentos, también en destinos desconocidos.
@@ -757,11 +787,13 @@ class _TechnicalPlaceholder extends StatelessWidget {
     this.categoriesAvailable = false,
     this.wealthAvailable = false,
     this.pendingAvailable = false,
+    this.fallbackOrigin,
   });
   final bool showManagement;
   final bool categoriesAvailable;
   final bool wealthAvailable;
   final bool pendingAvailable;
+  final NavigationContext? fallbackOrigin;
 
   final String title;
   final String message;
@@ -809,7 +841,13 @@ class _TechnicalPlaceholder extends StatelessWidget {
                 if (navigator.canPop()) {
                   navigator.pop();
                 } else {
-                  navigator.pushReplacementNamed(AppRoutes.home);
+                  final origin = fallbackOrigin;
+                  navigator.pushReplacementNamed(
+                    origin == null
+                        ? AppRoutes.home
+                        : SessionLocation.encode(origin),
+                    arguments: origin,
+                  );
                 }
               },
               child: const Text('Volver'),

@@ -66,7 +66,7 @@ void main() {
       expect(find.text('Cuenta cerrada sintética'), findsOneWidget);
       await tester.tap(find.text('Volver al origen'));
       await tester.pumpAndSettle();
-      expect(find.text('Autofinance · Base técnica'), findsOneWidget);
+      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
     },
   );
 

@@ -26,7 +26,7 @@ void main() {
 
     final expected = _expected[_environment];
     if (expected != null) {
-      expect(find.text('Autofinance · Base técnica'), findsOneWidget);
+      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
       expect(
         tester
             .widget<AutofinanceApp>(find.byType(AutofinanceApp))

@@ -255,7 +255,7 @@ void main() {
       await settle(tester, until: () => selected!.node.id != tax.node.id);
       expect(selected!.node.id, isNot(tax.node.id));
       expect(selected!.path, tax.path);
-      expect(find.text('Autofinance · Base técnica'), findsOneWidget);
+      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
       expect(await revision(tester), 5);
     },
   );
@@ -465,7 +465,7 @@ void main() {
       await settle(tester);
       expect(await revision(tester), 5);
       await settle(tester);
-      expect(find.text('Autofinance · Base técnica'), findsOneWidget);
+      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
     },
   );
 
@@ -557,7 +557,7 @@ void main() {
       );
       expect(await revision(tester), 5);
       await settle(tester);
-      expect(find.text('Autofinance · Base técnica'), findsOneWidget);
+      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
     },
   );
 
