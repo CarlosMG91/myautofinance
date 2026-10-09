@@ -1,5 +1,9 @@
 # MA-TSK-074 · Capturar y corregir fotos patrimoniales
 
+La carencia de verificación Android de esta entrega se revisa el 2026-10-09
+en [MA-TSK-148 · Verificación nativa](../ep-017/verificacion-android.md), con
+APK, recorrido SQLite en emulador, Back real y evidencia sintética.
+
 Ticket consultado el 2026-10-04 en `GET http://localhost:4310/api/data`, tablero
 **My autofinance**. Se aplican EP-001 §4 y caso D, el flujo F0–F4 de EP-002,
 la aprobación MA-TSK-019 registrada en `entrega-flutter.md` y el formulario de

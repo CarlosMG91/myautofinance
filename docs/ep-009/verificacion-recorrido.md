@@ -1,5 +1,10 @@
 # MA-TSK-077 · Recorrido integrado de fichas y patrimonio
 
+La comprobación Android posterior del 2026-10-09 se conserva en
+[MA-TSK-148 · Verificación nativa](../ep-017/verificacion-android.md), con APK,
+SQLite en emulador, Back real y evidencia sintética. La ausencia de SDK y
+dispositivo descrita abajo corresponde a la entrega original del 2026-10-04.
+
 Ticket consultado el 2026-10-04 mediante `GET http://localhost:4310/api/data`,
 tablero **My autofinance**; dependencia MA-TSK-076 terminada. Fuentes:
 EP-001 §4 y caso D, aprobación y entrega EP-002, mockup final y arquitectura

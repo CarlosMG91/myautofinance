@@ -1,0 +1,19 @@
+MA-TSK-148; verificación 2026-10-09
+flutter --version: Flutter 3.47.0 / Dart 3.13.0 / canal local user-branch
+scripts/check-toolchain.ps1: Versiones correctas: Flutter 3.47.0, Dart 3.13.0.
+Java: OpenJDK Temurin 17.0.20.1+1
+Paquetes fijados presentes: android-36, build-tools 36.0.0, ndk 28.2.13676358
+Emulador 37.2.12.0 / build_id 16428233; WHPX usable; GPU swiftshader
+AVD Medium_Phone_API_37.0; emulator-5554; sdk_gphone64_x86_64
+Android 17 / API 37; CE2A.260420.019 / 15611780
+Pantalla: 1080x2400 / 420 dpi; capturas Flutter 412x915
+Comando: flutter build apk --debug --no-pub --dart-define=APP_ENV=test
+Entrada APK final: lib/main.dart, recompilado después del runner de integración
+Running Gradle task assembleDebug: 36,2s; Built build/app/outputs/flutter-apk/app-debug.apk
+APK: 206569624 bytes
+APK SHA-256: d7a40570d5422ea66bc30ae4fc62a123e29788306c32c0f4ba778c9f62eefd45
+toolchain.json SHA-256: 85a1f3408139314b7993cee4bb3295f787bd46e43844fc115a4c93044877c083
+pubspec.lock SHA-256: 144adf4d36eabc6646ceae139a711e5a55f12096a0421a3f544089e8d28124d1
+git diff -- toolchain.json pubspec.lock: sin cambios
+Doctor: canal user-branch y algunas licencias Android pendientes; no impiden este build/recorrido.
+No se actualizan SDK/lockfile ni se aceptan licencias.

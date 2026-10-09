@@ -1,0 +1,102 @@
+00:00 +0: Caso D y recorrido completo de patrimonio en SQLite nativo
+Recorrido patrimonio: Gestionar fichas
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Seguir editando
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Volver a Patrimonio, 2026-01
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: febrero ausente, sin arrastre ni totales
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: febrero parcial, ahorro/cartera pendientes
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: fallo sin éxito ni cambios parciales
+MA-TSK-148: esperando KEYCODE_BACK 41662cd326de409da76968aca3cb2cfb
+Recorrido patrimonio: Seguir editando
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-02-01, céntimos [630000, 1050000, 1680000, 480000, 1200000]
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [630000, 1050000, 1680000, 480000, 1200000]
+MA-TSK-148: movimiento sin cambios en fotos manuales
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [630000, 1050000, 1680000, 480000, 1200000]
+MA-TSK-148: corrección e identidades conservadas al reabrir
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Cartera
+Recorrido patrimonio: Cambiar liquidez
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Aplicar cambio
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Aplicar cambio
+Recorrido patrimonio: Volver a Patrimonio, 2026-02
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [1670000, 0, 1670000, 480000, 1190000]
+Recorrido patrimonio: Cartera
+Recorrido patrimonio: Corregir liquidez histórica
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Corregir intervalo
+Recorrido patrimonio: Volver a Patrimonio, 2026-02
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Gestionar fichas
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Volver a Patrimonio, 2026-03
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Cuenta nueva
+Recorrido patrimonio: Editar ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Guardar baja
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Guardar baja
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Las doce fotos de 2026 · sin suma anual
+Recorrido patrimonio: marzo: Foto completa · Neto 11.900,00 €
+Recorrido patrimonio: Real
+06:35 +1: (tearDownAll)
+06:35 +2: All tests passed!
+MA-TSK-148: esperando KEYCODE_BACK 41662cd326de409da76968aca3cb2cfb -> adb KEYCODE_BACK enviado

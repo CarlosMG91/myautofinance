@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
 import 'package:myautofinance/app/local_backup_session.dart';
+import 'package:myautofinance/features/movements/movements.dart'
+    show MovementInput, ValueDate;
 import 'package:myautofinance/features/wealth/wealth.dart';
 
 /// Rutas de producto y SQLite en archivo, compartidas con los runners nativos.
@@ -14,6 +17,7 @@ Future<void> wealthLifecycleJourney(
   WidgetTester tester,
   Directory directory, {
   Directory? captures,
+  Future<void> Function()? androidBack,
 }) async {
   var session = LocalBackupSession(supportDirectory: () async => directory);
   Future<T> io<T>(Future<T> Function() action) async {
@@ -89,6 +93,7 @@ Future<void> wealthLifecycleJourney(
         'account_liquidity_periods',
         'wealth_snapshots',
         'wealth_values',
+        'movements',
         'database_state',
       ])
         table: (await db.customSelect('SELECT * FROM $table ORDER BY 1').get())
@@ -114,6 +119,9 @@ Future<void> wealthLifecycleJourney(
     ], expected);
     expect(reading.values.every((v) => v.amountCents >= 0), isTrue);
     expect(reading.month.value, '2026-${month.toString().padLeft(2, '0')}-01');
+    debugPrint(
+      'Patrimonio verificado: ${reading.month.value}, céntimos $expected',
+    );
   }
 
   Future<void> capture(String stage) async {
@@ -254,6 +262,9 @@ Future<void> wealthLifecycleJourney(
     expect(missing.status, WealthSnapshotStatus.absent);
     expect(missing.totals, isNull);
     expect(missing.values, isEmpty);
+    debugPrint(
+      'Patrimonio verificado: febrero ausente, sin arrastre ni totales',
+    );
     expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
     await capture('02-febrero-ausente');
     await tap('Registrar / editar foto');
@@ -272,6 +283,9 @@ Future<void> wealthLifecycleJourney(
       'Cuenta de ahorro',
       'Cartera',
     });
+    debugPrint(
+      'Patrimonio verificado: febrero parcial, ahorro/cartera pendientes',
+    );
     for (final label in [
       'Activos líquidos',
       'Activos totales',
@@ -311,16 +325,38 @@ Future<void> wealthLifecycleJourney(
       '6300',
     );
     expect(await image(), beforeFailure);
+    debugPrint('Patrimonio verificado: fallo sin éxito ni cambios parciales');
     await capture('05-error-con-borrador');
     await sql('DROP TRIGGER wealth_journey_failure');
-    // Cancelar el error conserva la foto previa. Reintentar luego la
-    // corrección conserva el ID de foto y de cada valoración.
-    await tap('Cancelar');
-    await tap('Seguir editando');
-    await tap('Cancelar');
-    await tap('Descartar cambios');
-    expect(await image(), beforeFailure);
-    await photo({principal: '6300'});
+    if (androidBack != null) {
+      // El host envía KEYCODE_BACK por adb; no se simula handlePopRoute.
+      await androidBack();
+      await settle();
+      expect(find.text('Hay cambios sin guardar'), findsOneWidget);
+      await capture('05a-android-back-protegido');
+      await tap('Seguir editando');
+      expect(
+        tester
+            .widget<TextField>(find.byKey(ValueKey('photo-value-$principal')))
+            .controller!
+            .text,
+        '6300',
+      );
+      expect(await image(), beforeFailure);
+      // Reintento desde el mismo borrador, tras retirar el fallo SQLite.
+      await enter(find.byKey(ValueKey('photo-value-$debt')), '4800');
+      await tap('Guardar foto');
+      await capture('05b-correccion-reintentada');
+    } else {
+      // Cancelar el error conserva la foto previa. Reintentar luego la
+      // corrección conserva el ID de foto y de cada valoración.
+      await tap('Cancelar');
+      await tap('Seguir editando');
+      await tap('Cancelar');
+      await tap('Descartar cambios');
+      expect(await image(), beforeFailure);
+      await photo({principal: '6300'});
+    }
     await totals(2, [630000, 1050000, 1680000, 480000, 1200000]);
     await totals(1, january);
     final corrected = await image();
@@ -328,6 +364,41 @@ Future<void> wealthLifecycleJourney(
       final old = (beforeFailure[table]! as List).cast<Map<String, Object?>>();
       final current = (corrected[table]! as List).cast<Map<String, Object?>>();
       expect(current.map((row) => row['id']), old.map((row) => row['id']));
+    }
+
+    if (androidBack != null) {
+      // Llevar al runner nativo la comprobación existente de EP-009:
+      // un movimiento real no recalcula ninguna valoración manual.
+      await io(() async {
+        final db = await session.store.open();
+        await SqliteMovementRepository(db).create(
+          MovementInput(
+            accountId: principal,
+            valueDate: ValueDate(2026, 2, 20),
+            concept: 'Ingreso sintético posterior al día 1',
+            amountCents: 1000000,
+          ),
+        );
+      });
+      final afterMovement = await image();
+      for (final table in ['wealth_snapshots', 'wealth_values']) {
+        expect(afterMovement[table], corrected[table]);
+      }
+      await totals(1, january);
+      await totals(2, [630000, 1050000, 1680000, 480000, 1200000]);
+      expect((await read(3)).status, WealthSnapshotStatus.absent);
+      debugPrint('MA-TSK-148: movimiento sin cambios en fotos manuales');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await settle();
+      await io(session.store.close);
+      session.controller.dispose();
+      session = LocalBackupSession(supportDirectory: () async => directory);
+      await mount(2);
+      expect(await image(), afterMovement);
+      await totals(1, january);
+      await totals(2, [630000, 1050000, 1680000, 480000, 1200000]);
+      await capture('05c-correccion-tras-reapertura');
+      debugPrint('MA-TSK-148: corrección e identidades conservadas al reabrir');
     }
 
     // Variante independiente: volver a 6.200 antes de cambiar la liquidez.

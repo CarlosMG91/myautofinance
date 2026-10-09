@@ -1,0 +1,215 @@
+00:00 +0: loading <repo>/test/wealth/wealth_photo_screen_test.dart
+00:00 +0: <repo>/test/wealth/wealth_photo_management_test.dart: EUR exactos: vacío, cero, coma/punto y límite INTEGER de SQLite
+00:00 +1: <repo>/test/wealth/wealth_photo_screen_test.dart: Carga manual, referencia fija y negativo enfocado sin perder campos
+00:01 +2: <repo>/test/wealth/wealth_photo_screen_test.dart: Carga manual, referencia fija y negativo enfocado sin perder campos
+00:01 +3: <repo>/test/wealth/wealth_photo_screen_test.dart: Carga manual, referencia fija y negativo enfocado sin perder campos
+00:02 +4: <repo>/test/wealth/wealth_photo_screen_test.dart: Carga manual, referencia fija y negativo enfocado sin perder campos
+00:02 +5: <repo>/test/wealth/wealth_photo_screen_test.dart: Carga manual, referencia fija y negativo enfocado sin perder campos
+00:03 +6: <repo>/test/wealth/wealth_photo_screen_test.dart: Carga manual, referencia fija y negativo enfocado sin perder campos
+00:05 +7: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Gestionar fichas
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Cancelar
+00:07 +8: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Seguir editando
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+Recorrido patrimonio: Crear ficha
+00:11 +9: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+00:12 +10: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+Recorrido patrimonio: Crear ficha
+00:15 +11: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Volver a Patrimonio, 2026-01
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: febrero ausente, sin arrastre ni totales
+Recorrido patrimonio: Registrar / editar foto
+00:29 +12: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+00:30 +13: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Registrar / editar foto
+00:32 +14: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: febrero parcial, ahorro/cartera pendientes
+Recorrido patrimonio: Registrar / editar foto
+00:34 +15: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Registrar / editar foto
+00:35 +16: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: fallo sin éxito ni cambios parciales
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Seguir editando
+00:37 +17: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+00:39 +18: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-02-01, céntimos [630000, 1050000, 1680000, 480000, 1200000]
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+00:40 +19: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+00:41 +20: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Cartera
+Recorrido patrimonio: Cambiar liquidez
+00:43 +21: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: windows
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Aplicar cambio
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Aplicar cambio
+Recorrido patrimonio: Volver a Patrimonio, 2026-02
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [1670000, 0, 1670000, 480000, 1190000]
+Recorrido patrimonio: Cartera
+Recorrido patrimonio: Corregir liquidez histórica
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Corregir intervalo
+Recorrido patrimonio: Volver a Patrimonio, 2026-02
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Gestionar fichas
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Volver a Patrimonio, 2026-03
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Cuenta nueva
+Recorrido patrimonio: Editar ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Guardar baja
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Guardar baja
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Las doce fotos de 2026 · sin suma anual
+Recorrido patrimonio: marzo: Foto completa · Neto 11.900,00 €
+Recorrido patrimonio: Real
+01:07 +22: <repo>/test/wealth/wealth_lifecycle_test.dart: Caso D completo en archivo SQLite: android
+Recorrido patrimonio: Gestionar fichas
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Seguir editando
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Volver a Patrimonio, 2026-01
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: febrero ausente, sin arrastre ni totales
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: febrero parcial, ahorro/cartera pendientes
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: fallo sin éxito ni cambios parciales
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Seguir editando
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Descartar cambios
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-02-01, céntimos [630000, 1050000, 1680000, 480000, 1200000]
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Cartera
+Recorrido patrimonio: Cambiar liquidez
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Aplicar cambio
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Aplicar cambio
+Recorrido patrimonio: Volver a Patrimonio, 2026-02
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [1670000, 0, 1670000, 480000, 1190000]
+Recorrido patrimonio: Cartera
+Recorrido patrimonio: Corregir liquidez histórica
+Recorrido patrimonio: Guardar liquidez
+Recorrido patrimonio: Corregir intervalo
+Recorrido patrimonio: Volver a Patrimonio, 2026-02
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Gestionar fichas
+Recorrido patrimonio: Crear ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Volver a Patrimonio, 2026-03
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Recorrido patrimonio: Cuenta nueva
+Recorrido patrimonio: Editar ficha
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Cancelar
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Guardar baja
+Recorrido patrimonio: Guardar
+Recorrido patrimonio: Guardar baja
+Recorrido patrimonio: Registrar / editar foto
+Recorrido patrimonio: Guardar foto
+Patrimonio verificado: 2026-01-01, céntimos [900000, 1000000, 1900000, 500000, 1400000]
+Patrimonio verificado: 2026-02-01, céntimos [620000, 1050000, 1670000, 480000, 1190000]
+Recorrido patrimonio: Las doce fotos de 2026 · sin suma anual
+Recorrido patrimonio: marzo: Foto completa · Neto 11.900,00 €
+Recorrido patrimonio: Real
+02:03 +23: All tests passed!

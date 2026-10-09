@@ -1,0 +1,31 @@
+MA-TSK-148: calidad; extractos de logs reales, rutas del repositorio sustituidas por <repo>.
+
+Primera ejecución: scripts/check-quality.ps1 original; código 1.
+Versiones correctas: Flutter 3.47.0, Dart 3.13.0.
+Formatted 310 files (0 changed) in 9.47 seconds.
+No issues found! (ran in 108.0s)
+05:41 +1116 -1: <repo>/test/synchronization/local_recovery_journey_test.dart: EP-001: dos manuales, restauración y recuperación de la anterior tras reinicios [E]
+  TimeoutException after 0:00:30.000000: Test timed out after 30 seconds. See https://pub.dev/packages/test#timeouts
+05:44 +1117 -2: <repo>/test/synchronization/local_recovery_journey_test.dart: fallo de disco tras instalar: rollback íntegro y sin contraste nuevo [E]
+  SqliteException(5): while executing, database is locked, database is locked (code 5)
+05:44 +1119 -3: <repo>/test/synchronization/local_recovery_journey_test.dart: cuarta fallida conserva exceso; siguiente éxito retiene las tres más recientes [E]
+  SqliteException(5): while executing, database is locked, database is locked (code 5)
+05:44 +1119 -3: <repo>/test/synchronization/local_recovery_journey_test.dart: EP-001: dos manuales, restauración y recuperación de la anterior tras reinicios [E]
+08:01 +1391 -4: <repo>/test/wealth/wealth_photo_screen_test.dart: Ruta conserva febrero, Atrás protegido y guardado actualiza origen con pendientes [E]
+09:10 +1423 -4: Some tests failed.
+
+Repetición: wrapper EP-009 .tools/077-check-quality.ps1, solo --timeout=2m en flutter test; código 0.
+Versiones correctas: Flutter 3.47.0, Dart 3.13.0.
+Formatted 310 files (0 changed) in 2.08 seconds.
+No issues found! (ran in 8.2s)
+06:24 +1427: All tests passed!
+00:01 +1: All tests passed!
+00:01 +1: All tests passed!
+00:01 +1: All tests passed!
+00:00 +1: All tests passed!
+Calidad correcta: formato, anÃ¡lisis, pruebas y configuraciÃ³n de arranque.
+
+Adicionales: 23 pruebas de fotos/recorrido y tres casos de recuperación aislados correctos.
+Casos de referencia: node docs/ep-001/verificar-casos.mjs -> OK.
+Guard Android: rechaza timeout-inicial.txt pese a salida 0 del driver genérico.
+Sintaxis PowerShell, enlaces, dimensiones PNG y git diff --check: correctos.

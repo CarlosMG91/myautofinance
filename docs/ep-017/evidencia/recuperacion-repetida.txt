@@ -1,0 +1,5 @@
+00:00 +0: loading <repo>/test/synchronization/local_recovery_journey_test.dart
+00:00 +0: EP-001: dos manuales, restauración y recuperación de la anterior tras reinicios
+00:23 +1: fallo de disco tras instalar: rollback íntegro y sin contraste nuevo
+00:28 +2: cuarta fallida conserva exceso; siguiente éxito retiene las tres más recientes
+00:43 +3: All tests passed!
