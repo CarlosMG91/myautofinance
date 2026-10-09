@@ -1,0 +1,28 @@
+﻿import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);const {chromium}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});
+const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const url=process.env.MOCKUP_URL || 'http://localhost:4310/mockups/autofinance-ma-tsk-153-v1.html';
+async function scenario(value){await page.reload();await page.locator('#scenario').selectOption(value);}
+async function confirm(){await page.locator('#authorize').check();await page.locator('#acceptModal').click();}
+try{
+ await page.goto(url);assert.match(await page.locator('[data-root="food"][data-edit="0"]').first().locator('..').innerText(),/−360,00/);
+ await page.locator('[data-root="food"][data-edit="0"]').first().click();await page.locator('#amount').fill('-370,00');await page.locator('#acceptModal').click();
+ await page.locator('[data-root="food"][data-edit="0"]').first().click();await page.locator('#assignment').selectOption('child');await page.locator('#acceptModal').click();
+ await page.locator('#compare').click();await page.screenshot({path:'docs/ep-018/comparacion.png',fullPage:true});assert.equal(await page.locator('#changes .compare-row').count(),62);assert.match(await page.locator('#changes').innerText(),/Retirada.*Alimentación/s);assert.match(await page.locator('#changes').innerText(),/Supermercado/);
+ await page.locator('#cancelModal').click();await page.locator('#compare').click();await confirm();assert.match(await page.locator('main').innerText(),/Supermercado: −370,00/);assert.match(await page.locator('main').innerText(),/Viajes antiguos/);
+ await scenario('normal');await page.locator('[data-root="income"][data-edit="2"]').first().click();await page.locator('#amount').fill('0,00');await page.locator('#acceptModal').click();assert.match(await page.locator('[data-root="income"][data-edit="2"]').first().locator('..').innerText(),/Cero explícito/);
+ await page.locator('[data-root="food"][data-edit="0"]').first().click();await page.locator('#assignment').selectOption('grandchild');await page.locator('#first').fill('-370,00');await page.locator('#acceptModal').click();assert.match(await page.locator('#editorError').innerText(),/confirma explícitamente/);await page.locator('#newTotal').check();await page.screenshot({path:'docs/ep-018/desglose.png',fullPage:true});await page.locator('#acceptModal').click();await page.locator('#compare').click();assert.match(await page.locator('#changes').innerText(),/Compra semanal/);await page.locator('#cancelModal').click();
+ await scenario('empty');await page.locator('#compare').click();assert.equal(await page.locator('#acceptModal').innerText(),'Guardar propuesta');await page.locator('#cancelModal').click();
+ await scenario('sign');await page.locator('#compare').click();assert.match(await page.locator('#status').innerText(),/Revisión obligatoria/);await page.locator('#reviewSigns').check();await page.locator('#compare').click();await page.locator('#cancelModal').click();await page.locator('[data-root="food"][data-edit="0"]').first().click();await page.locator('#acceptModal').click();assert.equal(await page.locator('#reviewSigns').isChecked(),false);
+ await scenario('conflict');await page.locator('#compare').click();assert.match(await page.locator('#status').innerText(),/Conflicto/);assert.equal(await page.locator('#modal').evaluate(e=>e.open),false);
+ await scenario('changed');await page.locator('#compare').click();await confirm();assert.match(await page.locator('#status').innerText(),/Borrador conservado/);await page.locator('#revalidate').click();await page.locator('#compare').click();assert.match(await page.locator('#changes').innerText(),/−970,00/);await page.locator('#cancelModal').click();
+ await scenario('write');await page.locator('#compare').click();await confirm();assert.match(await page.locator('#saveError').innerText(),/borrador conservado/);await page.locator('#retrySave').click();await page.locator('#acceptModal').click();assert.match(await page.locator('main').innerText(),/Propuesta guardada/);
+ await scenario('read');assert.match(await page.locator('main').innerText(),/No se ha generado/);await page.locator('#retryRead').click();
+ await page.locator('#exit').click();await page.keyboard.press('Escape');assert.equal(await page.locator('#modal').evaluate(e=>e.open),false);assert.equal(await page.locator('#exit').evaluate(e=>e===document.activeElement),true);
+ for(const width of [320,360,412,1024,1440]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'ancho '+width);}
+ await page.screenshot({path:'docs/ep-018/pc.png',fullPage:true});await page.setViewportSize({width:412,height:915});await page.locator('.cards .card').first().locator('summary').first().click();await page.screenshot({path:'docs/ep-018/android.png',fullPage:true});
+ await page.setViewportSize({width:320,height:900});await page.locator('#large').click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'texto 200%');await page.screenshot({path:'docs/ep-018/texto-200.png',fullPage:true});
+ assert.deepEqual(errors,[]);console.log('PASS: caso H, edición -370/desglose, 62 filas completas, cancelación, guardar/sustituir, signos e invalidación, conflicto, concurrencia y revalidación, error/reintento, generación fallida, Escape/foco, cinco anchos y texto 200%, sin errores JS.');
+}finally{await browser.close();}
