@@ -49,8 +49,12 @@ void main() {
       await tester.tap(find.text('${destination.label} · ${destination.path}'));
       await tester.pumpAndSettle();
 
-      expect(find.text(destination.label), findsOneWidget);
-      final context = tester.element(find.text(destination.label));
+      final title = find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text(destination.label),
+      );
+      expect(title, findsOneWidget);
+      final context = tester.element(title);
       expect(Localizations.localeOf(context), const Locale('es', 'ES'));
       expect(MaterialLocalizations.of(context).backButtonTooltip, 'Atrás');
       expect(
@@ -58,9 +62,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        ModalRoute.of(tester.element(find.text(destination.label)))!
-            .settings
-            .name,
+        ModalRoute.of(tester.element(title))!.settings.name,
         destination.path,
       );
       await tester.tap(find.text('Volver'));

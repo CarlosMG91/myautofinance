@@ -136,9 +136,14 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(
-        ModalRoute.of(tester.element(find.text(destination.label)))!
-            .settings
-            .name,
+        ModalRoute.of(
+          tester.element(
+            find.descendant(
+              of: find.byType(AppBar),
+              matching: find.text(destination.label),
+            ),
+          ),
+        )!.settings.name,
         origin,
       );
       navigator.pop();

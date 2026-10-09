@@ -85,10 +85,12 @@ final class NavigationSession extends ChangeNotifier {
         : selectPeriod(value, guard: guard);
   }
 
-  Future<bool> currentMonth({NavigationLeaveGuard? guard}) => selectPeriod(
-    NavigationPeriod.fromMonth(madridMonth(_clock())),
-    guard: guard,
-  );
+  /// Consulta explícita del reloj de Madrid, sin modificar el contexto.
+  NavigationPeriod currentPeriod() =>
+      NavigationPeriod.fromMonth(madridMonth(_clock()));
+
+  Future<bool> currentMonth({NavigationLeaveGuard? guard}) =>
+      selectPeriod(currentPeriod(), guard: guard);
 
   SecondaryNavigationContext openSecondary() =>
       SecondaryNavigationContext(context);

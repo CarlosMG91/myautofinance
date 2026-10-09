@@ -20,6 +20,8 @@ class WealthScreen extends StatefulWidget {
     required this.onNavigate,
     required this.management,
     this.onReturn,
+    this.periodControls,
+    this.onPeriodChanged,
   });
   final WealthController controller;
   final Month initialMonth;
@@ -31,6 +33,9 @@ class WealthScreen extends StatefulWidget {
   final Widget Function(Month month, Future<void> Function() refresh)
   management;
   final VoidCallback? onReturn;
+  final Widget Function(Month month, void Function(Month month) select)?
+  periodControls;
+  final void Function(Month month)? onPeriodChanged;
   @override
   State<WealthScreen> createState() => _WealthScreenState();
 }
@@ -68,7 +73,7 @@ class _WealthScreenState extends State<WealthScreen> {
     } catch (_) {}
   }
 
-  void _select(int year, int number) {
+  void _select(int year, int number, {bool publish = true}) {
     setState(() {
       final changedYear = year != _year;
       _month = Month(year, number);
@@ -77,6 +82,7 @@ class _WealthScreenState extends State<WealthScreen> {
       _yearError = null;
       if (changedYear) _data = widget.controller.readYear(year);
     });
+    if (publish) widget.onPeriodChanged?.call(_month);
   }
 
   void _applyYear() {
@@ -201,50 +207,60 @@ class _WealthScreenState extends State<WealthScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 160,
-                      child: TextField(
-                        controller: _yearInput,
-                        keyboardType: TextInputType.number,
-                        onSubmitted: (_) => _applyYear(),
-                        decoration: InputDecoration(
-                          labelText: 'Año',
-                          errorText: _yearError,
+                if (widget.periodControls != null)
+                  widget.periodControls!(
+                    _month,
+                    (month) => _select(
+                      int.parse(month.value.substring(0, 4)),
+                      int.parse(month.value.substring(5, 7)),
+                      publish: false,
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 160,
+                        child: TextField(
+                          controller: _yearInput,
+                          keyboardType: TextInputType.number,
+                          onSubmitted: (_) => _applyYear(),
+                          decoration: InputDecoration(
+                            labelText: 'Año',
+                            errorText: _yearError,
+                          ),
                         ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: _applyYear,
-                      child: const Text('Aplicar año'),
-                    ),
-                    SizedBox(
-                      width: 180,
-                      child: DropdownButtonFormField<int>(
-                        key: ValueKey(_month.value),
-                        initialValue: _number,
-                        isExpanded: true,
-                        decoration: const InputDecoration(labelText: 'Mes'),
-                        items: [
-                          for (var i = 1; i <= 12; i++)
-                            DropdownMenuItem(
-                              value: i,
-                              child: Text(_monthName(i)),
-                            ),
-                        ],
-                        onChanged: (number) {
-                          if (number != null) {
-                            _select(_year, number);
-                          }
-                        },
+                      TextButton(
+                        onPressed: _applyYear,
+                        child: const Text('Aplicar año'),
                       ),
-                    ),
-                  ],
-                ),
+                      SizedBox(
+                        width: 180,
+                        child: DropdownButtonFormField<int>(
+                          key: ValueKey(_month.value),
+                          initialValue: _number,
+                          isExpanded: true,
+                          decoration: const InputDecoration(labelText: 'Mes'),
+                          items: [
+                            for (var i = 1; i <= 12; i++)
+                              DropdownMenuItem(
+                                value: i,
+                                child: Text(_monthName(i)),
+                              ),
+                          ],
+                          onChanged: (number) {
+                            if (number != null) {
+                              _select(_year, number);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 16),
                 Text(
                   'Foto del día 1 · ${_month.value.substring(8, 10)}/${_month.value.substring(5, 7)}/${_month.value.substring(0, 4)} · $_period',
@@ -388,11 +404,12 @@ class _WealthScreenState extends State<WealthScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (desktop)
-                SizedBox(
-                  width: width >= 1200 ? 216 : 200,
-                  child: SingleChildScrollView(child: _navigation(true, width)),
-                ),
+              SizedBox(
+                width: desktop ? (width >= 1200 ? 216 : 200) : 0,
+                child: desktop
+                    ? SingleChildScrollView(child: _navigation(true, width))
+                    : null,
+              ),
               Expanded(child: content),
             ],
           ),

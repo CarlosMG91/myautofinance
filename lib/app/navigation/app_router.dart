@@ -18,6 +18,9 @@ import 'package:intl/intl.dart';
 import 'app_routes.dart';
 import 'navigation_context.dart';
 import 'navigation_session.dart';
+import 'navigation_period.dart';
+import 'period_controls.dart';
+import 'primary_navigation.dart';
 import 'session_location.dart';
 import 'session_navigation_error.dart';
 import '../../features/synchronization/presentation/drive_controller.dart';
@@ -99,6 +102,7 @@ abstract final class AppRouter {
         categories: categories,
         importsAvailable: imports != null,
         pendingAvailable: pendingMovements != null && categories != null,
+        navigationSession: navigationSession,
       );
     } else if (uri?.path == AppRoutes.pendingMovements) {
       page = pendingMovements == null || categories == null
@@ -139,6 +143,7 @@ abstract final class AppRouter {
         loadManagement: wealth,
         categoriesAvailable: categories != null,
         pendingAvailable: pendingMovements != null && categories != null,
+        navigationSession: navigationSession,
       );
     } else if (uri?.path == AppRoutes.categories ||
         uri?.path.startsWith('${AppRoutes.categories}/') == true) {
@@ -195,6 +200,7 @@ abstract final class AppRouter {
             ? 'Destino desconocido · ${settings.name ?? "(sin ruta)"}'
             : 'Marcador técnico · ${destination.path}',
         fallbackOrigin: destination == null ? navigationSession?.context : null,
+        navigationSession: destination == null ? null : navigationSession,
       );
     }
     // Conserva nombre y argumentos, también en destinos desconocidos.
@@ -226,11 +232,13 @@ class _WealthRoute extends StatefulWidget {
     required this.loadManagement,
     this.categoriesAvailable = false,
     this.pendingAvailable = false,
+    this.navigationSession,
   });
   final RouteSettings settings;
   final WealthManagementLoader loadManagement;
   final bool categoriesAvailable;
   final bool pendingAvailable;
+  final NavigationSession? navigationSession;
 
   @override
   State<_WealthRoute> createState() => _WealthRouteState();
@@ -291,6 +299,20 @@ class _WealthRouteState extends State<_WealthRoute> {
         return WealthScreen(
           controller: WealthController(loadManagement: widget.loadManagement),
           initialMonth: route.month!,
+          periodControls: widget.navigationSession == null
+              ? null
+              : (selected, select) => PeriodControls(
+                  session: widget.navigationSession!,
+                  beforeChange: (period) async {
+                    select(period.civilMonth);
+                    return true;
+                  },
+                ),
+          onPeriodChanged: widget.navigationSession == null
+              ? null
+              : (month) => widget.navigationSession!.selectPeriod(
+                  NavigationPeriod.fromMonth(month),
+                ),
           onPhoto: (month) => open(AppRoutes.wealthPhoto, month),
           onAccount: (id, month) =>
               open('${AppRoutes.accounts}/${Uri.encodeComponent(id)}', month),
@@ -788,18 +810,65 @@ class _TechnicalPlaceholder extends StatelessWidget {
     this.wealthAvailable = false,
     this.pendingAvailable = false,
     this.fallbackOrigin,
+    this.navigationSession,
   });
   final bool showManagement;
   final bool categoriesAvailable;
   final bool wealthAvailable;
   final bool pendingAvailable;
   final NavigationContext? fallbackOrigin;
+  final NavigationSession? navigationSession;
 
   final String title;
   final String message;
 
   @override
   Widget build(BuildContext context) {
+    final session = navigationSession;
+    if (session != null) {
+      return PrimaryNavigation(
+        session: session,
+        title: title,
+        actions: [
+          if (showManagement)
+            _ManagementMenu(
+              categoriesAvailable: categoriesAvailable,
+              wealthAvailable: wealthAvailable,
+              pendingAvailable: pendingAvailable,
+              origin: () => SessionLocation.encode(session.context),
+            ),
+        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            PeriodControls(session: session),
+            const SizedBox(height: 16),
+            Text(message),
+            const Text('Sin contenido de producto · Diseño pendiente'),
+            if (showManagement &&
+                (title == 'Estado del mes' || title == 'Real anual'))
+              TextButton(
+                onPressed: () {
+                  final origin = SessionLocation.encode(session.context);
+                  Navigator.of(context).pushNamed(
+                    MovementLinks.management(
+                      origin,
+                      defaultMonth: session.period.civilMonth,
+                    ),
+                    arguments: MovementListOrigin(origin),
+                  );
+                },
+                child: const Text('Ver movimientos reales'),
+              ),
+            if (Navigator.of(context).canPop())
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Volver'),
+              ),
+          ],
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
@@ -865,15 +934,21 @@ class _ManagementMenu extends StatelessWidget {
     this.wealthAvailable = false,
     this.pendingAvailable = false,
     this.onOpen,
+    this.origin,
   });
   final bool categoriesAvailable;
   final bool wealthAvailable;
   final bool pendingAvailable;
   final Future<void> Function(String path)? onOpen;
+  final String Function()? origin;
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     tooltip: 'Gestión',
     onSelected: (value) {
+      final source =
+          origin?.call() ??
+          ModalRoute.of(context)?.settings.name ??
+          AppRoutes.home;
       final path = value == 'pending'
           ? AppRoutes.pendingMovements
           : value == 'movements'
@@ -895,29 +970,23 @@ class _ManagementMenu extends StatelessWidget {
         Navigator.of(context).pushNamed(
           path == AppRoutes.movements
               ? MovementLinks.management(
-                  ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
+                  source,
                   defaultMonth: madridMonth(DateTime.now()),
                 )
               : path,
           arguments: path == AppRoutes.pendingMovements
               ? PendingMovementOrigin(
-                  route:
-                      ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
-                  label:
-                      "Volver a ${_BackupOrigin(ModalRoute.of(context)?.settings.name ?? AppRoutes.home).label}",
+                  route: source,
+                  label: "Volver a ${_BackupOrigin(source).label}",
                 )
               : path == AppRoutes.importCsv
               ? CsvImportOrigin(
-                  ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
-                  'Volver a ${_BackupOrigin(ModalRoute.of(context)?.settings.name ?? AppRoutes.home).label}',
+                  source,
+                  'Volver a ${_BackupOrigin(source).label}',
                 )
               : path == AppRoutes.movements
-              ? MovementListOrigin(
-                  ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
-                )
-              : _BackupOrigin(
-                  ModalRoute.of(context)?.settings.name ?? AppRoutes.home,
-                ),
+              ? MovementListOrigin(source)
+              : _BackupOrigin(source),
         );
       }
     },

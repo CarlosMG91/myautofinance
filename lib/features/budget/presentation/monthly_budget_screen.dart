@@ -18,6 +18,7 @@ class MonthlyBudgetScreen extends StatefulWidget {
     required this.onNavigate,
     required this.destinations,
     required this.management,
+    this.periodControls,
   });
   final BudgetLoader load;
   final BudgetMonth month;
@@ -30,6 +31,11 @@ class MonthlyBudgetScreen extends StatefulWidget {
     Future<bool> Function() canOpen,
   )
   management;
+  final Widget Function(
+    BudgetMonth month,
+    Future<bool> Function(BudgetMonth month) change,
+  )?
+  periodControls;
   @override
   State<MonthlyBudgetScreen> createState() => _MonthlyBudgetScreenState();
 }
@@ -183,17 +189,19 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
     if (focus?.context != null) focus?.requestFocus();
   }
 
-  Future<void> _change(BudgetMonth month) async {
+  Future<bool> _change(BudgetMonth month) async {
     if (locked || !await discard() || !mounted) {
       _year.text = _month.value.substring(0, 4);
-      return;
+      return false;
     }
     _clear();
     setState(() {
       _month = month;
       _year.text = month.value.substring(0, 4);
     });
-    await _read();
+    // La sesión publica el periodo aceptado también durante la carga.
+    unawaited(_read());
+    return true;
   }
 
   Future<void> _navigate(String path) async {
@@ -400,11 +408,10 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (!compact)
-                  SizedBox(
-                    width: width >= 1200 ? 216 : 200,
-                    child: navigation(true),
-                  ),
+                SizedBox(
+                  width: compact ? 0 : (width >= 1200 ? 216 : 200),
+                  child: compact ? null : navigation(true),
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     controller: _scroll,
@@ -423,75 +430,84 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
                           runSpacing: 12,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            SizedBox(
-                              width: 120,
-                              child: TextField(
-                                controller: _year,
-                                enabled: !locked,
-                                decoration: const InputDecoration(
-                                  labelText: 'Año',
-                                ),
-                                keyboardType: TextInputType.number,
-                                onSubmitted: (value) {
-                                  try {
-                                    _change(
-                                      BudgetMonth(
-                                        int.parse(value),
-                                        int.parse(_month.value.substring(5, 7)),
-                                      ),
-                                    );
-                                  } catch (_) {
-                                    _year.text = _month.value.substring(0, 4);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Año inválido: usa 1 a 9999.',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ),
-                            SizedBox(
-                              width: compact ? width - 32 : 240,
-                              child: DropdownButton<int>(
-                                isExpanded: true,
-                                value: int.parse(_month.value.substring(5, 7)),
-                                items: [
-                                  for (var m = 1; m <= 12; m++)
-                                    DropdownMenuItem(
-                                      value: m,
-                                      child: Text(
-                                        const [
-                                          'Enero',
-                                          'Febrero',
-                                          'Marzo',
-                                          'Abril',
-                                          'Mayo',
-                                          'Junio',
-                                          'Julio',
-                                          'Agosto',
-                                          'Septiembre',
-                                          'Octubre',
-                                          'Noviembre',
-                                          'Diciembre',
-                                        ][m - 1],
-                                      ),
-                                    ),
-                                ],
-                                onChanged: locked
-                                    ? null
-                                    : (m) => _change(
+                            if (widget.periodControls != null)
+                              widget.periodControls!(_month, _change)
+                            else ...[
+                              SizedBox(
+                                width: 120,
+                                child: TextField(
+                                  controller: _year,
+                                  enabled: !locked,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Año',
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onSubmitted: (value) {
+                                    try {
+                                      _change(
                                         BudgetMonth(
+                                          int.parse(value),
                                           int.parse(
-                                            _month.value.substring(0, 4),
+                                            _month.value.substring(5, 7),
                                           ),
-                                          m!,
+                                        ),
+                                      );
+                                    } catch (_) {
+                                      _year.text = _month.value.substring(0, 4);
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Año inválido: usa 1 a 9999.',
+                                              ),
+                                            ),
+                                          );
+                                    }
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                width: compact ? width - 32 : 240,
+                                child: DropdownButton<int>(
+                                  isExpanded: true,
+                                  value: int.parse(
+                                    _month.value.substring(5, 7),
+                                  ),
+                                  items: [
+                                    for (var m = 1; m <= 12; m++)
+                                      DropdownMenuItem(
+                                        value: m,
+                                        child: Text(
+                                          const [
+                                            'Enero',
+                                            'Febrero',
+                                            'Marzo',
+                                            'Abril',
+                                            'Mayo',
+                                            'Junio',
+                                            'Julio',
+                                            'Agosto',
+                                            'Septiembre',
+                                            'Octubre',
+                                            'Noviembre',
+                                            'Diciembre',
+                                          ][m - 1],
                                         ),
                                       ),
+                                  ],
+                                  onChanged: locked
+                                      ? null
+                                      : (m) => _change(
+                                          BudgetMonth(
+                                            int.parse(
+                                              _month.value.substring(0, 4),
+                                            ),
+                                            m!,
+                                          ),
+                                        ),
+                                ),
                               ),
-                            ),
+                            ],
                             FilledButton(
                               onPressed:
                                   locked || _loading || _readError != null

@@ -11,6 +11,8 @@ import 'pending_movement_route.dart';
 import 'wealth_route.dart';
 import 'category_navigation_context.dart';
 import 'import_route.dart';
+import 'navigation_session.dart';
+import 'period_controls.dart';
 
 class BudgetEditorOrigin {
   const BudgetEditorOrigin(this.month, this.categoryId);
@@ -26,12 +28,14 @@ class BudgetRoute extends StatefulWidget {
     this.categories,
     this.importsAvailable = false,
     this.pendingAvailable = false,
+    this.navigationSession,
   });
   final RouteSettings settings;
   final BudgetLoader load;
   final CategoryManagementLoader? categories;
   final bool importsAvailable;
   final bool pendingAvailable;
+  final NavigationSession? navigationSession;
   @override
   State<BudgetRoute> createState() => _BudgetRouteState();
 }
@@ -82,6 +86,12 @@ class _BudgetRouteState extends State<BudgetRoute> {
         return MonthlyBudgetScreen(
           load: widget.load,
           month: month,
+          periodControls: widget.navigationSession == null
+              ? null
+              : (selected, change) => PeriodControls(
+                  session: widget.navigationSession!,
+                  beforeChange: (period) => change(period.budgetMonth),
+                ),
           destinations: _labels,
           onNavigate: (path, selected) => navigator.pushNamedAndRemoveUntil(
             '$path?${_period(selected)}',

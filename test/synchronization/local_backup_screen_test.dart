@@ -382,7 +382,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Copias locales'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Volver a ${destination.label}'));
+      await tester.tap(find.textContaining('Volver a ${destination.label}'));
       await tester.pumpAndSettle();
       expect(
         find.text('Marcador técnico · ${destination.path}'),
