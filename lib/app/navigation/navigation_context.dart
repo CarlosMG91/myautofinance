@@ -63,6 +63,18 @@ final class NavigationContext {
     scrollOffset: value == period ? scrollOffset : 0,
     focus: value == period ? focus : null,
   );
+
+  NavigationContext withPosition(double offset, String? token) =>
+      NavigationContext(
+        destination: destination,
+        period: period,
+        view: view,
+        branchId: branchId,
+        scope: scope,
+        filters: filters,
+        scrollOffset: offset,
+        focus: token,
+      );
 }
 
 /// Una ruta de detalle guarda el origen completo sin elegir otro periodo.

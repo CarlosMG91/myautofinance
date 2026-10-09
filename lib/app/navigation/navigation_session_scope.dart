@@ -16,6 +16,10 @@ class NavigationSessionScope extends InheritedNotifier<NavigationSession> {
   static NavigationSession of(BuildContext context) => context
       .dependOnInheritedWidgetOfExactType<NavigationSessionScope>()!
       .notifier!;
+
+  static NavigationSession? maybeOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<NavigationSessionScope>()
+      ?.notifier;
 }
 
 /// Publicar una ruta de detalle no cambia el periodo común. Al hacer pop de

@@ -53,10 +53,13 @@ Future<void> movementLifecycleJourney(
           find.textContaining('Cargando').evaluate().isNotEmpty ||
           find.textContaining('Guardando').evaluate().isNotEmpty ||
           (find.byType(MovementListScreen).evaluate().isNotEmpty &&
+              ModalRoute.of(tester.element(find.byType(MovementListScreen)))
+                      ?.isCurrent ==
+                  true &&
               tester
                   .widget<MovementListScreen>(find.byType(MovementListScreen))
                   .controller
-                  .loading);
+                  .locked);
       if (turn >= 5 && !loading) {
         expect(tester.takeException(), isNull);
         return;

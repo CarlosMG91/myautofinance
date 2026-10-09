@@ -8,6 +8,9 @@ import '../category_selector_navigation.dart';
 import 'app_routes.dart';
 import 'wealth_route.dart';
 import 'movement_links.dart';
+import 'navigation_session.dart';
+import 'navigation_context.dart';
+import 'session_location.dart';
 
 class MovementEditorOrigin {
   const MovementEditorOrigin(this.context, {this.listRoute});
@@ -21,10 +24,12 @@ class MovementEditorRoute extends StatelessWidget {
     required this.settings,
     required this.load,
     this.categories,
+    this.navigationSession,
   });
   final RouteSettings settings;
   final MovementListLoader load;
   final CategoryManagementLoader? categories;
+  final NavigationSession? navigationSession;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +60,8 @@ class MovementEditorRoute extends StatelessWidget {
       }
       final query = MovementLinks.parse(
         uri.replace(path: AppRoutes.movements).toString(),
-        defaultMonth: madridMonth(DateTime.now()),
+        defaultMonth:
+            navigationSession?.period.civilMonth ?? madridMonth(DateTime.now()),
       );
       final origin = settings.arguments is MovementEditorOrigin
           ? (settings.arguments as MovementEditorOrigin).context
@@ -87,9 +93,12 @@ class MovementEditorRoute extends StatelessWidget {
         onReturn: back,
         onSaved: (saved) {
           back(saved);
-          final outside =
-              saved.data.valueDate.value.substring(0, 7) !=
-              date.value.substring(0, 7);
+          final outside = origin == null
+              ? saved.data.valueDate.value.substring(0, 7) !=
+                    date.value.substring(0, 7)
+              : saved.data.valueDate.compareTo(origin.from) < 0 ||
+                    origin.until != null &&
+                        saved.data.valueDate.compareTo(origin.until!) >= 0;
           messenger.showSnackBar(
             SnackBar(
               content: Text(
@@ -138,7 +147,14 @@ class MovementEditorRoute extends StatelessWidget {
               AppRoutes.actualSpending => 'Real',
               _ => 'Indicadores',
             }: () => Navigator.of(context).pushNamedAndRemoveUntil(
-              '${d.path}?a=${date.value.substring(0, 4)}&m=${date.value.substring(5, 7)}',
+              navigationSession == null
+                  ? '${d.path}?a=${date.value.substring(0, 4)}&m=${date.value.substring(5, 7)}'
+                  : SessionLocation.encode(
+                      NavigationContext(
+                        destination: SessionDestination.fromPath(d.path)!,
+                        period: navigationSession!.period,
+                      ),
+                    ),
               (_) => false,
             ),
         },

@@ -22,6 +22,7 @@ class WealthScreen extends StatefulWidget {
     this.onReturn,
     this.periodControls,
     this.onPeriodChanged,
+    this.onOrigin,
   });
   final WealthController controller;
   final Month initialMonth;
@@ -36,6 +37,7 @@ class WealthScreen extends StatefulWidget {
   final Widget Function(Month month, void Function(Month month) select)?
   periodControls;
   final void Function(Month month)? onPeriodChanged;
+  final void Function(double offset, String? focus)? onOrigin;
   @override
   State<WealthScreen> createState() => _WealthScreenState();
 }
@@ -46,26 +48,72 @@ class _WealthScreenState extends State<WealthScreen> {
     text: _month.value.substring(0, 4),
   );
   late final Map<int, int> _remembered = {_year: _number};
-  late Future<List<WealthReading>> _data = widget.controller.readYear(_year);
+  late Future<List<WealthReading>> _data = _readYear(_year);
   final _scroll = ScrollController();
+  final _originNodes = <String, FocusNode>{};
+  FocusNode _node(String token) =>
+      _originNodes.putIfAbsent(token, () => FocusNode(debugLabel: token));
   String? _yearError;
+  bool _changingPeriod = false;
+  String? _originFocus;
+  ({
+    String month,
+    Future<List<WealthReading>> data,
+    double offset,
+    String? focus,
+  })?
+  _restore;
   int get _year => int.parse(_month.value.substring(0, 4));
   int get _number => int.parse(_month.value.substring(5, 7));
   String _monthName(int number) =>
       DateFormat.MMMM('es_ES').format(DateTime(2026, number));
   String get _period => '${_monthName(_number)} $_year';
 
+  Future<List<WealthReading>> _readYear(int year) {
+    final data = widget.controller.readYear(year);
+    // El fallo puede llegar antes del próximo frame, cuando FutureBuilder
+    // todavía no se ha suscrito. Conserva el error para su presentación.
+    data.ignore();
+    return data;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_publishOrigin);
+  }
+
+  void _publishOrigin([String? focus]) {
+    if (_changingPeriod || ModalRoute.of(context)?.isCurrent == false) return;
+    _originFocus = focus ?? _originFocus;
+    widget.onOrigin?.call(
+      _scroll.hasClients ? _scroll.offset : 0,
+      _originFocus,
+    );
+  }
+
   @override
   void dispose() {
     _yearInput.dispose();
     _scroll.dispose();
+    for (final node in _originNodes.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
-  Future<void> _refresh() async {
+  Future<void> _refresh({double? restoreOffset, String? restoreFocus}) async {
+    final month = _month.value;
+    final offset = restoreOffset ?? (_scroll.hasClients ? _scroll.offset : 0.0);
     final data = widget.controller.readYear(_year);
     setState(() {
       _data = data;
+      _restore = (
+        month: month,
+        data: data,
+        offset: offset,
+        focus: restoreFocus,
+      );
     });
     // FutureBuilder presenta los fallos, también después de volver de un editor.
     try {
@@ -73,14 +121,42 @@ class _WealthScreenState extends State<WealthScreen> {
     } catch (_) {}
   }
 
+  void _restoreAfterRead() {
+    final restore = _restore;
+    if (restore == null) return;
+    _restore = null;
+    // FutureBuilder puede suscribirse a un Future ya resuelto en el siguiente
+    // frame. Restaurar solo después de construir las filas, no en la carga.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          restore.month == _month.value &&
+          identical(restore.data, _data) &&
+          _scroll.hasClients) {
+        final focus = _originNodes[restore.focus];
+        if (focus?.context != null) focus?.requestFocus();
+        _scroll.jumpTo(
+          restore.offset.clamp(0, _scroll.position.maxScrollExtent),
+        );
+      }
+    });
+  }
+
   void _select(int year, int number, {bool publish = true}) {
+    if (year != _year || number != _number) {
+      _changingPeriod = true;
+      _restore = null;
+      _originFocus = null;
+      if (_scroll.hasClients) _scroll.jumpTo(0);
+      FocusManager.instance.primaryFocus?.unfocus();
+      _changingPeriod = false;
+    }
     setState(() {
       final changedYear = year != _year;
       _month = Month(year, number);
       _remembered[year] = number;
       _yearInput.text = year.toString().padLeft(4, '0');
       _yearError = null;
-      if (changedYear) _data = widget.controller.readYear(year);
+      if (changedYear) _data = _readYear(year);
     });
     if (publish) widget.onPeriodChanged?.call(_month);
   }
@@ -94,14 +170,16 @@ class _WealthScreenState extends State<WealthScreen> {
     _select(year, _remembered[year] ?? 1);
   }
 
-  Future<void> _open(Future<void> Function() action) async {
-    final focus = FocusManager.instance.primaryFocus;
+  Future<void> _open(String token, Future<void> Function() action) async {
+    final month = _month.value;
+    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+    _publishOrigin(token);
     await action();
     if (!mounted) return;
-    await _refresh();
-    if (mounted && focus?.context != null) {
-      focus?.requestFocus();
-    }
+    await _refresh(
+      restoreOffset: month == _month.value ? offset : null,
+      restoreFocus: month == _month.value ? token : null,
+    );
   }
 
   String _status(WealthSnapshotStatus status) => switch (status) {
@@ -274,11 +352,15 @@ class _WealthScreenState extends State<WealthScreen> {
                   runSpacing: 12,
                   children: [
                     FilledButton(
-                      onPressed: () => _open(() => widget.onPhoto(_month)),
+                      focusNode: _node('photo'),
+                      onPressed: () =>
+                          _open('photo', () => widget.onPhoto(_month)),
                       child: const Text('Registrar / editar foto'),
                     ),
                     TextButton(
-                      onPressed: () => _open(() => widget.onCatalog(_month)),
+                      focusNode: _node('catalog'),
+                      onPressed: () =>
+                          _open('catalog', () => widget.onCatalog(_month)),
                       child: const Text('Gestionar fichas'),
                     ),
                   ],
@@ -297,6 +379,7 @@ class _WealthScreenState extends State<WealthScreen> {
                         ],
                       );
                     }
+                    _restoreAfterRead();
                     if (snapshot.hasError) {
                       final error = snapshot.error;
                       final cause = switch (error) {
@@ -440,15 +523,21 @@ class _WealthScreenState extends State<WealthScreen> {
         ? 'Pendiente'
         : _money(amounts[account.id]!);
     Widget name(AccountRecord account) => TextButton(
+      focusNode: _node('account:${account.id}'),
       style: TextButton.styleFrom(alignment: Alignment.centerLeft),
-      onPressed: () => _open(() => widget.onAccount(account.id, _month)),
+      onPressed: () => _open(
+        'account:${account.id}',
+        () => widget.onAccount(account.id, _month),
+      ),
       child: Text(account.name, style: TextStyle(fontSize: desktop ? 14 : 16)),
     );
     Widget amount(AccountRecord account) => TextButton(
+      focusNode: _node('value:${account.id}'),
       style: TextButton.styleFrom(
         alignment: desktop ? Alignment.centerRight : Alignment.centerLeft,
       ),
-      onPressed: () => _open(() => widget.onPhoto(_month)),
+      onPressed: () =>
+          _open('value:${account.id}', () => widget.onPhoto(_month)),
       child: Semantics(
         label:
             'Valor manual de ${account.name}, $_period: ${value(account)}. Editar foto',

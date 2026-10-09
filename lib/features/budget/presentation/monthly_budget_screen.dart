@@ -19,6 +19,7 @@ class MonthlyBudgetScreen extends StatefulWidget {
     required this.destinations,
     required this.management,
     this.periodControls,
+    this.onOrigin,
   });
   final BudgetLoader load;
   final BudgetMonth month;
@@ -36,6 +37,7 @@ class MonthlyBudgetScreen extends StatefulWidget {
     Future<bool> Function(BudgetMonth month) change,
   )?
   periodControls;
+  final void Function(double offset, String? focus)? onOrigin;
   @override
   State<MonthlyBudgetScreen> createState() => _MonthlyBudgetScreenState();
 }
@@ -48,11 +50,15 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
   StreamSubscription<int>? _subscription;
   final _amount = TextEditingController(), _year = TextEditingController();
   final _amountFocus = FocusNode();
+  final _newFocus = FocusNode();
   final _scroll = ScrollController();
   final _cellFocus = <String, FocusNode>{};
+  final _detailFocus = <String, FocusNode>{};
   MonthlyBudgetRow? _draft;
   String? _error, _readError;
   bool _loading = true;
+  bool _changingPeriod = false;
+  String? _originFocus;
   int _request = 0;
   @override
   bool get dirty =>
@@ -66,6 +72,7 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
     super.initState();
     _month = widget.month;
     _year.text = _month.value.substring(0, 4);
+    _scroll.addListener(_publishOrigin);
     _read();
   }
 
@@ -75,22 +82,30 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
     _amount.dispose();
     _year.dispose();
     _amountFocus.dispose();
+    _newFocus.dispose();
     _scroll.dispose();
     for (final f in _cellFocus.values) {
+      f.dispose();
+    }
+    for (final f in _detailFocus.values) {
       f.dispose();
     }
     super.dispose();
   }
 
-  Future<void> _read() async {
+  Future<void> _read({double? restoreOffset}) async {
     final request = ++_request;
+    final month = _month;
+    final offset = restoreOffset ?? (_scroll.hasClients ? _scroll.offset : 0.0);
     setState(() {
       _loading = true;
       _readError = null;
+      _data = null;
     });
     try {
       final source = await widget.load();
-      final data = await source.query.read(_month);
+      if (!mounted || request != _request) return;
+      final data = await source.query.read(month);
       final categories = await source.categories();
       if (!mounted || request != _request) return;
       _subscription ??= source.query.invalidation.changes.listen((_) {
@@ -109,7 +124,14 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
         });
       }
     } finally {
-      if (mounted && request == _request) setState(() => _loading = false);
+      if (mounted && request == _request) {
+        setState(() => _loading = false);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && request == _request && _scroll.hasClients) {
+            _scroll.jumpTo(offset.clamp(0, _scroll.position.maxScrollExtent));
+          }
+        });
+      }
     }
   }
 
@@ -179,14 +201,30 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
     }
   }
 
-  Future<void> _open(MonthlyBudgetRow? row) async {
+  Future<void> _open(MonthlyBudgetRow? row, FocusNode? focus) async {
     if (locked || !await discard() || !mounted) return;
-    final focus = FocusManager.instance.primaryFocus;
+    final month = _month;
+    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+    _publishOrigin(row?.categoryId ?? 'new-budget');
     _clear();
     await widget.onOpen(row, _month);
     if (!mounted) return;
-    await _read();
-    if (focus?.context != null) focus?.requestFocus();
+    await _read(restoreOffset: month.value == _month.value ? offset : null);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || month.value != _month.value) return;
+      if (focus?.context != null) {
+        focus?.requestFocus();
+      }
+    });
+  }
+
+  void _publishOrigin([String? focus]) {
+    if (_changingPeriod || ModalRoute.of(context)?.isCurrent == false) return;
+    _originFocus = focus ?? _originFocus;
+    widget.onOrigin?.call(
+      _scroll.hasClients ? _scroll.offset : 0,
+      _originFocus,
+    );
   }
 
   Future<bool> _change(BudgetMonth month) async {
@@ -195,6 +233,11 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
       return false;
     }
     _clear();
+    _changingPeriod = true;
+    _originFocus = null;
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+    FocusManager.instance.primaryFocus?.unfocus();
+    _changingPeriod = false;
     setState(() {
       _month = month;
       _year.text = month.value.substring(0, 4);
@@ -287,7 +330,10 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
     }
     return TextButton(
       focusNode: _cellFocus.putIfAbsent(row.categoryId, FocusNode.new),
-      onPressed: locked ? null : () => compact ? _open(row) : _begin(row),
+      onPressed: locked
+          ? null
+          : () =>
+                compact ? _open(row, _cellFocus[row.categoryId]) : _begin(row),
       child: Semantics(
         label:
             'Importe propio de ${row.category.path}, ${_month.value.substring(0, 7)}',
@@ -308,7 +354,8 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
       ],
     );
     final detail = TextButton(
-      onPressed: locked ? null : () => _open(row),
+      focusNode: _detailFocus.putIfAbsent(row.categoryId, FocusNode.new),
+      onPressed: locked ? null : () => _open(row, _detailFocus[row.categoryId]),
       child: Text('Abrir ${row.budget == null ? 'alta' : 'detalle'}'),
     );
     final subtotal = Semantics(
@@ -397,6 +444,7 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
               widget.management(_month, _read, () async {
                 if (locked || !await discard() || !mounted) return false;
                 _clear();
+                _publishOrigin();
                 return true;
               }),
             ],
@@ -509,10 +557,11 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
                               ),
                             ],
                             FilledButton(
+                              focusNode: _newFocus,
                               onPressed:
                                   locked || _loading || _readError != null
                                   ? null
-                                  : () => _open(null),
+                                  : () => _open(null, _newFocus),
                               child: const Text('Crear partida'),
                             ),
                           ],

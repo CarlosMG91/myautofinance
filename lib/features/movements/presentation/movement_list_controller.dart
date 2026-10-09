@@ -53,6 +53,8 @@ class MovementListContext {
     required this.unclassified,
     required this.concept,
     required this.pageIndex,
+    this.scrollOffset = 0,
+    this.focus,
   });
   final ValueDate from;
   final ValueDate? until;
@@ -61,6 +63,8 @@ class MovementListContext {
   final bool unclassified;
   final String concept;
   final int pageIndex;
+  final double scrollOffset;
+  final String? focus;
 }
 
 class MovementListController extends ChangeNotifier {
@@ -92,6 +96,9 @@ class MovementListController extends ChangeNotifier {
   final selected = <String>{};
   final _cursors = <MovementCursor?>[null];
   int pageIndex = 0;
+  int periodRevision = 0;
+  double scrollOffset = 0;
+  String? focus;
   int _generation = 0;
   bool _disposed = false;
   Object? _readIdentity;
@@ -107,6 +114,8 @@ class MovementListController extends ChangeNotifier {
     unclassified: unclassified,
     concept: concept,
     pageIndex: pageIndex,
+    scrollOffset: scrollOffset,
+    focus: focus,
   );
 
   Future<void> refresh({bool restart = false}) async {
@@ -118,6 +127,8 @@ class MovementListController extends ChangeNotifier {
       pageIndex = 0;
     }
     final generation = ++_generation;
+    final query = context;
+    var cursor = _cursors[pageIndex];
     loading = true;
     error = null;
     page = null;
@@ -133,6 +144,7 @@ class MovementListController extends ChangeNotifier {
           ..clear()
           ..add(null);
         pageIndex = 0;
+        cursor = null;
       }
       _changes ??= source.invalidation.changes.listen((_) {
         unawaited(refresh());
@@ -145,14 +157,14 @@ class MovementListController extends ChangeNotifier {
           : '${path(byId[node.parentId]!)} / ${node.name}';
       final categories = {for (final node in nodes) node.id: path(node)};
       final result = await source.movements.readPage(
-        from: from,
-        until: until,
-        accountId: accountId,
-        categoryId: categoryId,
-        categoryScope: scope,
-        unclassifiedOnly: unclassified,
-        concept: concept,
-        after: _cursors[pageIndex],
+        from: query.from,
+        until: query.until,
+        accountId: query.accountId,
+        categoryId: query.categoryId,
+        categoryScope: query.scope,
+        unclassifiedOnly: query.unclassified,
+        concept: query.concept,
+        after: cursor,
         limit: pageSize,
       );
       if (_disposed || generation != _generation) return;
@@ -185,6 +197,21 @@ class MovementListController extends ChangeNotifier {
   Future<void> apply() {
     if (locked) return Future.value();
     clearSelection();
+    scrollOffset = 0;
+    focus = null;
+    return refresh(restart: true);
+  }
+
+  /// El default de sesión puede cambiar mientras una lectura sigue pendiente.
+  /// Los rangos explícitos se resuelven en app y no llaman a este método.
+  Future<void> changePeriod(ValueDate value, ValueDate? end) {
+    if (batchActive || _disposed) return Future.value();
+    from = value;
+    until = end;
+    periodRevision++;
+    clearSelection();
+    scrollOffset = 0;
+    focus = null;
     return refresh(restart: true);
   }
 

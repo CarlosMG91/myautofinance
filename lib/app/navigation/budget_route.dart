@@ -13,6 +13,9 @@ import 'category_navigation_context.dart';
 import 'import_route.dart';
 import 'navigation_session.dart';
 import 'period_controls.dart';
+import 'movement_links.dart';
+import 'movement_list_route.dart';
+import '../../features/wealth/wealth.dart' show Month;
 
 class BudgetEditorOrigin {
   const BudgetEditorOrigin(this.month, this.categoryId);
@@ -86,6 +89,15 @@ class _BudgetRouteState extends State<BudgetRoute> {
         return MonthlyBudgetScreen(
           load: widget.load,
           month: month,
+          onOrigin: widget.navigationSession == null
+              ? null
+              : (offset, focus) {
+                  final session = widget.navigationSession!;
+                  session.setContext(
+                    session.context.withPosition(offset, focus),
+                    deferNotification: true,
+                  );
+                },
           periodControls: widget.navigationSession == null
               ? null
               : (selected, change) => PeriodControls(
@@ -108,8 +120,19 @@ class _BudgetRouteState extends State<BudgetRoute> {
             onSelected: (path) async {
               if (!await canOpen() || !mounted) return;
               await navigator.pushNamed(
-                path,
-                arguments: path == AppRoutes.pendingMovements
+                path == AppRoutes.movements
+                    ? MovementLinks.management(
+                        '${AppRoutes.budget}?${_period(selected)}',
+                        defaultMonth:
+                            widget.navigationSession?.period.civilMonth ??
+                            Month.parse(selected.value),
+                      )
+                    : path,
+                arguments: path == AppRoutes.movements
+                    ? MovementListOrigin(
+                        '${AppRoutes.budget}?${_period(selected)}',
+                      )
+                    : path == AppRoutes.pendingMovements
                     ? PendingMovementOrigin(
                         route: "${AppRoutes.budget}?${_period(selected)}",
                         label:
@@ -128,6 +151,10 @@ class _BudgetRouteState extends State<BudgetRoute> {
               if (mounted) await refresh();
             },
             itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: AppRoutes.movements,
+                child: Text('Movimientos'),
+              ),
               PopupMenuItem(
                 value: AppRoutes.pendingMovements,
                 enabled: widget.pendingAvailable,

@@ -18,6 +18,7 @@ import 'package:intl/intl.dart';
 import 'app_routes.dart';
 import 'navigation_context.dart';
 import 'navigation_session.dart';
+import 'navigation_session_scope.dart';
 import 'navigation_period.dart';
 import 'period_controls.dart';
 import 'primary_navigation.dart';
@@ -127,6 +128,7 @@ abstract final class AppRouter {
         settings: settings,
         load: movements,
         categories: categories,
+        navigationSession: navigationSession,
       );
     } else if (uri?.path.startsWith('${AppRoutes.movements}/') == true &&
         movements != null) {
@@ -134,6 +136,7 @@ abstract final class AppRouter {
         settings: settings,
         load: movements,
         categories: categories,
+        navigationSession: navigationSession,
       );
     } else if (wealth != null &&
         (uri?.path == AppRoutes.wealth ||
@@ -273,6 +276,11 @@ class _WealthRouteState extends State<_WealthRoute> {
           final saved = await Navigator.of(context).pushNamed<Object?>(
             path == AppRoutes.pendingMovements
                 ? path
+                : path == AppRoutes.movements
+                ? MovementLinks.management(
+                    '${AppRoutes.wealth}?${period(month)}',
+                    defaultMonth: month,
+                  )
                 : '$path?${period(month)}',
             arguments: path == AppRoutes.pendingMovements
                 ? PendingMovementOrigin(
@@ -299,6 +307,15 @@ class _WealthRouteState extends State<_WealthRoute> {
         return WealthScreen(
           controller: WealthController(loadManagement: widget.loadManagement),
           initialMonth: route.month!,
+          onOrigin: widget.navigationSession == null
+              ? null
+              : (offset, focus) {
+                  final session = widget.navigationSession!;
+                  session.setContext(
+                    session.context.withPosition(offset, focus),
+                    deferNotification: true,
+                  );
+                },
           periodControls: widget.navigationSession == null
               ? null
               : (selected, select) => PeriodControls(
@@ -971,7 +988,11 @@ class _ManagementMenu extends StatelessWidget {
           path == AppRoutes.movements
               ? MovementLinks.management(
                   source,
-                  defaultMonth: madridMonth(DateTime.now()),
+                  defaultMonth:
+                      NavigationSessionScope.maybeOf(context)
+                          ?.period
+                          .civilMonth ??
+                      madridMonth(DateTime.now()),
                 )
               : path,
           arguments: path == AppRoutes.pendingMovements

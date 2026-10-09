@@ -12,6 +12,7 @@ class MovementListScreen extends StatefulWidget {
     required this.onOpen,
     required this.onReturn,
     this.onSelection,
+    this.onFiltersApplied,
     this.onCreate,
     this.selectCategory,
     this.navigation,
@@ -26,6 +27,7 @@ class MovementListScreen extends StatefulWidget {
 
   /// Entrega UUID y contexto exactos a las acciones de MA-TSK-094.
   final void Function(MovementSelection?, MovementListContext)? onSelection;
+  final VoidCallback? onFiltersApplied;
   final Widget? navigation, bottomNavigation;
   final String returnLabel;
   @override
@@ -41,6 +43,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
   String? _validation, _accountId, _categoryId;
   late MovementCategoryScope _scope;
   bool _unclassified = false;
+  int _shownPeriodRevision = 0;
   MovementListController get c => widget.controller;
   @override
   void initState() {
@@ -57,6 +60,16 @@ class _MovementListScreenState extends State<MovementListScreen> {
   }
 
   void _changed() {
+    // Cambios externos de periodo actualizan los campos sin heredar el rango
+    // anterior. Una edición de filtros pendiente sigue siendo local.
+    if (_shownPeriodRevision != c.periodRevision) {
+      _shownPeriodRevision = c.periodRevision;
+      _from.text = c.from.value;
+      _until.text = c.until?.value ?? '';
+      _validation = null;
+      if (_scroll.hasClients) _scroll.jumpTo(0);
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
     widget.onSelection?.call(c.selection, c.context);
     if (mounted) setState(() {});
   }
@@ -97,6 +110,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
       c.until = until;
       c.concept = _search.text;
       setState(() => _validation = null);
+      widget.onFiltersApplied?.call();
       if (_scroll.hasClients) _scroll.jumpTo(0);
       await c.apply();
     } on MovementFailure catch (e) {
@@ -105,17 +119,39 @@ class _MovementListScreenState extends State<MovementListScreen> {
   }
 
   Future<void> _open(String id) async {
+    final revision = c.periodRevision;
     final offset = _scroll.offset;
+    c.scrollOffset = offset;
+    c.focus = id;
     await widget.onOpen(id);
     if (!mounted) return;
     await c.refresh();
     if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || revision != c.periodRevision) return;
       if (_scroll.hasClients) {
         _scroll.jumpTo(offset.clamp(0, _scroll.position.maxScrollExtent));
       }
       _focus[id]?.requestFocus();
+    });
+  }
+
+  Future<void> _create() async {
+    final revision = c.periodRevision;
+    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+    final focus = FocusManager.instance.primaryFocus;
+    c.scrollOffset = offset;
+    c.focus = 'nuevo';
+    await widget.onCreate!();
+    if (!mounted) return;
+    await c.refresh();
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || revision != c.periodRevision) return;
+      if (_scroll.hasClients) {
+        _scroll.jumpTo(offset.clamp(0, _scroll.position.maxScrollExtent));
+      }
+      if (focus?.context != null) focus?.requestFocus();
     });
   }
 
@@ -379,12 +415,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
                   _filters(),
                   if (widget.onCreate != null)
                     FilledButton(
-                      onPressed: c.locked
-                          ? null
-                          : () async {
-                              await widget.onCreate!();
-                              if (mounted) await c.refresh();
-                            },
+                      onPressed: c.locked ? null : _create,
                       child: const Text('Añadir movimiento'),
                     ),
                   if (_validation != null)
