@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Autofinance · Periodos · MA-TSK-141</title>
+<style>
+:root{font:16px 'Segoe UI',Roboto,system-ui,sans-serif;color:#17212b;background:#f5f7fa;--blue:#124b7a;--line:#bbc5cf}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit;color:var(--blue);border:1px solid #8996a5;background:#fff;border-radius:8px;min-height:44px;padding:8px 12px;max-width:100%}button{cursor:pointer}button:hover,button[aria-current=page]{background:#eaf3fb}button[aria-current=page]{border-left:4px solid var(--blue);font-weight:600}button:disabled{color:#647080;background:#edf0f3;cursor:default}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid #005fcc;outline-offset:3px}.primary{background:var(--blue);color:#fff}.primary:hover{background:#0b385c}aside{position:fixed;inset:0 auto 0 0;width:216px;background:#fff;border-right:1px solid var(--line);padding:24px}aside strong{font-size:24px}aside p{color:#455468}nav{display:grid;gap:8px;margin-top:32px}main{margin-left:216px;padding:32px;max-width:1500px}h1{font-size:24px;margin:0}h2{font-size:20px;margin-top:0}h3{font-size:16px}p{line-height:1.5}small,.muted{color:#455468}.eyebrow{font-size:14px;color:#455468;margin:0 0 8px}.banner{background:#fff4e5;color:#70400b;padding:12px 16px;border-radius:8px;margin-bottom:24px}.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px}.controls{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:24px 0 12px}label{display:grid;gap:6px}#year{width:7em}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin:16px 0}.note{border-left:4px solid var(--blue);background:#eaf3fb;padding:12px 16px;margin:16px 0}.error{background:#fff0f0;border-left-color:#9f2733}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.grid .panel{margin:0}.value{font-size:24px;font-weight:600;display:block;margin:12px 0;font-variant-numeric:tabular-nums}.negative{color:#9f2733}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)}th{background:#eaf3fb}td:last-child,th:last-child{text-align:right}.cards{display:none}.months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}.months button[aria-pressed=true]{background:var(--blue);color:#fff}.review{margin:24px 0;border-top:1px solid var(--line);padding-top:20px}summary{cursor:pointer;font-weight:600;line-height:1.5}dialog{border:1px solid #8996a5;border-radius:12px;width:min(560px,calc(100% - 32px));padding:24px;max-height:90vh;overflow:auto}dialog::backdrop{background:#17212b88}#content{min-height:220px}#live:not(:empty){padding:12px 16px;background:#eaf3fb;border-radius:8px;margin:16px 0}#originInfo{overflow-wrap:anywhere}#editor{display:grid;gap:16px;max-width:640px}#editor input{width:100%}.large{font-size:32px}.large h1{font-size:1.5rem}.large h2{font-size:1.25rem}.large h3,.large table,.large .eyebrow,.large small{font-size:1rem}.large .value{font-size:1.5rem}.large .months{grid-template-columns:repeat(3,minmax(0,1fr))}.large aside strong{font-size:1.2rem}a{color:var(--blue)}
+@media(max-width:839px){aside{inset:auto 0 0;width:auto;padding:8px;border-right:0;border-top:1px solid var(--line);z-index:2}aside strong,aside p{display:none}nav{margin:0;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}nav button{padding:8px 2px;font-size:12px;min-width:0;overflow-wrap:anywhere;min-height:56px}main{margin:0;padding:24px 16px 130px}button,input,select{min-height:48px}.grid{grid-template-columns:1fr}.table-wrap{display:none}.cards{display:grid;gap:12px}.cards .panel{margin:0}.months{grid-template-columns:repeat(3,minmax(0,1fr))}.controls{gap:8px}.large main{padding-bottom:220px}.large nav button{font-size:24px}.large .months{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:16px}}@media(min-width:840px) and (max-width:1199px){aside{width:200px}main{margin-left:200px;padding:24px}}
+.months button{min-width:0;overflow-wrap:anywhere}p,button{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<aside><strong>Autofinance</strong><p>Finanzas familiares<br>Periodo de sesión</p><nav aria-label="Destinos principales">
+<button data-dest="Estado">Estado</button><button data-dest="Patrimonio">Patrimonio</button><button data-dest="Presupuesto">Presupuesto</button><button data-dest="Real">Real</button><button data-dest="Indicadores">Indicadores</button>
+</nav></aside>
+<main>
+<div class="banner">MA-TSK-141 · Propuesta v1 · Datos sintéticos · Aprobación humana pendiente</div>
+<div class="top"><div><p class="eyebrow">EP-016 / Suplemento de EP-002</p><h1 id="title">Estado</h1></div><button id="newSession">Nueva sesión (demo)</button></div>
+<section aria-label="Periodo de consulta">
+<div class="controls">
+<label>Año<input id="year" type="number" min="1" max="9999" inputmode="numeric" aria-describedby="periodHelp"></label>
+<label><span id="monthLabel">Mes</span><select id="month"></select></label>
+<button id="apply">Ir al periodo</button><button id="prev">← Anterior</button><button id="next">Siguiente →</button><button id="today">Mes actual</button>
+</div>
+<p id="periodHelp" class="muted"></p><p id="validation" role="alert"></p>
+</section>
+<div id="live" role="status" aria-live="polite"></div>
+<div id="content"></div>
+<details class="review" open><summary>Escenarios de revisión</summary>
+<p>Prueba un periodo vacío, cambia de destino y abre un detalle. Todo ocurre en memoria; las cifras de ejemplo pertenecen únicamente a este mockup.</p>
+<div class="actions"><button id="empty">Año vacío 2031</button><button id="sample">Octubre 2026 · ejemplos</button><button id="partial">Febrero 2026 · foto parcial</button><button id="loading">Simular carga</button><button id="failure">Simular error</button><button id="normal">Restablecer lectura</button><button id="large">Texto 200 %</button><button id="back">Atrás de Android (demo)</button></div>
+<p id="sessionInfo" class="muted"></p>
+</details>
+<details class="review"><summary>Qué se propone aprobar</summary>
+<p>Controles comunes para los cinco destinos: consulta mensual en Estado, Patrimonio e Indicadores; contexto anual en Real y Presupuesto, con mes enfocado. El presupuesto mensual y la lista de movimientos existentes se muestran con su contexto mensual.</p>
+<p>El año en contexto mensual mantiene el mes. En contexto anual recupera el mes recordado de ese año o enero. Elegir mes explícitamente prevalece. Cambiar destino mantiene año y mes. Anterior/siguiente recorre meses o años según el contexto; en 0001/9999 se deshabilita el paso fuera del calendario.</p>
+<p>La sesión comienza en Estado, mes actual de Europe/Madrid. Mes actual consulta otra vez el reloj y conserva el destino. Nueva sesión borra la memoria de años. No hay preferencias persistentes ni sincronización.</p>
+<p>Detalle y edición conservan origen, rama, filtros, desplazamiento y foco. Cambiar destino o periodo, cancelar, Volver o Atrás con borrador exige Seguir editando o Descartar cambios. Escape cancela la confirmación. Guardar en otro mes devuelve al origen y ofrece Ver mes.</p>
+<p>Las vistas pendientes muestran puntos de integración, sin cálculos. La consulta anual no suma fotos patrimoniales. Carga y error sustituyen el contenido anterior; Reintentar repite el periodo elegido. Los estados vacíos no impiden consultar pasado o futuro ni crean datos.</p>
+<p>Teclado: Tab/Mayús+Tab, Enter/Espacio, foco visible y diálogo modal. Android: objetivos de 48 px, navegación con etiquetas y Atrás protegido (simulado aquí). Texto ampliado y ancho estrecho usan tarjetas. La aprobación debe registrarse explícitamente en Epic Board; este prototipo no contiene un botón que simule aprobar.</p>
+</details>
+</main>
+<dialog id="guard" aria-labelledby="guardTitle"><h2 id="guardTitle">Hay cambios sin guardar</h2><p>Para continuar se descartará el borrador. El periodo y los datos guardados se conservan si sigues editando.</p><div class="actions"><button id="stay" autofocus>Seguir editando</button><button id="discard">Descartar cambios</button></div></dialog>
+<script>
+const $=id=>document.getElementById(id);
+const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function madridNow(){const p=new Intl.DateTimeFormat('en',{timeZone:'Europe/Madrid',year:'numeric',month:'numeric'}).formatToParts(new Date());return {y:+p.find(x=>x.type==='year').value,m:+p.find(x=>x.type==='month').value};}
+let s,origin=null,dirty=false,pending=null,lastFocus=null,reading='ready',filter='Todos',modeOverride=null;
+function fresh(){s={dest:'Estado',...madridNow(),memory:{}};s.memory[s.y]=s.m;origin=null;dirty=false;reading='ready';filter='Todos';modeOverride=null;render();}
+const annual=()=>!modeOverride&&(s.dest==='Real'||s.dest==='Presupuesto');
+const period=()=>`${months[s.m-1]} ${String(s.y).padStart(4,'0')}`;
+function request(action){if(dirty){pending=action;lastFocus=document.activeElement;$('guard').showModal();$('stay').focus();return;}action();}
+function cancelGuard(){pending=null;$('guard').close();lastFocus?.focus();}
+$('stay').onclick=cancelGuard;$('guard').oncancel=e=>{e.preventDefault();cancelGuard();};
+$('discard').onclick=()=>{const action=pending;pending=null;dirty=false;$('guard').close();action?.();};
+function setPeriod(y,m){s.y=y;s.m=m;s.memory[y]=m;origin=null;reading='ready';render();$('apply').focus();}
+function selectYear(y){setPeriod(y,annual()?(s.memory[y]||1):s.m);}
+function step(n){request(()=>{if(annual()){const y=s.y+n;if(y>=1&&y<=9999)selectYear(y);}else{const i=(s.y-1)*12+s.m-1+n;if(i>=0&&i<9999*12)setPeriod(Math.floor(i/12)+1,i%12+1);}});}
+$('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);
+$('apply').onclick=()=>{const y=Number($('year').value);if(!/^\d{1,4}$/.test($('year').value)||y<1||y>9999){$('validation').textContent='Introduce un año válido entre 0001 y 9999.';$('year').focus();return;}request(()=>selectYear(y));};
+$('year').onkeydown=e=>{if(e.key==='Enter')$('apply').click();};
+$('month').innerHTML=months.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+$('month').onchange=()=>{const m=+$('month').value;request(()=>setPeriod(s.y,m));if(dirty)$('month').value=s.m;};
+document.querySelectorAll('[data-dest]').forEach(b=>b.onclick=()=>request(()=>{s.dest=b.dataset.dest;origin=null;modeOverride=null;filter='Todos';reading='ready';render();b.focus();}));
+$('today').onclick=()=>request(()=>{const p=madridNow();setPeriod(p.y,p.m);});
+$('newSession').onclick=()=>request(()=>{fresh();announce('Nueva sesión: Estado y mes actual de Europe/Madrid.');});
+$('empty').onclick=()=>request(()=>setPeriod(2031,s.m));$('sample').onclick=()=>request(()=>setPeriod(2026,10));$('partial').onclick=()=>request(()=>{s.dest='Patrimonio';modeOverride=null;setPeriod(2026,2);});
+for(const [id,value] of [['loading','loading'],['failure','error'],['normal','ready']])$(id).onclick=()=>request(()=>{reading=value;origin=null;render();});
+$('large').onclick=()=>document.documentElement.classList.toggle('large');
+$('back').onclick=()=>origin?request(returnOrigin):announce('Atrás desde destino principal: salida de la sesión en Android. Simulación; no se cierra esta página.');
+function announce(text){$('live').textContent=text;}
+function render(){
+ $('validation').textContent='';$('live').textContent='';$('title').textContent=origin?'Detalle de '+(origin.dest==='Patrimonio'?'foto':origin.dest==='Presupuesto'?'partida':'movimiento'):s.dest;
+ $('year').value=s.y;$('month').value=s.m;$('monthLabel').textContent=annual()?'Mes enfocado':'Mes';
+ $('prev').textContent=annual()?'← Año anterior':'← Mes anterior';$('next').textContent=annual()?'Año siguiente →':'Mes siguiente →';
+ $('prev').disabled=s.y===1&&(annual()||s.m===1);$('next').disabled=s.y===9999&&(annual()||s.m===12);
+ $('periodHelp').textContent=annual()?`Año ${String(s.y).padStart(4,'0')} · Foco: ${months[s.m-1]}. Cambiar año recupera su mes recordado o enero.`:`${period()} · Cambiar año conserva ${months[s.m-1].toLowerCase()}.`;
+ document.querySelectorAll('[data-dest]').forEach(b=>b.setAttribute('aria-current',b.dataset.dest===s.dest?'page':'false'));
+ $('sessionInfo').textContent='Memoria de esta sesión: '+Object.entries(s.memory).map(([y,m])=>`${y}: ${months[m-1]}`).join(' · ');
+ if(origin){renderDetail();return;}
+ if(reading==='loading'){$('content').innerHTML=`<div class="panel" role="status" aria-busy="true"><h2>Cargando ${period()}</h2><p>Consultando el periodo seleccionado…</p><p>Las cifras anteriores no se muestran como actuales.</p><button id="finishLoad">Finalizar carga (demo)</button></div>`;$('finishLoad').onclick=()=>{reading='ready';render();};return;}
+ if(reading==='error'){$('content').innerHTML=`<div class="note error" role="alert"><h2>No se pudo leer ${period()}</h2><p>Fallo de lectura simulado. No se ha sustituido el periodo ni mostrado cifras anteriores.</p><button id="retry">Reintentar</button></div>`;$('retry').onclick=()=>{reading='ready';render();};return;}
+ let html='';
+ if(s.dest==='Estado'||s.dest==='Indicadores')html=`<section class="panel"><h2>${s.dest} · ${period()}</h2><p>Destino técnico · Vista pendiente de implementación.</p><p>Recibe el periodo común y mantiene su contexto al navegar. Los cálculos se entregarán en su épica funcional.</p><p>${s.dest==='Indicadores'?'Contrato: foto completa del mes y presupuesto del mismo año; con foto ausente o incompleta, sin dato.':'Contrato: real vacío cero; presupuesto ausente se etiqueta sin presupuesto.'}</p></section>`;
+ else if(annual())html=`<section class="panel"><h2>${s.dest} anual · ${s.y}</h2><p>Destino técnico · Informe pendiente. Selector de foco mensual, sin matriz ni totales ficticios.</p><div class="months" aria-label="Mes enfocado del año">${months.map((m,i)=>`<button data-month="${i+1}" aria-pressed="${s.m===i+1}">${m}</button>`).join('')}</div><p>${s.y===2031?'Año vacío permitido: no hay registros en este escenario. Consultarlo no crea datos.':'El mes enfocado identifica la celda de retorno; no limita la consulta anual.'}</p><button id="monthly">${s.dest==='Real'?'Abrir movimientos del mes':'Abrir presupuesto mensual existente'}</button></section>`;
+ else if(s.dest==='Patrimonio')html=wealth();
+ else html=monthlyList();
+ $('content').innerHTML=html;
+ document.querySelectorAll('[data-month]').forEach(b=>b.onclick=()=>setPeriod(s.y,+b.dataset.month));
+ if($('monthly'))$('monthly').onclick=()=>{modeOverride='monthly';render();};
+ if($('annual'))$('annual').onclick=()=>{modeOverride=null;render();};
+ if($('filter'))$('filter').onchange=()=>{filter=$('filter').value;announce('Filtro local: '+filter+'. El periodo compartido se conserva.');};
+ document.querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>openDetail(b));
+}
+function wealth(){const partial=s.y===2026&&s.m===2,full=s.y===2026&&s.m===10;return `<section class="panel"><h2>Foto del 1 de ${months[s.m-1].toLowerCase()} de ${s.y}</h2><p>Referencia mensual exacta · Valores manuales sintéticos</p><span class="value">${full?'1.200,00 €':'Sin dato'}</span><p>${full?'Foto completa · Patrimonio neto de ejemplo.':'Sin dato: '+(partial?'foto incompleta. Falta valorar Cartera familiar.':'falta foto patrimonial.')}</p><p>No se arrastra la foto anterior. Cada mes se consulta de forma independiente.</p>${partial?'<p>Cuenta familiar: 800,00 € registrados. Cartera familiar: pendiente. No se presenta un total parcial.</p>':''}${full?'<p>Cuenta familiar: 1.200,00 € · Cartera familiar: 0,00 € (cero registrado válido).</p>':''}<button id="photo" data-detail="foto">Revisar foto del mes</button></section>`;}
+function monthlyList(){const sample=s.y===2026&&s.m===10,budget=s.dest==='Presupuesto';const rows=budget?[['Alimentación',sample?'−250,00 €':'Sin presupuesto'],['Ocio',sample?'0,00 € · Cero registrado':'Sin presupuesto']]:sample?[['Compra sintética · 08/10/2026','−32,50 €']]:[];return `<section class="panel"><h2>${budget?'Presupuesto mensual':'Movimientos'} · ${period()}</h2><p>${budget?'Partidas presupuestarias; ausencia distinta de cero registrado.':'Fecha de valor · Subtotal firmado: '+(sample?'−32,50 €':'0,00 €')+(sample?'':' · Sin movimientos.')}</p><div class="actions"><label>Filtro local<select id="filter"><option ${filter==='Todos'?'selected':''}>Todos</option><option ${filter==='Rama Alimentación'?'selected':''}>Rama Alimentación</option></select></label><button id="annual">Volver al contexto anual</button></div><div class="table-wrap"><table><thead><tr><th>Concepto / rama</th><th>${budget?'Presupuesto':'Importe real'}</th></tr></thead><tbody>${rows.map(([name,v],i)=>`<tr><td>${name}</td><td><button data-detail="${i}" id="cell-${i}">${v}</button></td></tr>`).join('')}</tbody></table></div><div class="cards">${rows.map(([name,v],i)=>`<article class="panel"><h3>${name}</h3><p>${budget?'Presupuesto':'Real'}</p><button data-detail="${i}" id="card-${i}">${v}</button></article>`).join('')}</div>${!rows.length?'<p>No hay movimientos en este periodo. Real: 0,00 €.</p>':''}${budget?'<p>Rama completa · El cero de Ocio es una partida registrada únicamente en octubre 2026.</p>':''}</section>`;}
+function openDetail(button){origin={...s,memory:{...s.memory},mode:modeOverride,filter,scroll:window.scrollY,focus:button.id,branch:button.dataset.detail};dirty=false;render();$('return').focus();}
+function renderDetail(){const photo=origin.dest==='Patrimonio';$('content').innerHTML=`<section class="panel"><button id="return">← Volver a ${origin.dest}, ${period()}</button><h2>Editar ${photo?'foto':origin.dest==='Presupuesto'?'partida':'movimiento'} · Ejemplo sintético</h2><p id="originInfo">Origen: ${origin.dest} · ${months[origin.m-1]} ${origin.y} · Filtro: ${origin.filter} · Rama: ${origin.branch} · Desplazamiento: ${Math.round(origin.scroll)} px · Foco: ${origin.focus}</p><div id="editor"><label>Concepto<input id="concept" value="Ejemplo sintético"></label><label>${photo?'Fecha de referencia (día 1)':'Fecha de valor / mes de partida'}<input id="date" type="date" value="${String(s.y).padStart(4,'0')}-${String(s.m).padStart(2,'0')}-01" ${photo?'readonly':''}></label><label>Importe EUR<input id="amount" value="0,00" inputmode="decimal"></label></div><p id="draftStatus" role="status">Sin cambios en el borrador.</p><div class="actions"><button id="cancelEdit">Cancelar</button><button id="saveEdit" class="primary">Guardar (demo)</button></div><p class="muted">Simulación de navegación y borrador; no escribe datos financieros.</p></section>`;
+ for(const id of ['concept','date','amount'])$(id).oninput=()=>{dirty=true;$('draftStatus').textContent='Borrador con cambios sin guardar.';};
+ $('return').onclick=$('cancelEdit').onclick=()=>request(returnOrigin);
+ $('saveEdit').onclick=()=>{const d=$('date').value.match(/^(\d{4})-(\d{2})-\d{2}$/);if(!d||+d[1]<1||+d[1]>9999){$('draftStatus').textContent='Introduce una fecha válida.';return;}const target={y:+d[1],m:+d[2]},changed=target.y!==origin.y||target.m!==origin.m;dirty=false;returnOrigin();announce(`Guardado simulado en ${months[target.m-1]} ${target.y}. Retorno al origen conservado.`);if(changed){const b=document.createElement('button');b.id='seeMonth';b.textContent='Ver mes';b.onclick=()=>setPeriod(target.y,target.m);$('live').append(' ',b);}};
+}
+function returnOrigin(){if(!origin)return;const o=origin;s={dest:o.dest,y:o.y,m:o.m,memory:o.memory};modeOverride=o.mode;filter=o.filter;origin=null;dirty=false;render();requestAnimationFrame(()=>{document.getElementById(o.focus)?.focus({preventScroll:true});window.scrollTo(0,o.scroll);});}
+// Solo se expone lectura de estado para verificar este prototipo, sin servicios reales.
+window.mockState=()=>({dest:s.dest,y:s.y,m:s.m,memory:{...s.memory},annual:annual(),dirty,detail:!!origin,filter});
+fresh();
+</script>
+</body></html>
