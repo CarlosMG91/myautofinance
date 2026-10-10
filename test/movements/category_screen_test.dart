@@ -56,6 +56,7 @@ void main() {
       final loading =
           find.text('Leyendo categorías…').evaluate().isNotEmpty ||
           find.text('Leyendo categoría…').evaluate().isNotEmpty ||
+          find.text('Consultando el estado del mes…').evaluate().isNotEmpty ||
           find.text('Guardando categoría…').evaluate().isNotEmpty;
       if (turn >= 3 &&
           (!waitForStorage || !loading) &&
@@ -562,7 +563,9 @@ void main() {
       );
       expect(await revision(tester), 5);
       await settle(tester);
-      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
+      expect(find.text('Estado del mes'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await settle(tester);
     },
   );
 

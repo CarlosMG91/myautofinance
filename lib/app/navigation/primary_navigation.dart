@@ -13,12 +13,14 @@ class PrimaryNavigation extends StatelessWidget {
     required this.title,
     required this.child,
     this.actions = const [],
+    this.scrollController,
   });
 
   final NavigationSession session;
   final String title;
   final Widget child;
   final List<Widget> actions;
+  final ScrollController? scrollController;
 
   static const labels = {
     SessionDestination.status: 'Estado',
@@ -86,6 +88,7 @@ class PrimaryNavigation extends StatelessWidget {
                 ),
                 Expanded(
                   child: SingleChildScrollView(
+                    controller: scrollController,
                     padding: EdgeInsets.all(desktop ? 24 : 16),
                     child: child,
                   ),

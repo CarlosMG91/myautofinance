@@ -5,6 +5,8 @@ import 'import_route.dart';
 import '../../features/importing/importing.dart' show LocalCsvSelector;
 import '../../features/importing/presentation/import_controller.dart';
 import 'budget_route.dart';
+import 'monthly_status_route.dart';
+import '../../features/monthly_status/presentation/monthly_status_screen.dart';
 import '../../features/budget/presentation/budget_source.dart';
 import 'movement_editor_route.dart';
 import 'movement_links.dart';
@@ -49,6 +51,7 @@ abstract final class AppRouter {
     MovementListLoader? movements,
     PendingMovementLoader? pendingMovements,
     BudgetLoader? budgets,
+    MonthlyStatusLoader? monthlyStatus,
     ImportServicesLoader? imports,
     LocalCsvSelector? csvSelector,
     bool allowTestImports = false,
@@ -80,6 +83,19 @@ abstract final class AppRouter {
     }
     if (invalidOrigin != null) {
       page = SessionNavigationError(origin: invalidOrigin);
+    } else if (uri?.path == AppRoutes.monthlyStatus && monthlyStatus != null) {
+      page = MonthlyStatusRoute(
+        settings: settings,
+        load: monthlyStatus,
+        session: navigationSession,
+        management: (origin, refresh) => _ManagementMenu(
+          categoriesAvailable: categories != null,
+          wealthAvailable: wealth != null,
+          pendingAvailable: pendingMovements != null && categories != null,
+          origin: origin,
+          onReturned: refresh,
+        ),
+      );
     } else if (uri?.path == AppRoutes.importHistory ||
         uri?.path.startsWith('${AppRoutes.importHistory}/') == true) {
       page = imports == null
@@ -952,16 +968,18 @@ class _ManagementMenu extends StatelessWidget {
     this.pendingAvailable = false,
     this.onOpen,
     this.origin,
+    this.onReturned,
   });
   final bool categoriesAvailable;
   final bool wealthAvailable;
   final bool pendingAvailable;
   final Future<void> Function(String path)? onOpen;
   final String Function()? origin;
+  final Future<void> Function()? onReturned;
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     tooltip: 'Gestión',
-    onSelected: (value) {
+    onSelected: (value) async {
       final source =
           origin?.call() ??
           ModalRoute.of(context)?.settings.name ??
@@ -984,7 +1002,7 @@ class _ManagementMenu extends StatelessWidget {
       if (onOpen != null) {
         onOpen!(path);
       } else {
-        Navigator.of(context).pushNamed(
+        await Navigator.of(context).pushNamed(
           path == AppRoutes.movements
               ? MovementLinks.management(
                   source,
@@ -1009,6 +1027,7 @@ class _ManagementMenu extends StatelessWidget {
               ? MovementListOrigin(source)
               : _BackupOrigin(source),
         );
+        if (context.mounted) await onReturned?.call();
       }
     },
     itemBuilder: (_) => [

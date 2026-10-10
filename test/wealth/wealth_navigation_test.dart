@@ -39,7 +39,11 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 10));
       });
       await tester.pump(const Duration(milliseconds: 50));
-      if (find.byType(LinearProgressIndicator).evaluate().isEmpty) break;
+      if (i >= 15 &&
+          find.byType(LinearProgressIndicator).evaluate().isEmpty &&
+          find.text('Consultando el estado del mes…').evaluate().isEmpty) {
+        break;
+      }
     }
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
@@ -65,8 +69,10 @@ void main() {
       await settle(tester);
       expect(find.text('Cuenta cerrada sintética'), findsOneWidget);
       await tester.tap(find.text('Volver al origen'));
-      await tester.pumpAndSettle();
-      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
+      await settle(tester);
+      expect(find.text('Estado del mes'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await settle(tester);
     },
   );
 
@@ -74,6 +80,7 @@ void main() {
     'Foto y patrimonio leen el periodo; errores no escriben ni muestran ceros',
     (tester) async {
       await tester.pumpWidget(AutofinanceApp(localSession: session));
+      await settle(tester);
       final navigator = tester.state<NavigatorState>(find.byType(Navigator));
       final db = (await tester.runAsync(session.store.open))!;
       final revision = (await tester.runAsync(db.readState))!.revision;
@@ -82,7 +89,7 @@ void main() {
         await settle(tester);
         expect(find.text('Foto completa'), findsOneWidget);
         await tester.tap(find.text('Volver al origen'));
-        await tester.pumpAndSettle();
+        await settle(tester);
       }
       for (final path in [
         '/patrimonio/foto?a=2026&m=99',
@@ -93,9 +100,11 @@ void main() {
         expect(find.text('No se pudo abrir este detalle'), findsOneWidget);
         expect(find.text('Foto completa'), findsNothing);
         await tester.tap(find.text('Volver al origen'));
-        await tester.pumpAndSettle();
+        await settle(tester);
       }
       expect((await tester.runAsync(db.readState))!.revision, revision);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await settle(tester);
     },
   );
 }

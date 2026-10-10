@@ -4,6 +4,8 @@ import '../features/movements/presentation/pending_movement_controller.dart';
 import 'import_factory.dart';
 import '../features/importing/presentation/import_controller.dart';
 import 'budget_factory.dart';
+import 'monthly_status_query_factory.dart';
+import '../features/monthly_status/monthly_status.dart';
 import '../features/budget/presentation/budget_source.dart';
 import '../features/movements/presentation/movement_list_controller.dart';
 import '../features/synchronization/presentation/local_backup_controller.dart';
@@ -49,6 +51,11 @@ class LocalBackupSession {
   // Resolver por visita: una restauración puede sustituir la conexión activa.
   Future<BudgetSource> budgets() async =>
       createBudgetSource(await store.open(), categoryInvalidation);
+
+  Future<MonthlyStatusQuery> monthlyStatus() async => createMonthlyStatusQuery(
+    database: await store.open(),
+    invalidation: categoryInvalidation,
+  );
 
   Future<ImportServices> imports() async => createImportServices(
     await store.open(),

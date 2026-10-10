@@ -3,6 +3,7 @@ import '../features/movements/presentation/pending_movement_controller.dart';
 import '../features/importing/presentation/import_controller.dart';
 import '../features/importing/importing.dart' show LocalCsvSelector;
 import '../features/budget/presentation/budget_source.dart';
+import '../features/monthly_status/presentation/monthly_status_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -34,6 +35,7 @@ class AutofinanceApp extends StatefulWidget {
     this.movements,
     this.pendingMovements,
     this.budgets,
+    this.monthlyStatus,
     this.imports,
     this.csvSelector,
     this.navigationSession,
@@ -51,6 +53,7 @@ class AutofinanceApp extends StatefulWidget {
   final MovementListLoader? movements;
   final PendingMovementLoader? pendingMovements;
   final BudgetLoader? budgets;
+  final MonthlyStatusLoader? monthlyStatus;
   final ImportServicesLoader? imports;
   final LocalCsvSelector? csvSelector;
   final NavigationSession? navigationSession;
@@ -162,6 +165,8 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
                 widget.pendingMovements ??
                 widget.localSession?.pendingMovements,
             budgets: widget.budgets ?? widget.localSession?.budgets,
+            monthlyStatus:
+                widget.monthlyStatus ?? widget.localSession?.monthlyStatus,
             imports: widget.imports ?? widget.localSession?.imports,
             csvSelector: widget.csvSelector,
             allowTestImports: widget.config.environment == AppEnvironment.test,
@@ -178,6 +183,8 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
           pendingMovements:
               widget.pendingMovements ?? widget.localSession?.pendingMovements,
           budgets: widget.budgets ?? widget.localSession?.budgets,
+          monthlyStatus:
+              widget.monthlyStatus ?? widget.localSession?.monthlyStatus,
           imports: widget.imports ?? widget.localSession?.imports,
           csvSelector: widget.csvSelector,
           allowTestImports: widget.config.environment == AppEnvironment.test,
