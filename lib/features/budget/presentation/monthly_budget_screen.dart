@@ -20,6 +20,7 @@ class MonthlyBudgetScreen extends StatefulWidget {
     required this.management,
     this.periodControls,
     this.onOrigin,
+    this.onProposal,
   });
   final BudgetLoader load;
   final BudgetMonth month;
@@ -38,6 +39,7 @@ class MonthlyBudgetScreen extends StatefulWidget {
   )?
   periodControls;
   final void Function(double offset, String? focus)? onOrigin;
+  final Future<void> Function(BudgetMonth month)? onProposal;
   @override
   State<MonthlyBudgetScreen> createState() => _MonthlyBudgetScreenState();
 }
@@ -51,6 +53,7 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
   final _amount = TextEditingController(), _year = TextEditingController();
   final _amountFocus = FocusNode();
   final _newFocus = FocusNode();
+  final _proposalFocus = FocusNode();
   final _scroll = ScrollController();
   final _cellFocus = <String, FocusNode>{};
   final _detailFocus = <String, FocusNode>{};
@@ -83,6 +86,7 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
     _year.dispose();
     _amountFocus.dispose();
     _newFocus.dispose();
+    _proposalFocus.dispose();
     _scroll.dispose();
     for (final f in _cellFocus.values) {
       f.dispose();
@@ -564,6 +568,29 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
                                   : () => _open(null, _newFocus),
                               child: const Text('Crear partida'),
                             ),
+                            if (widget.onProposal != null)
+                              OutlinedButton(
+                                focusNode: _proposalFocus,
+                                onPressed:
+                                    locked || _loading || _readError != null
+                                    ? null
+                                    : () async {
+                                        if (!await discard() || !mounted) {
+                                          return;
+                                        }
+                                        final offset = _scroll.hasClients
+                                            ? _scroll.offset
+                                            : 0.0;
+                                        _clear();
+                                        _publishOrigin('budget-proposal');
+                                        await widget.onProposal!(_month);
+                                        if (mounted) {
+                                          await _read(restoreOffset: offset);
+                                          _proposalFocus.requestFocus();
+                                        }
+                                      },
+                                child: const Text('Proponer año siguiente'),
+                              ),
                           ],
                         ),
                         const SizedBox(height: 16),

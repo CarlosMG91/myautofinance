@@ -4,6 +4,7 @@ import '../../features/budget/budget.dart';
 import '../../features/budget/presentation/budget_source.dart';
 import '../../features/budget/presentation/monthly_budget_screen.dart';
 import '../../features/budget/presentation/budget_form_screen.dart';
+import '../../features/budget/presentation/budget_proposal_screen.dart';
 import '../../features/movements/presentation/category_tree_screen.dart';
 import '../category_selector_navigation.dart';
 import 'app_routes.dart';
@@ -55,6 +56,32 @@ class _BudgetRouteState extends State<BudgetRoute> {
       'a=${month.value.substring(0, 4)}&m=${month.value.substring(5, 7)}';
   BudgetMonth _parse(Uri uri) {
     final now = madridMonth(DateTime.now());
+    if (uri.path == AppRoutes.budgetProposal) {
+      if (uri.hasScheme ||
+          uri.hasAuthority ||
+          uri.hasFragment ||
+          uri.queryParametersAll.values.any((values) => values.length != 1)) {
+        throw const BudgetFailure('Ruta de propuesta inválida.');
+      }
+      final year = uri.queryParameters['a'];
+      final month = uri.queryParameters['m'];
+      if ((year != null && !RegExp(r'^\d{4}$').hasMatch(year)) ||
+          (month != null &&
+              (year == null || !RegExp(r'^\d{2}$').hasMatch(month)))) {
+        throw const BudgetFailure('Periodo de propuesta inválido.');
+      }
+      if (year == null) {
+        return widget.navigationSession?.period.budgetMonth ??
+            BudgetMonth.parse(now.value);
+      }
+      final selectedYear = int.parse(year);
+      return BudgetMonth(
+        selectedYear,
+        month == null
+            ? widget.navigationSession?.rememberedMonth(selectedYear) ?? 1
+            : int.parse(month),
+      );
+    }
     if (uri.queryParameters.containsKey('a') !=
         uri.queryParameters.containsKey('m')) {
       throw const BudgetFailure('Periodo incompleto.');
@@ -85,10 +112,40 @@ class _BudgetRouteState extends State<BudgetRoute> {
       final uri = Uri.parse(widget.settings.name!);
       final month = _parse(uri);
       fallback = '${AppRoutes.budget}?${_period(month)}';
+      if (uri.path == AppRoutes.budgetProposal) {
+        return BudgetProposalScreen(
+          load: widget.load,
+          sourceYear: int.parse(month.value.substring(0, 4)),
+          onReturn: (year, saved) {
+            final originalYear = int.parse(month.value.substring(0, 4));
+            if (!saved && year == originalYear && navigator.canPop()) {
+              navigator.pop();
+            } else {
+              final selectedMonth = year == originalYear
+                  ? int.parse(month.value.substring(5, 7))
+                  : widget.navigationSession?.rememberedMonth(year) ?? 1;
+              navigator.pushNamedAndRemoveUntil(
+                '${AppRoutes.budget}?${_period(BudgetMonth(year, selectedMonth))}',
+                (_) => false,
+              );
+            }
+            if (saved) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Propuesta guardada en $year')),
+              );
+            }
+          },
+        );
+      }
       if (uri.path == AppRoutes.budget) {
         return MonthlyBudgetScreen(
           load: widget.load,
           month: month,
+          onProposal: (selected) async {
+            await navigator.pushNamed(
+              '${AppRoutes.budgetProposal}?${_period(selected)}',
+            );
+          },
           onOrigin: widget.navigationSession == null
               ? null
               : (offset, focus) {

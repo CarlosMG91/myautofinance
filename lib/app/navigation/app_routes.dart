@@ -24,6 +24,7 @@ abstract final class AppRoutes {
   static const accounts = '/patrimonio/fichas';
   static const newAccount = '/patrimonio/fichas/nueva';
   static const budget = '/presupuesto';
+  static const budgetProposal = '/presupuesto/propuesta';
   static const actualSpending = '/real';
   static const indicators = '/indicadores';
   static const error = '/error';

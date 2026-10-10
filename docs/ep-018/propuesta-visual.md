@@ -1,6 +1,6 @@
 ﻿# MA-TSK-153 · Suplemento visual de propuesta presupuestaria
 
-Versión 1, 2026-10-09. Pendiente de aprobación humana explícita en Epic Board. No completar el ticket ni iniciar MA-TSK-154 hasta esa aprobación.
+Versión 1, 2026-10-09. Aprobada explícitamente en Epic Board el 2026-10-10 a las 05:20:42.977 UTC: MA-TSK-153 figura completado y la conversación registra «Propuesta visual aceptada: http://localhost:4310/mockups/autofinance-ma-tsk-153-v1.html». Evidencia consultada mediante GET /api/data durante MA-TSK-154; habilita su implementación.
 
 Mockup: http://localhost:4310/mockups/autofinance-ma-tsk-153-v1.html
 

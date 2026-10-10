@@ -2,6 +2,7 @@ import '../features/budget/budget.dart';
 import '../features/budget/presentation/budget_source.dart';
 import '../features/movements/movements.dart';
 import 'category_management_factory.dart';
+import 'budget_proposal_factory.dart';
 import 'monthly_budget_query_factory.dart';
 import 'data/sqlite/local_database.dart';
 import 'data/sqlite/sqlite_budget_repository.dart';
@@ -23,4 +24,12 @@ BudgetSource createBudgetSource(
     invalidation: invalidation,
   ).list,
   identity: database,
+  proposalCalculator: createBudgetProposalCalculator(
+    database: database,
+    invalidation: invalidation,
+  ),
+  proposalSaver: createBudgetProposalSaver(
+    database: database,
+    invalidation: invalidation,
+  ),
 );
