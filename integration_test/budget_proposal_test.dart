@@ -125,6 +125,19 @@ void main() {
         await settle();
         await tap(find.text('Proponer año siguiente'));
         await tap(find.text('Generar propuesta'));
+        // Cancelar la generación completa conserva destino, fuente y revisión.
+        final beforeCancel = await db.readState();
+        final targetBeforeCancel = await budgets.readYear(2027);
+        await tap(find.text('Cancelar propuesta'));
+        await tap(find.text('Descartar cambios'));
+        expect((await db.readState()).revision, beforeCancel.revision);
+        expect(
+          (await budgets.readYear(2027)).map((b) => (b.id, b.data.amountCents)),
+          targetBeforeCancel.map((b) => (b.id, b.data.amountCents)),
+        );
+        expect((await budgets.get(original.id))!.data.amountCents, -10000);
+        await tap(find.text('Proponer año siguiente'));
+        await tap(find.text('Generar propuesta'));
         if (!Platform.isWindows) {
           await tap(find.text('Alimentación'));
           await tap(find.text('Enero'));
@@ -136,9 +149,20 @@ void main() {
           '-370',
         );
         if (Platform.isWindows) {
-          await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-          await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-          await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+          // En profile no existen debugName: indicar teclas físicas evita
+          // que el simulador dependa del mapa de nombres exclusivo de debug.
+          await tester.sendKeyDownEvent(
+            LogicalKeyboardKey.controlLeft,
+            physicalKey: PhysicalKeyboardKey.controlLeft,
+          );
+          await tester.sendKeyEvent(
+            LogicalKeyboardKey.enter,
+            physicalKey: PhysicalKeyboardKey.enter,
+          );
+          await tester.sendKeyUpEvent(
+            LogicalKeyboardKey.controlLeft,
+            physicalKey: PhysicalKeyboardKey.controlLeft,
+          );
           await settle();
         } else {
           await tap(find.text('Aplicar importe'));
@@ -156,7 +180,10 @@ void main() {
         await tap(find.text('Revisar y guardar'));
         expect(find.textContaining('Alimentación · Retirada'), findsOneWidget);
         if (Platform.isWindows) {
-          await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+          await tester.sendKeyEvent(
+            LogicalKeyboardKey.escape,
+            physicalKey: PhysicalKeyboardKey.escape,
+          );
           await settle();
         } else {
           await tester.binding.handlePopRoute();
