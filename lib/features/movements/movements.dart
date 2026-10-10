@@ -3,6 +3,7 @@ export 'domain/category_management.dart';
 export 'domain/category_read_invalidation.dart';
 export 'domain/category_grouping.dart';
 export 'domain/movement_repository.dart';
+export 'domain/monthly_movement_totals.dart';
 export 'domain/movement_management.dart';
 export 'domain/movement_list_query.dart';
 export 'domain/pending_movement_repository.dart';
