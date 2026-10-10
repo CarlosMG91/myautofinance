@@ -1,6 +1,7 @@
 import '../../features/movements/movements.dart';
 import '../../features/wealth/wealth.dart' show Month;
 import 'app_routes.dart';
+import 'monthly_status_origin.dart';
 
 /// Serialización de app; los informes solo necesitan MovementListQuery y un
 /// callback inyectado. No acceden a controladores ni adaptadores de movimientos.
@@ -61,6 +62,8 @@ abstract final class MovementLinks {
       _ => throw const MovementFailure('Alcance de categoría inválido.'),
     };
     if (p.containsKey('rama') && p.containsKey('c') ||
+        p.containsKey('sinClasificar') &&
+            (p.containsKey('rama') || p.containsKey('c')) ||
         p['sinClasificar'] != null && p['sinClasificar'] != '1') {
       throw const MovementFailure('Categoría ambigua.');
     }
@@ -108,6 +111,9 @@ abstract final class MovementLinks {
           ...AppRoutes.destinations.map((d) => d.path),
         ].contains(uri.path)) {
       throw const MovementFailure('Origen de navegación inválido.');
+    }
+    if (uri.path == AppRoutes.monthlyStatus && uri.hasQuery) {
+      MonthlyStatusOrigin.parse(route);
     }
     return route;
   }

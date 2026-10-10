@@ -10,12 +10,14 @@ import 'movement_links.dart';
 import 'navigation_session.dart';
 import 'session_location.dart';
 import 'navigation_context.dart';
+import 'monthly_status_origin.dart';
 import '../category_selector_navigation.dart';
 import '../../features/movements/presentation/category_tree_screen.dart';
 
 class MovementListOrigin {
-  const MovementListOrigin(this.route);
+  const MovementListOrigin(this.route, {this.context});
   final String route;
+  final NavigationContext? context;
   String get label {
     final uri = Uri.tryParse(route);
     for (final destination in AppRoutes.destinations) {
@@ -166,9 +168,23 @@ class _MovementListRouteState extends State<MovementListRoute> {
             : null,
         controller: controller,
         onFiltersApplied: () => _explicitPeriod = true,
-        onReturn: () => Navigator.of(context).canPop()
-            ? Navigator.of(context).pop()
-            : Navigator.of(context).pushReplacementNamed(origin),
+        onReturn: () {
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
+          } else {
+            final saved = widget.settings.arguments is MovementListOrigin
+                ? (widget.settings.arguments as MovementListOrigin).context
+                : null;
+            final restored =
+                saved ??
+                (Uri.parse(origin).path == AppRoutes.monthlyStatus &&
+                        Uri.parse(origin).hasQuery
+                    ? MonthlyStatusOrigin.parse(origin).context
+                    : null);
+            navigator.pushReplacementNamed(origin, arguments: restored);
+          }
+        },
         selectCategory: widget.categories == null
             ? null
             : () => selectCategory(context, loadManagement: widget.categories!),

@@ -152,6 +152,9 @@ class MovementListController extends ChangeNotifier {
       final labels = await source.accounts();
       final nodes = await source.categories.list();
       final byId = {for (final node in nodes) node.id: node};
+      if (query.categoryId != null && !byId.containsKey(query.categoryId)) {
+        throw const MovementFailure('La categoría no existe.');
+      }
       String path(CategoryNode node) => node.parentId == null
           ? node.name
           : '${path(byId[node.parentId]!)} / ${node.name}';

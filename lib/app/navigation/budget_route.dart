@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/budget/budget.dart';
+import '../../features/movements/movements.dart' show MovementSelection;
 import '../../features/budget/presentation/budget_source.dart';
 import '../../features/budget/presentation/monthly_budget_screen.dart';
 import '../../features/budget/presentation/budget_form_screen.dart';
@@ -16,13 +17,11 @@ import 'navigation_session.dart';
 import 'period_controls.dart';
 import 'movement_links.dart';
 import 'movement_list_route.dart';
+import 'budget_links.dart';
+import 'budget_list_route.dart';
+import 'budget_editor_origin.dart';
+export 'budget_editor_origin.dart';
 import '../../features/wealth/wealth.dart' show Month;
-
-class BudgetEditorOrigin {
-  const BudgetEditorOrigin(this.month, this.categoryId);
-  final BudgetMonth month;
-  final String? categoryId;
-}
 
 class BudgetRoute extends StatefulWidget {
   const BudgetRoute({
@@ -110,6 +109,15 @@ class _BudgetRouteState extends State<BudgetRoute> {
 
     try {
       final uri = Uri.parse(widget.settings.name!);
+      if (uri.path == BudgetLinks.path) {
+        return BudgetListRoute(settings: widget.settings, load: widget.load);
+      }
+      if (uri.hasScheme ||
+          uri.hasAuthority ||
+          uri.hasFragment ||
+          uri.queryParametersAll.values.any((v) => v.length != 1)) {
+        throw const BudgetFailure('Ruta inválida.');
+      }
       final month = _parse(uri);
       fallback = '${AppRoutes.budget}?${_period(month)}';
       if (uri.path == AppRoutes.budgetProposal) {
@@ -244,20 +252,46 @@ class _BudgetRouteState extends State<BudgetRoute> {
         );
       }
       if (uri.pathSegments.length != 3 ||
+          uri.pathSegments.first != 'presupuesto' ||
           uri.pathSegments[1] != 'partidas' ||
           uri.pathSegments.last.isEmpty) {
         throw const BudgetFailure('Ruta inválida.');
       }
+      if (uri.pathSegments.last != 'nueva') {
+        MovementSelection([uri.pathSegments.last]);
+      }
+      if (uri.queryParameters.keys.any(
+        (key) => !const {'a', 'm', 'rama', 'alcance', 'origen'}.contains(key),
+      )) {
+        throw const BudgetFailure('Ruta de partida inválida.');
+      }
+      if (uri.queryParameters.containsKey('origen') ||
+          uri.queryParameters.containsKey('rama') ||
+          uri.queryParameters.containsKey('alcance')) {
+        final query = BudgetLinks.parse(
+          uri.replace(path: BudgetLinks.path).toString(),
+        );
+        fallback = BudgetLinks.list(
+          query,
+          origin: BudgetLinks.origin(uri.toString())?.route,
+        );
+      }
       final origin = widget.settings.arguments is BudgetEditorOrigin
           ? widget.settings.arguments as BudgetEditorOrigin
           : null;
+      if (origin?.listRoute != null) BudgetLinks.parse(origin!.listRoute!);
       final initial = origin?.month ?? month;
+      fallback = origin?.listRoute ?? fallback;
       final messenger = ScaffoldMessenger.of(context);
       return BudgetFormScreen(
         load: widget.load,
         month: initial,
         id: uri.pathSegments.last == 'nueva' ? null : uri.pathSegments.last,
-        categoryId: origin?.categoryId,
+        categoryId:
+            origin?.categoryId ??
+            (uri.queryParameters['rama'] == 'sin-clasificar'
+                ? null
+                : uri.queryParameters['rama']),
         selectCategory: (id) async {
           if (widget.categories == null) {
             throw const BudgetFailure('Categorías no disponibles.');
