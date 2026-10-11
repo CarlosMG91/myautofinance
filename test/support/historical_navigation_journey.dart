@@ -203,6 +203,7 @@ Future<void> historicalNavigationJourney(
     // Partida fuera de mes: borrador protegido y posición/foco del origen.
     await destination('Presupuesto');
     await press('Captura mensual');
+    final annualOrigin = session.context;
     final detail = find.descendant(
       of: find.byKey(ValueKey(data.focusCategoryId)),
       matching: find.widgetWithText(TextButton, 'Abrir alta'),
@@ -231,7 +232,7 @@ Future<void> historicalNavigationJourney(
     await press('Descartar cambios');
     expect(session.period, NavigationPeriod(2026, 1));
     expect(scroll.offset, closeTo(offset, 1));
-    expect(session.context.focus, isNull);
+    expect(session.context.focus, annualOrigin.focus);
     expect(tester.widget<TextButton>(detail).focusNode!.hasFocus, isTrue);
     await tap(detail);
     await tester.enterText(find.byKey(const Key('budget-period')), '2026-02');
@@ -249,12 +250,12 @@ Future<void> historicalNavigationJourney(
     await settle();
     expect(session.period, NavigationPeriod(2026, 1));
     expect(scroll.offset, closeTo(offset, 1));
-    expect(session.context.focus, isNull);
+    expect(session.context.focus, annualOrigin.focus);
     await press('Mes siguiente');
     expect(session.period, NavigationPeriod(2026, 1));
     expect(find.text('Periodo de consulta: 2026-02'), findsOneWidget);
     expect(scroll.offset, 0);
-    expect(session.context.focus, isNull);
+    expect(session.context.focus, annualOrigin.focus);
     expect((await io(data.database.readState)).revision, before.revision + 2);
 
     // Una sesión nueva vuelve a Estado/Madrid incluso sobre el mismo SQLite.

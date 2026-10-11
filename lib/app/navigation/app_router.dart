@@ -120,11 +120,13 @@ abstract final class AppRouter {
         pendingAvailable: pendingMovements != null && categories != null,
         navigationSession: navigationSession,
         annualBuilder: annualBudgetBuilder,
-        annualManagement: (origin) => _ManagementMenu(
+        annualManagement: (origin, canLeave, refresh) => _ManagementMenu(
           categoriesAvailable: categories != null,
           wealthAvailable: wealth != null,
           pendingAvailable: pendingMovements != null && categories != null,
           origin: origin,
+          beforeOpen: canLeave,
+          onReturned: refresh,
         ),
       );
     } else if (uri?.path == AppRoutes.pendingMovements) {
@@ -975,6 +977,7 @@ class _ManagementMenu extends StatelessWidget {
     this.onOpen,
     this.origin,
     this.onReturned,
+    this.beforeOpen,
   });
   final bool categoriesAvailable;
   final bool wealthAvailable;
@@ -982,10 +985,13 @@ class _ManagementMenu extends StatelessWidget {
   final Future<void> Function(String path)? onOpen;
   final String Function()? origin;
   final Future<void> Function()? onReturned;
+  final Future<bool> Function()? beforeOpen;
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     tooltip: 'Gestión',
     onSelected: (value) async {
+      if (beforeOpen != null && !await beforeOpen!()) return;
+      if (!context.mounted) return;
       final source =
           origin?.call() ??
           ModalRoute.of(context)?.settings.name ??

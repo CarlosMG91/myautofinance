@@ -1,4 +1,5 @@
 import '../domain/budget_management.dart';
+import '../domain/annual_budget_query.dart';
 import '../domain/budget_list_query.dart';
 import '../domain/budget_proposal_calculator.dart';
 import '../domain/budget_proposal_saver.dart';
@@ -14,6 +15,7 @@ class BudgetSource {
     this.proposalCalculator,
     this.proposalSaver,
     this.entries,
+    this.annual,
   });
   final MonthlyBudgetQuery query;
   final BudgetManagement management;
@@ -22,6 +24,7 @@ class BudgetSource {
   final BudgetProposalCalculator? proposalCalculator;
   final BudgetProposalSaver? proposalSaver;
   final BudgetListReader? entries;
+  final AnnualBudgetQuery? annual;
 }
 
 typedef BudgetLoader = Future<BudgetSource> Function();

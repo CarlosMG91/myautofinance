@@ -2,6 +2,7 @@ import '../features/budget/budget.dart';
 import '../features/budget/presentation/budget_source.dart';
 import '../features/movements/movements.dart';
 import 'category_management_factory.dart';
+import 'annual_budget_query_factory.dart';
 import 'budget_proposal_factory.dart';
 import 'monthly_budget_query_factory.dart';
 import 'data/sqlite/local_database.dart';
@@ -12,6 +13,10 @@ BudgetSource createBudgetSource(
   LocalDatabase database,
   CategoryReadInvalidation invalidation,
 ) => BudgetSource(
+  annual: createAnnualBudgetQuery(
+    database: database,
+    invalidation: invalidation,
+  ),
   query: createMonthlyBudgetQuery(
     database: database,
     invalidation: invalidation,

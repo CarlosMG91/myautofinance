@@ -48,7 +48,12 @@ class BudgetRoute extends StatefulWidget {
   final bool pendingAvailable;
   final NavigationSession? navigationSession;
   final AnnualBudgetBuilder? annualBuilder;
-  final Widget Function(String Function() origin)? annualManagement;
+  final Widget Function(
+    String Function() origin,
+    Future<bool> Function() canLeave,
+    Future<void> Function() refresh,
+  )?
+  annualManagement;
   @override
   State<BudgetRoute> createState() => _BudgetRouteState();
 }

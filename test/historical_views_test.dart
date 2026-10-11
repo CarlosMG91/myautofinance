@@ -401,6 +401,7 @@ void main() {
       await boot(tester);
       await tap(tester, find.byKey(const ValueKey('destination-budget')));
       await tap(tester, find.text('Captura mensual'));
+      final annualOrigin = session.context;
       final row = find.byKey(ValueKey(ids.last));
       final detail = find.descendant(
         of: row,
@@ -419,8 +420,8 @@ void main() {
       final offset = scroll.offset;
       expect(offset, greaterThan(0));
       await tap(tester, detail);
-      expect(session.context.scrollOffset, 0);
-      expect(session.context.focus, isNull);
+      expect(session.context.scrollOffset, annualOrigin.scrollOffset);
+      expect(session.context.focus, annualOrigin.focus);
       await tap(tester, find.text('Cancelar'));
       expect(session.period, NavigationPeriod(2026, 1));
       expect(scroll.offset, closeTo(offset, 1));
@@ -443,7 +444,7 @@ void main() {
       await tap(tester, find.text('Guardar partida'));
       expect(session.period, NavigationPeriod(2026, 1));
       expect(scroll.offset, closeTo(offset, 1));
-      expect(session.context.focus, isNull);
+      expect(session.context.focus, annualOrigin.focus);
       expect(find.text('Ver mes'), findsOneWidget);
       await tap(tester, find.text('Ver mes'));
       expect(session.period, NavigationPeriod(2026, 2));
@@ -454,7 +455,7 @@ void main() {
       await tap(tester, find.text('Mes siguiente'));
       expect(session.period, NavigationPeriod(2026, 1));
       expect(scroll.offset, 0);
-      expect(session.context.focus, isNull);
+      expect(session.context.focus, annualOrigin.focus);
     },
   );
 

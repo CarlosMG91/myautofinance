@@ -15,6 +15,7 @@ class PrimaryNavigation extends StatelessWidget {
     this.actions = const [],
     this.scrollController,
     this.wrapHeader = false,
+    this.beforeNavigate,
   });
 
   final NavigationSession session;
@@ -23,6 +24,7 @@ class PrimaryNavigation extends StatelessWidget {
   final List<Widget> actions;
   final ScrollController? scrollController;
   final bool wrapHeader;
+  final Future<bool> Function()? beforeNavigate;
 
   static const labels = {
     SessionDestination.status: 'Estado',
@@ -66,7 +68,12 @@ class PrimaryNavigation extends StatelessWidget {
                     key: ValueKey('destination-${entry.key.name}'),
                     onPressed: session.context.destination == entry.key
                         ? null
-                        : () {
+                        : () async {
+                            if (beforeNavigate != null &&
+                                !await beforeNavigate!()) {
+                              return;
+                            }
+                            if (!context.mounted) return;
                             final next = NavigationContext(
                               destination: entry.key,
                               period: session.period,
