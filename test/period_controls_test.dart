@@ -295,12 +295,23 @@ void main() {
         expect(find.text('Sin dato: falta foto patrimonial'), findsOneWidget);
         await tap(tester, find.widgetWithText(TextButton, 'Presupuesto'));
         await settle(tester);
-        expect(session.context.view, PeriodView.monthly);
+        expect(session.context.view, PeriodView.annual);
         expect(find.byType(PeriodControls), findsOneWidget);
-        expect(find.text('Mes siguiente'), findsOneWidget);
+        expect(find.text('Año siguiente'), findsOneWidget);
+        await tap(tester, find.text('Captura mensual'));
+        await settle(tester);
+        expect(find.byType(PeriodControls), findsOneWidget);
         expect(find.text('Total mensual: Sin presupuesto'), findsOneWidget);
         await tap(tester, find.text('Mes anterior'));
         await settle(tester);
+        expect(session.period, NavigationPeriod(2031, 1));
+        expect(find.text('Periodo de consulta: 2030-12'), findsOneWidget);
+        await tap(tester, find.text('Volver a Presupuesto anual'));
+        await settle(tester);
+        expect(session.period, NavigationPeriod(2031, 1));
+        await tap(tester, find.text('Año anterior'));
+        await settle(tester);
+        await chooseMonth(tester, 'diciembre');
         expect(session.period, NavigationPeriod(2030, 12));
         await tap(tester, find.widgetWithText(TextButton, 'Real'));
         expect(session.context.annualPeriod.focusedMonth, 12);
@@ -314,6 +325,8 @@ void main() {
         await boot(tester);
         final revision = (await tester.runAsync(db.readState))!.revision;
         await tap(tester, find.byKey(const ValueKey('destination-budget')));
+        await settle(tester);
+        await tap(tester, find.text('Captura mensual'));
         await settle(tester);
         final cell = find.descendant(
           of: find.byKey(ValueKey(category.node.id)),
@@ -367,7 +380,8 @@ void main() {
         await tap(tester, find.text('Mes siguiente'));
         await tap(tester, find.text('Descartar cambios'));
         await settle(tester);
-        expect(session.period, NavigationPeriod(2026, 2));
+        expect(session.period, NavigationPeriod(2026, 1));
+        expect(find.text('Periodo de consulta: 2026-02'), findsOneWidget);
         expect(find.byKey(const Key('budget-cell-input')), findsNothing);
         expect((await tester.runAsync(db.readState))!.revision, revision);
       },

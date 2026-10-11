@@ -21,6 +21,9 @@ class MonthlyBudgetScreen extends StatefulWidget {
     this.periodControls,
     this.onOrigin,
     this.onProposal,
+    this.onReturn,
+    this.initialScrollOffset = 0,
+    this.initialFocus,
   });
   final BudgetLoader load;
   final BudgetMonth month;
@@ -40,6 +43,9 @@ class MonthlyBudgetScreen extends StatefulWidget {
   periodControls;
   final void Function(double offset, String? focus)? onOrigin;
   final Future<void> Function(BudgetMonth month)? onProposal;
+  final VoidCallback? onReturn;
+  final double initialScrollOffset;
+  final String? initialFocus;
   @override
   State<MonthlyBudgetScreen> createState() => _MonthlyBudgetScreenState();
 }
@@ -63,6 +69,7 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
   bool _changingPeriod = false;
   String? _originFocus;
   int _request = 0;
+  bool _restoringOrigin = true;
   @override
   bool get dirty =>
       _draft != null &&
@@ -74,6 +81,7 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
   void initState() {
     super.initState();
     _month = widget.month;
+    _originFocus = widget.initialFocus;
     _year.text = _month.value.substring(0, 4);
     _scroll.addListener(_publishOrigin);
     _read();
@@ -100,7 +108,11 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
   Future<void> _read({double? restoreOffset}) async {
     final request = ++_request;
     final month = _month;
-    final offset = restoreOffset ?? (_scroll.hasClients ? _scroll.offset : 0.0);
+    final offset =
+        restoreOffset ??
+        (_restoringOrigin
+            ? widget.initialScrollOffset
+            : (_scroll.hasClients ? _scroll.offset : 0.0));
     setState(() {
       _loading = true;
       _readError = null;
@@ -133,6 +145,15 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && request == _request && _scroll.hasClients) {
             _scroll.jumpTo(offset.clamp(0, _scroll.position.maxScrollExtent));
+            if (_restoringOrigin && _readError == null) {
+              _restoringOrigin = false;
+              final focus = widget.initialFocus == 'budget-proposal'
+                  ? _proposalFocus
+                  : widget.initialFocus == 'new-budget'
+                  ? _newFocus
+                  : _detailFocus[widget.initialFocus];
+              if (focus?.context != null) focus!.requestFocus();
+            }
           }
         });
       }
@@ -237,6 +258,7 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
       return false;
     }
     _clear();
+    _restoringOrigin = false;
     _changingPeriod = true;
     _originFocus = null;
     if (_scroll.hasClients) _scroll.jumpTo(0);
@@ -444,6 +466,7 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
         child: Scaffold(
           appBar: AppBar(
             title: const Text('Presupuesto mensual'),
+            automaticallyImplyLeading: false,
             actions: [
               widget.management(_month, _read, () async {
                 if (locked || !await discard() || !mounted) return false;
@@ -477,14 +500,21 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (widget.onReturn != null)
+                          TextButton(
+                            onPressed: locked
+                                ? null
+                                : () => leave(widget.onReturn!),
+                            child: const Text('Volver a Presupuesto anual'),
+                          ),
+                        if (widget.periodControls != null)
+                          widget.periodControls!(_month, _change),
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            if (widget.periodControls != null)
-                              widget.periodControls!(_month, _change)
-                            else ...[
+                            if (widget.periodControls == null) ...[
                               SizedBox(
                                 width: 120,
                                 child: TextField(

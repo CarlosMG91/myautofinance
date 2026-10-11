@@ -2,6 +2,7 @@ import '../../features/movements/movements.dart';
 import '../../features/wealth/wealth.dart' show Month;
 import 'app_routes.dart';
 import 'monthly_status_origin.dart';
+import 'budget_origin.dart';
 
 /// Serialización de app; los informes solo necesitan MovementListQuery y un
 /// callback inyectado. No acceden a controladores ni adaptadores de movimientos.
@@ -108,6 +109,7 @@ abstract final class MovementLinks {
         uri.hasFragment ||
         ![
           AppRoutes.home,
+          AppRoutes.monthlyBudget,
           ...AppRoutes.destinations.map((d) => d.path),
         ].contains(uri.path)) {
       throw const MovementFailure('Origen de navegación inválido.');
@@ -115,6 +117,7 @@ abstract final class MovementLinks {
     if (uri.path == AppRoutes.monthlyStatus && uri.hasQuery) {
       MonthlyStatusOrigin.parse(route);
     }
+    if (uri.path == AppRoutes.monthlyBudget) BudgetOrigin.parse(route);
     return route;
   }
 }

@@ -92,7 +92,8 @@ Future<void> historicalNavigationJourney(
     expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
 
     await destination('Presupuesto');
-    expect(session.context.view, PeriodView.monthly);
+    expect(session.context.view, PeriodView.annual);
+    await press('Captura mensual');
     expect(find.text('Total mensual: Sin presupuesto'), findsOneWidget);
     await press('Mes anterior');
     expect(find.text('Total mensual: −123,00 €'), findsOneWidget);
@@ -124,6 +125,7 @@ Future<void> historicalNavigationJourney(
     }
     await year('2035');
     expect(session.period, NavigationPeriod(2035, 1));
+    await press('Captura mensual');
     expect(find.text('Total mensual: Sin presupuesto'), findsOneWidget);
     await destination('Patrimonio');
     expect(find.text('Sin dato: falta foto patrimonial'), findsOneWidget);
@@ -200,6 +202,7 @@ Future<void> historicalNavigationJourney(
 
     // Partida fuera de mes: borrador protegido y posición/foco del origen.
     await destination('Presupuesto');
+    await press('Captura mensual');
     final detail = find.descendant(
       of: find.byKey(ValueKey(data.focusCategoryId)),
       matching: find.widgetWithText(TextButton, 'Abrir alta'),
@@ -228,7 +231,7 @@ Future<void> historicalNavigationJourney(
     await press('Descartar cambios');
     expect(session.period, NavigationPeriod(2026, 1));
     expect(scroll.offset, closeTo(offset, 1));
-    expect(session.context.focus, data.focusCategoryId);
+    expect(session.context.focus, isNull);
     expect(tester.widget<TextButton>(detail).focusNode!.hasFocus, isTrue);
     await tap(detail);
     await tester.enterText(find.byKey(const Key('budget-period')), '2026-02');
@@ -246,9 +249,10 @@ Future<void> historicalNavigationJourney(
     await settle();
     expect(session.period, NavigationPeriod(2026, 1));
     expect(scroll.offset, closeTo(offset, 1));
-    expect(session.context.focus, data.focusCategoryId);
+    expect(session.context.focus, isNull);
     await press('Mes siguiente');
-    expect(session.period, NavigationPeriod(2026, 2));
+    expect(session.period, NavigationPeriod(2026, 1));
+    expect(find.text('Periodo de consulta: 2026-02'), findsOneWidget);
     expect(scroll.offset, 0);
     expect(session.context.focus, isNull);
     expect((await io(data.database.readState)).revision, before.revision + 2);

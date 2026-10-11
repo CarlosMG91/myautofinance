@@ -114,7 +114,7 @@ void main() {
             localizationsDelegates: AppRegional.delegates,
             onGenerateInitialRoutes: (_) => [
               AppRouter.generateRoute(
-                const RouteSettings(name: '/presupuesto?a=2026&m=01'),
+                const RouteSettings(name: '/presupuesto/mensual?a=2026&m=01'),
                 budgets: () async => source,
               ),
             ],

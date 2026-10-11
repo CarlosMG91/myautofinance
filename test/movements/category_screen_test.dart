@@ -128,7 +128,7 @@ void main() {
     for (final destination in AppRoutes.destinations) {
       final navigator = tester.state<NavigatorState>(find.byType(Navigator));
       final origin =
-          '${destination.path}?a=2026&m=01&rama=${salary.node.id}&alcance=rama&filtro=retencion';
+          '${destination.path}?a=2026&m=01&rama=${salary.node.id}&alcance=rama&${destination.path == AppRoutes.budget ? 'abiertas=${salary.node.id}' : 'filtro=retencion'}';
       navigator.pushNamed(origin);
       await tester.pumpAndSettle();
       await tap(tester, 'Gestión');

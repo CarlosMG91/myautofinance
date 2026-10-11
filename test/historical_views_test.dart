@@ -167,6 +167,7 @@ void main() {
       expect(find.text('Sin dato: falta foto patrimonial'), findsOneWidget);
       expect(find.text('Cuenta cerrada sintética'), findsNothing);
       await tap(tester, find.widgetWithText(TextButton, 'Presupuesto'));
+      await tap(tester, find.text('Captura mensual'));
       expect(find.text('Total mensual: Sin presupuesto'), findsOneWidget);
       await tap(tester, find.text('Mes anterior'));
       expect(find.text('Total mensual: −123,00 €'), findsOneWidget);
@@ -291,7 +292,7 @@ void main() {
           return budget;
         },
       );
-      nav(tester).pushNamed('/presupuesto');
+      nav(tester).pushNamed('/presupuesto/mensual');
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Consultando presupuesto…'), findsOneWidget);
@@ -299,11 +300,11 @@ void main() {
       expect(find.text('Total mensual: −123,00 €'), findsOneWidget);
       gate.complete(budget);
       await settle(tester);
-      expect(session.period, NavigationPeriod(2026, 2));
+      expect(session.period, NavigationPeriod(2026, 1));
       expect(find.text('Total mensual: 0,00 €'), findsNothing);
       fail = true;
       await tap(tester, find.text('Mes siguiente'));
-      expect(session.period, NavigationPeriod(2026, 3));
+      expect(session.period, NavigationPeriod(2026, 1));
       expect(find.textContaining('Total mensual:'), findsNothing);
       expect(find.text('Reintentar'), findsOneWidget);
     },
@@ -399,6 +400,7 @@ void main() {
       }
       await boot(tester);
       await tap(tester, find.byKey(const ValueKey('destination-budget')));
+      await tap(tester, find.text('Captura mensual'));
       final row = find.byKey(ValueKey(ids.last));
       final detail = find.descendant(
         of: row,
@@ -417,8 +419,8 @@ void main() {
       final offset = scroll.offset;
       expect(offset, greaterThan(0));
       await tap(tester, detail);
-      expect(session.context.scrollOffset, closeTo(offset, 1));
-      expect(session.context.focus, ids.last);
+      expect(session.context.scrollOffset, 0);
+      expect(session.context.focus, isNull);
       await tap(tester, find.text('Cancelar'));
       expect(session.period, NavigationPeriod(2026, 1));
       expect(scroll.offset, closeTo(offset, 1));
@@ -441,7 +443,7 @@ void main() {
       await tap(tester, find.text('Guardar partida'));
       expect(session.period, NavigationPeriod(2026, 1));
       expect(scroll.offset, closeTo(offset, 1));
-      expect(session.context.focus, ids.last);
+      expect(session.context.focus, isNull);
       expect(find.text('Ver mes'), findsOneWidget);
       await tap(tester, find.text('Ver mes'));
       expect(session.period, NavigationPeriod(2026, 2));
@@ -450,7 +452,7 @@ void main() {
       expect(session.period, NavigationPeriod(2026, 1));
       expect(scroll.offset, closeTo(offset, 1));
       await tap(tester, find.text('Mes siguiente'));
-      expect(session.period, NavigationPeriod(2026, 2));
+      expect(session.period, NavigationPeriod(2026, 1));
       expect(scroll.offset, 0);
       expect(session.context.focus, isNull);
     },

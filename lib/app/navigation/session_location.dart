@@ -2,6 +2,7 @@ import 'navigation_context.dart';
 import 'navigation_period.dart';
 import 'navigation_session.dart';
 import '../../features/movements/movements.dart' show MovementCategoryScope;
+import 'budget_origin.dart';
 
 /// Resolución sin efectos: un error nunca cambia la sesión ni consulta datos.
 sealed class SessionLocationResult {
@@ -73,6 +74,28 @@ abstract final class SessionLocation {
           : m == null
           ? session.periodForYear(int.parse(a), effectiveView)
           : NavigationPeriod(int.parse(a), int.parse(m));
+      if (destination == SessionDestination.budget) {
+        return ValidSessionLocation(
+          BudgetOrigin.parse(
+            uri
+                .replace(
+                  queryParameters: {
+                    for (final entry in p.entries)
+                      if (entry.key != 'c' && entry.key != 'alcance')
+                        entry.key: entry.value,
+                    if (p['rama'] != null || p['c'] != null)
+                      'rama': (p['rama'] ?? p['c'])!,
+                    'alcance': scope == MovementCategoryScope.direct
+                        ? 'directo'
+                        : 'rama',
+                    'a': period.year.toString().padLeft(4, '0'),
+                    'm': period.month.toString().padLeft(2, '0'),
+                  },
+                )
+                .toString(),
+          ).context,
+        );
+      }
       return ValidSessionLocation(
         NavigationContext(
           destination: destination,

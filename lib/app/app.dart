@@ -15,6 +15,7 @@ import '../features/synchronization/presentation/drive_controller.dart';
 import 'modules.dart';
 import 'navigation/app_router.dart';
 import 'navigation/app_routes.dart';
+import 'navigation/annual_budget_navigation.dart';
 import 'navigation/navigation_session.dart';
 import 'navigation/navigation_session_scope.dart';
 import 'navigation/session_location.dart';
@@ -35,6 +36,7 @@ class AutofinanceApp extends StatefulWidget {
     this.movements,
     this.pendingMovements,
     this.budgets,
+    this.annualBudgetBuilder,
     this.monthlyStatus,
     this.imports,
     this.csvSelector,
@@ -53,6 +55,7 @@ class AutofinanceApp extends StatefulWidget {
   final MovementListLoader? movements;
   final PendingMovementLoader? pendingMovements;
   final BudgetLoader? budgets;
+  final AnnualBudgetBuilder? annualBudgetBuilder;
   final MonthlyStatusLoader? monthlyStatus;
   final ImportServicesLoader? imports;
   final LocalCsvSelector? csvSelector;
@@ -78,11 +81,7 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
     _navigation =
         widget.navigationSession ??
         NavigationSession(clock: widget.navigationClock);
-    _navigationObserver = NavigationSessionObserver(
-      _navigation,
-      monthlyBudget:
-          widget.budgets != null || widget.localSession?.budgets != null,
-    );
+    _navigationObserver = NavigationSessionObserver(_navigation);
   }
 
   @override
@@ -165,6 +164,7 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
                 widget.pendingMovements ??
                 widget.localSession?.pendingMovements,
             budgets: widget.budgets ?? widget.localSession?.budgets,
+            annualBudgetBuilder: widget.annualBudgetBuilder,
             monthlyStatus:
                 widget.monthlyStatus ?? widget.localSession?.monthlyStatus,
             imports: widget.imports ?? widget.localSession?.imports,
@@ -183,6 +183,7 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
           pendingMovements:
               widget.pendingMovements ?? widget.localSession?.pendingMovements,
           budgets: widget.budgets ?? widget.localSession?.budgets,
+          annualBudgetBuilder: widget.annualBudgetBuilder,
           monthlyStatus:
               widget.monthlyStatus ?? widget.localSession?.monthlyStatus,
           imports: widget.imports ?? widget.localSession?.imports,

@@ -89,8 +89,9 @@ Future<void> budgetLifecycleJourney(
     await settle();
   }
 
-  Future<void> month(int number) =>
-      route('/presupuesto?a=2026&m=${number.toString().padLeft(2, '0')}');
+  Future<void> month(int number) => route(
+    '/presupuesto/mensual?a=2026&m=${number.toString().padLeft(2, '0')}',
+  );
   Future<void> open(String id, {int origin = 1}) => route(
     '/presupuesto/partidas/$id?a=2026&m=${origin.toString().padLeft(2, '0')}',
   );

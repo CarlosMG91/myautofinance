@@ -5,6 +5,7 @@ import 'import_route.dart';
 import '../../features/importing/importing.dart' show LocalCsvSelector;
 import '../../features/importing/presentation/import_controller.dart';
 import 'budget_route.dart';
+import 'annual_budget_navigation.dart';
 import 'monthly_status_route.dart';
 import '../../features/monthly_status/presentation/monthly_status_screen.dart';
 import '../../features/budget/presentation/budget_source.dart';
@@ -51,6 +52,7 @@ abstract final class AppRouter {
     MovementListLoader? movements,
     PendingMovementLoader? pendingMovements,
     BudgetLoader? budgets,
+    AnnualBudgetBuilder? annualBudgetBuilder,
     MonthlyStatusLoader? monthlyStatus,
     ImportServicesLoader? imports,
     LocalCsvSelector? csvSelector,
@@ -63,21 +65,18 @@ abstract final class AppRouter {
     NavigationContext? invalidOrigin;
     if (navigationSession != null &&
         SessionDestination.fromPath(uri?.path ?? '') != null) {
-      final result = SessionLocation.resolve(
-        settings.name!,
-        navigationSession,
-        view: uri?.path == AppRoutes.budget && budgets != null
-            ? PeriodView.monthly
-            : null,
-      );
+      final result = SessionLocation.resolve(settings.name!, navigationSession);
       if (result is InvalidSessionLocation) {
         invalidOrigin = result.origin;
       } else {
+        final selected = (result as ValidSessionLocation).context;
         destinationSettings = RouteSettings(
-          name: SessionLocation.encode(
-            (result as ValidSessionLocation).context,
-          ),
-          arguments: settings.arguments,
+          name: SessionLocation.encode(selected),
+          arguments:
+              settings.arguments ??
+              (selected.destination == SessionDestination.budget
+                  ? selected
+                  : null),
         );
       }
     }
@@ -120,6 +119,13 @@ abstract final class AppRouter {
         importsAvailable: imports != null,
         pendingAvailable: pendingMovements != null && categories != null,
         navigationSession: navigationSession,
+        annualBuilder: annualBudgetBuilder,
+        annualManagement: (origin) => _ManagementMenu(
+          categoriesAvailable: categories != null,
+          wealthAvailable: wealth != null,
+          pendingAvailable: pendingMovements != null && categories != null,
+          origin: origin,
+        ),
       );
     } else if (uri?.path == AppRoutes.pendingMovements) {
       page = pendingMovements == null || categories == null

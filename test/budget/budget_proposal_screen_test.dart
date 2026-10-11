@@ -180,9 +180,7 @@ void main() {
             child: child!,
           ),
         ),
-        navigatorObservers: [
-          NavigationSessionObserver(session, monthlyBudget: true),
-        ],
+        navigatorObservers: [NavigationSessionObserver(session)],
         onGenerateInitialRoutes: (_) => [
           AppRouter.generateRoute(
             RouteSettings(name: route),
@@ -522,7 +520,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await settle(tester);
       await tap(tester, find.text('Descartar cambios'));
-      expect(find.text('Presupuesto mensual'), findsOneWidget);
+      expect(find.text('Presupuesto anual'), findsOneWidget);
       expect(session.period, NavigationPeriod(2026, 4));
     },
   );
@@ -530,7 +528,8 @@ void main() {
   testWidgets(
     'Entrada mensual, Escape y retorno conservan periodo común y foco',
     (tester) async {
-      await boot(tester, route: '/presupuesto?a=2026&m=04');
+      await session.selectPeriod(NavigationPeriod(2026, 4));
+      await boot(tester, route: '/presupuesto/mensual?a=2026&m=04');
       await tap(tester, find.text('Proponer año siguiente'));
       expect(session.period, NavigationPeriod(2026, 4));
       await generate(tester);

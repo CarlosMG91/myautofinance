@@ -3,6 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'navigation_context.dart';
 import 'navigation_session.dart';
 import 'session_location.dart';
+import 'budget_origin.dart';
+import 'app_routes.dart';
 
 /// Solo app importa este acceso. Los módulos reciben periodo/callbacks por
 /// constructor para conservar el grafo de arquitectura existente.
@@ -25,9 +27,8 @@ class NavigationSessionScope extends InheritedNotifier<NavigationSession> {
 /// Publicar una ruta de detalle no cambia el periodo común. Al hacer pop de
 /// una ruta principal se recupera su contexto, no el default del reloj.
 class NavigationSessionObserver extends NavigatorObserver {
-  NavigationSessionObserver(this.session, {this.monthlyBudget = false});
+  NavigationSessionObserver(this.session);
   final NavigationSession session;
-  final bool monthlyBudget;
   final Map<Route<dynamic>, NavigationContext> _origins = {};
 
   void _activate(Route<dynamic>? route) {
@@ -38,17 +39,35 @@ class NavigationSessionObserver extends NavigatorObserver {
       return;
     }
     final uri = Uri.tryParse(route.settings.name ?? '');
+    // «Ver mes» es una elección explícita; la captura normal sigue secundaria.
+    final explicit = route.settings.arguments;
+    if (uri?.path == AppRoutes.monthlyBudget && explicit is NavigationContext) {
+      try {
+        final p = uri!.queryParameters;
+        if (p.keys.any((key) => !const {'a', 'm'}.contains(key)) ||
+            uri.queryParametersAll.values.any((values) => values.length != 1)) {
+          return;
+        }
+        final selected = BudgetOrigin.parse(
+          uri.replace(queryParameters: {'a': p['a']!, 'm': p['m']!}).toString(),
+        );
+        if (explicit.destination != SessionDestination.budget ||
+            explicit.period != selected.context.period ||
+            explicit.view != PeriodView.annual) {
+          return;
+        }
+        _origins[route] = explicit;
+        session.setContext(explicit, deferNotification: true);
+      } catch (_) {
+        // La ruta inválida no puede alterar el origen de sesión.
+      }
+      return;
+    }
     final destination = uri == null
         ? null
         : SessionDestination.fromPath(uri.path);
     if (destination == null) return;
-    final result = SessionLocation.resolve(
-      route.settings.name!,
-      session,
-      view: destination == SessionDestination.budget && monthlyBudget
-          ? PeriodView.monthly
-          : null,
-    );
+    final result = SessionLocation.resolve(route.settings.name!, session);
     if (result is ValidSessionLocation) {
       final argument = route.settings.arguments;
       final context =
@@ -67,7 +86,7 @@ class NavigationSessionObserver extends NavigatorObserver {
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    if (previousRoute != null && _origins.containsKey(previousRoute)) {
+    if (previousRoute != null) {
       _origins[previousRoute] = session.context;
     }
     _activate(route);

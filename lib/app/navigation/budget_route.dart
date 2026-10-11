@@ -20,6 +20,12 @@ import 'movement_list_route.dart';
 import 'budget_links.dart';
 import 'budget_list_route.dart';
 import 'budget_editor_origin.dart';
+import 'budget_origin.dart';
+import 'annual_budget_route.dart';
+import 'annual_budget_navigation.dart';
+import 'navigation_context.dart';
+import 'navigation_period.dart';
+import 'session_location.dart';
 export 'budget_editor_origin.dart';
 import '../../features/wealth/wealth.dart' show Month;
 
@@ -32,6 +38,8 @@ class BudgetRoute extends StatefulWidget {
     this.importsAvailable = false,
     this.pendingAvailable = false,
     this.navigationSession,
+    this.annualBuilder,
+    this.annualManagement,
   });
   final RouteSettings settings;
   final BudgetLoader load;
@@ -39,11 +47,20 @@ class BudgetRoute extends StatefulWidget {
   final bool importsAvailable;
   final bool pendingAvailable;
   final NavigationSession? navigationSession;
+  final AnnualBudgetBuilder? annualBuilder;
+  final Widget Function(String Function() origin)? annualManagement;
   @override
   State<BudgetRoute> createState() => _BudgetRouteState();
 }
 
 class _BudgetRouteState extends State<BudgetRoute> {
+  NavigationSession? _monthlySession;
+  @override
+  void dispose() {
+    _monthlySession?.dispose();
+    super.dispose();
+  }
+
   static const _labels = {
     '/estado': 'Estado',
     '/patrimonio': 'Patrimonio',
@@ -53,13 +70,40 @@ class _BudgetRouteState extends State<BudgetRoute> {
   };
   String _period(BudgetMonth month) =>
       'a=${month.value.substring(0, 4)}&m=${month.value.substring(5, 7)}';
+  NavigationContext _annualContext(Uri uri) {
+    final now = madridMonth(DateTime.now());
+    final session =
+        widget.navigationSession ??
+        NavigationSession(
+          initialContext: NavigationContext(
+            destination: SessionDestination.budget,
+            period: NavigationPeriod.fromMonth(now),
+          ),
+        );
+    try {
+      final result = SessionLocation.resolve(uri.toString(), session);
+      if (result is! ValidSessionLocation) {
+        throw const BudgetFailure('Periodo anual inválido.');
+      }
+      return result.context;
+    } finally {
+      if (widget.navigationSession == null) session.dispose();
+    }
+  }
+
   BudgetMonth _parse(Uri uri) {
     final now = madridMonth(DateTime.now());
+    if (uri.path == AppRoutes.budget) {
+      return _annualContext(uri).period.budgetMonth;
+    }
     if (uri.path == AppRoutes.budgetProposal) {
       if (uri.hasScheme ||
           uri.hasAuthority ||
           uri.hasFragment ||
-          uri.queryParametersAll.values.any((values) => values.length != 1)) {
+          uri.queryParametersAll.values.any((values) => values.length != 1) ||
+          uri.queryParameters.keys.any(
+            (key) => !const {'a', 'm', 'origen'}.contains(key),
+          )) {
         throw const BudgetFailure('Ruta de propuesta inválida.');
       }
       final year = uri.queryParameters['a'];
@@ -81,6 +125,19 @@ class _BudgetRouteState extends State<BudgetRoute> {
             : int.parse(month),
       );
     }
+    if (uri.path == AppRoutes.monthlyBudget &&
+        uri.queryParameters.containsKey('a') &&
+        !uri.queryParameters.containsKey('m')) {
+      final a = uri.queryParameters['a']!;
+      if (!RegExp(r'^[0-9]{4}$').hasMatch(a)) {
+        throw const BudgetFailure('Periodo de captura inválido.');
+      }
+      return BudgetMonth(
+        int.parse(a),
+        widget.navigationSession?.period.month ??
+            int.parse(now.value.substring(5, 7)),
+      );
+    }
     if (uri.queryParameters.containsKey('a') !=
         uri.queryParameters.containsKey('m')) {
       throw const BudgetFailure('Periodo incompleto.');
@@ -91,7 +148,8 @@ class _BudgetRouteState extends State<BudgetRoute> {
       throw const BudgetFailure('Periodo inválido.');
     }
     return a == null
-        ? BudgetMonth.parse(now.value)
+        ? widget.navigationSession?.period.budgetMonth ??
+              BudgetMonth.parse(now.value)
         : BudgetMonth(int.parse(a), int.parse(m!));
   }
 
@@ -99,11 +157,12 @@ class _BudgetRouteState extends State<BudgetRoute> {
   Widget build(BuildContext context) {
     final navigator = Navigator.of(context);
     var fallback = AppRoutes.monthlyStatus;
+    NavigationContext? fallbackContext;
     void back([Object? result]) {
       if (navigator.canPop()) {
         navigator.pop(result);
       } else {
-        navigator.pushReplacementNamed(fallback);
+        navigator.pushReplacementNamed(fallback, arguments: fallbackContext);
       }
     }
 
@@ -120,6 +179,29 @@ class _BudgetRouteState extends State<BudgetRoute> {
       }
       final month = _parse(uri);
       fallback = '${AppRoutes.budget}?${_period(month)}';
+      final returnOrigin = BudgetLinks.origin(uri.toString());
+      if (returnOrigin != null) {
+        fallback = returnOrigin.route;
+        fallbackContext = returnOrigin.context;
+      }
+      if (uri.path == AppRoutes.budget) {
+        final origin = BudgetOrigin(_annualContext(uri));
+        final argument = widget.settings.arguments;
+        final selected =
+            argument is NavigationContext &&
+                argument.destination == SessionDestination.budget &&
+                argument.view == PeriodView.annual &&
+                argument.period == origin.context.period
+            ? BudgetOrigin(argument)
+            : origin;
+        return AnnualBudgetRoute(
+          origin: selected,
+          load: widget.load,
+          session: widget.navigationSession,
+          builder: widget.annualBuilder,
+          management: widget.annualManagement,
+        );
+      }
       if (uri.path == AppRoutes.budgetProposal) {
         return BudgetProposalScreen(
           load: widget.load,
@@ -145,39 +227,83 @@ class _BudgetRouteState extends State<BudgetRoute> {
           },
         );
       }
-      if (uri.path == AppRoutes.budget) {
+      if (uri.path == AppRoutes.monthlyBudget) {
+        if (uri.queryParameters.keys.any(
+          (key) => !const {
+            'a',
+            'm',
+            'origen',
+            'rama',
+            'alcance',
+            'abiertas',
+            'posicion',
+            'foco',
+          }.contains(key),
+        )) {
+          throw const BudgetFailure('Ruta de captura inválida.');
+        }
+        final captureOrigin = BudgetOrigin.parse(
+          uri
+              .replace(
+                queryParameters: {
+                  for (final entry in uri.queryParameters.entries)
+                    if (entry.key != 'origen') entry.key: entry.value,
+                  'a': month.value.substring(0, 4),
+                  'm': month.value.substring(5, 7),
+                },
+              )
+              .toString(),
+        );
+        final local = _monthlySession ??=
+            widget.navigationSession?.secondarySession(captureOrigin.context) ??
+            NavigationSession(initialContext: captureOrigin.context);
         return MonthlyBudgetScreen(
           load: widget.load,
           month: month,
+          onReturn: () => back(),
+          initialScrollOffset: captureOrigin.context.scrollOffset,
+          initialFocus: captureOrigin.context.focus,
           onProposal: (selected) async {
             await navigator.pushNamed(
               '${AppRoutes.budgetProposal}?${_period(selected)}',
             );
           },
-          onOrigin: widget.navigationSession == null
-              ? null
-              : (offset, focus) {
-                  final session = widget.navigationSession!;
-                  session.setContext(
-                    session.context.withPosition(offset, focus),
-                    deferNotification: true,
-                  );
-                },
-          periodControls: widget.navigationSession == null
-              ? null
-              : (selected, change) => PeriodControls(
-                  session: widget.navigationSession!,
-                  beforeChange: (period) => change(period.budgetMonth),
-                ),
+          onOrigin: (offset, focus) {
+            local.setContext(
+              local.context.withPosition(offset, focus),
+              deferNotification: true,
+            );
+          },
+          periodControls: (selected, change) => PeriodControls(
+            session: local,
+            beforeChange: (period) => change(period.budgetMonth),
+          ),
           destinations: _labels,
           onNavigate: (path, selected) => navigator.pushNamedAndRemoveUntil(
             '$path?${_period(selected)}',
             (_) => false,
           ),
           onOpen: (row, selected) async {
+            final query = BudgetListQuery(
+              month: selected,
+              categoryId: row?.categoryId,
+            );
             await navigator.pushNamed(
-              '${AppRoutes.budget}/partidas/${row?.budget?.id ?? 'nueva'}?${_period(selected)}',
-              arguments: BudgetEditorOrigin(selected, row?.categoryId),
+              row?.budget == null
+                  ? BudgetLinks.create(
+                      query,
+                      origin: BudgetOrigin(local.context).route,
+                    )
+                  : BudgetLinks.detail(
+                      row!.budget!.id,
+                      query,
+                      origin: BudgetOrigin(local.context).route,
+                    ),
+              arguments: BudgetEditorOrigin(
+                selected,
+                row?.categoryId,
+                returnOrigin: BudgetOrigin(local.context),
+              ),
             );
           },
           management: (selected, refresh, canOpen) => PopupMenuButton<String>(
@@ -187,25 +313,23 @@ class _BudgetRouteState extends State<BudgetRoute> {
               await navigator.pushNamed(
                 path == AppRoutes.movements
                     ? MovementLinks.management(
-                        '${AppRoutes.budget}?${_period(selected)}',
+                        BudgetOrigin(local.context).route,
                         defaultMonth:
                             widget.navigationSession?.period.civilMonth ??
                             Month.parse(selected.value),
                       )
                     : path,
                 arguments: path == AppRoutes.movements
-                    ? MovementListOrigin(
-                        '${AppRoutes.budget}?${_period(selected)}',
-                      )
+                    ? MovementListOrigin(BudgetOrigin(local.context).route)
                     : path == AppRoutes.pendingMovements
                     ? PendingMovementOrigin(
-                        route: "${AppRoutes.budget}?${_period(selected)}",
+                        route: BudgetOrigin(local.context).route,
                         label:
                             "Volver a Presupuesto, ${selected.value.substring(0, 7)}",
                       )
                     : path == AppRoutes.importCsv
                     ? CsvImportOrigin(
-                        '${AppRoutes.budget}?${_period(selected)}',
+                        BudgetOrigin(local.context).route,
                         'Volver a Presupuesto, ${selected.value.substring(0, 7)}',
                       )
                     : CategoryNavigationContext(
@@ -261,12 +385,21 @@ class _BudgetRouteState extends State<BudgetRoute> {
         MovementSelection([uri.pathSegments.last]);
       }
       if (uri.queryParameters.keys.any(
-        (key) => !const {'a', 'm', 'rama', 'alcance', 'origen'}.contains(key),
+        (key) => !const {
+          'a',
+          'm',
+          'desde',
+          'hasta',
+          'rama',
+          'alcance',
+          'origen',
+        }.contains(key),
       )) {
         throw const BudgetFailure('Ruta de partida inválida.');
       }
       if (uri.queryParameters.containsKey('origen') ||
           uri.queryParameters.containsKey('rama') ||
+          uri.queryParameters.containsKey('desde') ||
           uri.queryParameters.containsKey('alcance')) {
         final query = BudgetLinks.parse(
           uri.replace(path: BudgetLinks.path).toString(),
@@ -275,6 +408,10 @@ class _BudgetRouteState extends State<BudgetRoute> {
           query,
           origin: BudgetLinks.origin(uri.toString())?.route,
         );
+        if (returnOrigin?.context.destination == SessionDestination.budget) {
+          fallback = returnOrigin!.route;
+          fallbackContext = returnOrigin.context;
+        }
       }
       final origin = widget.settings.arguments is BudgetEditorOrigin
           ? widget.settings.arguments as BudgetEditorOrigin
@@ -282,6 +419,10 @@ class _BudgetRouteState extends State<BudgetRoute> {
       if (origin?.listRoute != null) BudgetLinks.parse(origin!.listRoute!);
       final initial = origin?.month ?? month;
       fallback = origin?.listRoute ?? fallback;
+      if (origin?.listRoute == null && origin?.returnOrigin != null) {
+        fallback = origin!.returnOrigin!.route;
+        fallbackContext = origin.returnOrigin!.context;
+      }
       final messenger = ScaffoldMessenger.of(context);
       return BudgetFormScreen(
         load: widget.load,
@@ -314,7 +455,13 @@ class _BudgetRouteState extends State<BudgetRoute> {
                   ? SnackBarAction(
                       label: 'Ver mes',
                       onPressed: () => navigator.pushNamed(
-                        '${AppRoutes.budget}?${_period(saved.data.month)}',
+                        '${AppRoutes.monthlyBudget}?${_period(saved.data.month)}',
+                        arguments: NavigationContext(
+                          destination: SessionDestination.budget,
+                          period: NavigationPeriod.fromMonth(
+                            Month.parse(saved.data.month.value),
+                          ),
+                        ),
                       ),
                     )
                   : null,

@@ -95,6 +95,11 @@ final class NavigationSession extends ChangeNotifier {
   SecondaryNavigationContext openSecondary() =>
       SecondaryNavigationContext(context);
 
+  /// Controles de una captura secundaria: mismo reloj, contexto y memoria
+  /// independientes. Su propietario debe disponer la sesión devuelta.
+  NavigationSession secondarySession(NavigationContext initialContext) =>
+      NavigationSession(clock: _clock, initialContext: initialContext);
+
   Future<bool> returnToOrigin(
     SecondaryNavigationContext detail, {
     NavigationLeaveGuard? guard,

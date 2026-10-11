@@ -8,7 +8,7 @@ import '../../movements/movements.dart' show MovementCategoryScope;
 import 'budget_source.dart';
 import 'budget_ui.dart';
 
-/// Detalle mensual de fuentes originales; usa el editor EP-011 por callback.
+/// Detalle de fuentes originales por mes/rango/año; editor EP-011 por callback.
 class BudgetListScreen extends StatefulWidget {
   const BudgetListScreen({
     super.key,
@@ -110,12 +110,20 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
     final scope = query.unclassified
         ? 'Sin clasificar'
         : query.categoryId == null
-        ? 'Todo el mes'
+        ? 'Todas las categorías'
         : query.scope == MovementCategoryScope.direct
         ? 'Solo el nodo'
         : 'Nodo y descendientes';
     return Scaffold(
-      appBar: AppBar(title: const Text('Partidas del mes')),
+      appBar: AppBar(
+        title: Text(
+          query.isAnnual
+              ? 'Partidas del año'
+              : query.isMonthly
+              ? 'Partidas del mes'
+              : 'Partidas del periodo',
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           controller: _scroll,
@@ -123,7 +131,13 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${query.month.value.substring(0, 7)} · $scope'),
+              Text(
+                '${query.isAnnual
+                    ? query.year
+                    : query.isMonthly
+                    ? query.firstMonth.value.substring(0, 7)
+                    : '${query.firstMonth.value.substring(0, 7)} – ${query.lastMonth.value.substring(0, 7)}'} · $scope',
+              ),
               TextButton(
                 style: actionStyle,
                 onPressed: widget.onReturn,
@@ -162,6 +176,8 @@ class _BudgetListScreenState extends State<BudgetListScreen> {
                             '${entry.category.path}${entry.category.node.archived ? ' · Archivada' : ''}',
                           ),
                           Text(budgetEuro(entry.record.data.amountCents)),
+                          if (!query.isMonthly)
+                            Text(entry.record.data.month.value.substring(0, 7)),
                           Text(entry.record.id),
                           TextButton(
                             style: actionStyle,

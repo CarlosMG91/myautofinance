@@ -108,9 +108,7 @@ void main() {
         locale: AppRegional.locale,
         supportedLocales: AppRegional.supportedLocales,
         localizationsDelegates: AppRegional.delegates,
-        navigatorObservers: [
-          NavigationSessionObserver(session, monthlyBudget: true),
-        ],
+        navigatorObservers: [NavigationSessionObserver(session)],
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: TextScaler.linear(scale)),

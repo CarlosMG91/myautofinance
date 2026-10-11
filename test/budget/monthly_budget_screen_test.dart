@@ -49,7 +49,7 @@ void main() {
     WidgetTester tester, {
     double width = 1440,
     double scale = 1,
-    String route = '/presupuesto?a=2026&m=01',
+    String route = '/presupuesto/mensual?a=2026&m=01',
     BudgetLoader? load,
   }) async {
     tester.view.devicePixelRatio = 1;

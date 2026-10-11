@@ -4,7 +4,7 @@ import '../../features/budget/presentation/budget_source.dart';
 import '../../features/budget/presentation/budget_list_screen.dart';
 import 'budget_links.dart';
 import 'budget_editor_origin.dart';
-import 'monthly_status_origin.dart';
+import 'budget_origin.dart';
 
 class BudgetListRoute extends StatelessWidget {
   const BudgetListRoute({
@@ -17,7 +17,7 @@ class BudgetListRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navigator = Navigator.of(context);
-    MonthlyStatusOrigin? origin;
+    BudgetOrigin? origin;
     void back() {
       if (navigator.canPop()) {
         navigator.pop();
