@@ -13,12 +13,16 @@ final class BudgetOrigin {
       return;
     }
     if (context.destination != SessionDestination.budget ||
-        context.filters.keys.any((key) => key != 'abiertas')) {
+        context.filters.keys.any(
+          (key) => !const {'abiertas', 'meses'}.contains(key),
+        )) {
       throw const BudgetFailure('Origen de presupuesto inválido.');
     }
     if (context.branchId != null) MovementSelection([context.branchId!]);
-    for (final id in (context.filters['abiertas'] ?? '').split(',')) {
-      if (id.isNotEmpty) MovementSelection([id]);
+    for (final key in const ['abiertas', 'meses']) {
+      for (final id in (context.filters[key] ?? '').split(',')) {
+        if (id.isNotEmpty) MovementSelection([id]);
+      }
     }
     if (context.focus != null &&
         (context.focus!.length > 256 ||
@@ -65,6 +69,7 @@ final class BudgetOrigin {
             'rama',
             'alcance',
             'abiertas',
+            'meses',
             'posicion',
             'foco',
           }.contains(key),
@@ -92,7 +97,10 @@ final class BudgetOrigin {
           'directo' => MovementCategoryScope.direct,
           _ => throw const BudgetFailure('Alcance de presupuesto inválido.'),
         },
-        filters: {if (p['abiertas'] != null) 'abiertas': p['abiertas']!},
+        filters: {
+          if (p['abiertas'] != null) 'abiertas': p['abiertas']!,
+          if (p['meses'] != null) 'meses': p['meses']!,
+        },
         scrollOffset: offset,
         focus: p['foco'],
       ),

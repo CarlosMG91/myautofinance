@@ -114,6 +114,7 @@ void main() {
       NavigationSessionScope(
         session: session,
         child: MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.windows),
           locale: AppRegional.locale,
           supportedLocales: AppRegional.supportedLocales,
           localizationsDelegates: AppRegional.delegates,

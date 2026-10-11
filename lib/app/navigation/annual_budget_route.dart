@@ -79,6 +79,10 @@ class _AnnualBudgetRouteState extends State<AnnualBudgetRoute> {
               .split(',')
               .where((s) => s.isNotEmpty)
               .toSet(),
+          initialExpandedMonths: (_origin().context.filters['meses'] ?? '')
+              .split(',')
+              .where((s) => s.isNotEmpty)
+              .toSet(),
           initialScrollOffset: _origin().context.scrollOffset,
           initialFocus: _origin().context.focus,
           shell: (child, canLeave, refresh, scroll) => PrimaryNavigation(
@@ -109,10 +113,14 @@ class _AnnualBudgetRouteState extends State<AnnualBudgetRoute> {
           openProposal: snapshot.data == true
               ? navigation.prepareNextYear
               : null,
-          onOrigin: (expanded, offset, focus) {
+          onOrigin: (expanded, offset, focus, months) {
             final current = _origin().context;
-            final filters = {'abiertas': expanded.join(',')};
+            final filters = {
+              'abiertas': expanded.join(','),
+              if (months.isNotEmpty) 'meses': months.join(','),
+            };
             if (current.filters['abiertas'] == filters['abiertas'] &&
+                current.filters['meses'] == filters['meses'] &&
                 current.scrollOffset == offset &&
                 current.focus == focus) {
               return;

@@ -241,6 +241,7 @@ class _BudgetRouteState extends State<BudgetRoute> {
             'rama',
             'alcance',
             'abiertas',
+            'meses',
             'posicion',
             'foco',
           }.contains(key),

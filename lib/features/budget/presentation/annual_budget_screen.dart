@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../domain/annual_budget_query.dart';
 import '../domain/budget_repository.dart';
+import 'annual_budget_cards.dart';
 import 'budget_source.dart';
 import 'budget_ui.dart';
 
@@ -25,6 +26,7 @@ class AnnualBudgetScreen extends StatefulWidget {
     required this.onOrigin,
     this.openProposal,
     this.initialExpanded = const {},
+    this.initialExpandedMonths = const {},
     this.initialScrollOffset = 0,
     this.initialFocus,
   });
@@ -44,9 +46,15 @@ class AnnualBudgetScreen extends StatefulWidget {
   openCell;
   final Future<void> Function() openCapture;
   final Future<void> Function()? openProposal;
-  final void Function(Set<String> expanded, double offset, String? focus)
+  final void Function(
+    Set<String> expanded,
+    double offset,
+    String? focus,
+    Set<String> months,
+  )
   onOrigin;
   final Set<String> initialExpanded;
+  final Set<String> initialExpandedMonths;
   final double initialScrollOffset;
   final String? initialFocus;
 
@@ -83,6 +91,8 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
   final _header = ScrollController(), _horizontal = ScrollController();
   final _focuses = <String, FocusNode>{};
   late final Set<String> _expanded = {...widget.initialExpanded};
+  late final Set<String> _expandedMonths = {...widget.initialExpandedMonths};
+  bool _restoreFocus = false;
   StreamSubscription<int>? _subscription;
   Object? _subscribedInvalidation;
   bool _loading = true, _syncingScroll = false, _initial = true;
@@ -245,8 +255,9 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
               );
             }
           }
-          if (_initial && _data != null) {
+          if ((_initial || _restoreFocus) && _data != null) {
             _initial = false;
+            _restoreFocus = false;
             final focus = _focuses[_focusToken];
             if (focus?.context != null) focus!.requestFocus();
           }
@@ -269,6 +280,7 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
       {..._expanded},
       _scroll.hasClients ? _scroll.offset : 0,
       position,
+      {..._expandedMonths},
     );
   }
 
@@ -376,6 +388,7 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
     } finally {
       if (mounted) {
         setState(() => _opening = false);
+        _restoreFocus = ModalRoute.of(context)?.isCurrent != false;
         await _read();
       }
     }
@@ -811,68 +824,32 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
     }
   }
 
-  Widget _cards() => Column(
-    children: [
-      for (final row in _visible)
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _category(row),
-                _total(
-                  row.annualTotal,
-                  'total-year-${row.categoryId}',
-                  () => widget.openYear(row.categoryId),
-                ),
-                Text('${_months[widget.focusedMonth - 1]} · Mes enfocado'),
-                _cell(
-                  row,
-                  row.months[widget.focusedMonth - 1],
-                  compact: true,
-                  focused: true,
-                ),
-                ExpansionTile(
-                  title: const Text('Los doce meses'),
-                  maintainState: true,
-                  children: [
-                    for (var m = 0; m < 12; m++)
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(_months[m]),
-                            _cell(row, row.months[m], compact: true),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      Card(
-        child: Column(
-          children: [
-            const Text('Total mensual · solo raíces'),
-            for (var m = 0; m < 12; m++)
-              Column(
-                children: [
-                  Text(_months[m]),
-                  _total(
-                    _data!.months[m],
-                    'total-month-${m + 1}',
-                    () => widget.openMonth(m + 1, null),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    ],
+  Widget _cards() => AnnualBudgetCards(
+    rows: _visible,
+    months: _months,
+    focusedMonth: widget.focusedMonth,
+    expandedMonths: _expandedMonths,
+    onExpandMonths: (id, expanded) {
+      if (expanded) {
+        _expandedMonths.add(id);
+      } else {
+        _expandedMonths.remove(id);
+      }
+      _publish();
+    },
+    category: _category,
+    cell: (row, month, focused) =>
+        _cell(row, row.months[month - 1], compact: true, focused: focused),
+    total: (row) => _total(
+      row.annualTotal,
+      'total-year-${row.categoryId}',
+      () => widget.openYear(row.categoryId),
+    ),
+    monthTotal: (month) => _total(
+      _data!.months[month - 1],
+      'total-month-$month',
+      () => widget.openMonth(month, null),
+    ),
   );
 
   @override
@@ -985,7 +962,8 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
                 ),
               LayoutBuilder(
                 builder: (context, constraints) =>
-                    MediaQuery.sizeOf(context).width < 840 ||
+                    Theme.of(context).platform == TargetPlatform.android ||
+                        MediaQuery.sizeOf(context).width < 840 ||
                         constraints.maxWidth < 600
                     ? _cards()
                     : _matrix(),
