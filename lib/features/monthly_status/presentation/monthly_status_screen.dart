@@ -6,6 +6,7 @@ import '../../budget/budget.dart';
 import '../../movements/movements.dart';
 import '../domain/monthly_figure_detail.dart';
 import '../domain/monthly_status_query.dart';
+import 'monthly_status_cards.dart';
 
 typedef MonthlyStatusLoader = Future<MonthlyStatusQuery> Function();
 
@@ -212,6 +213,11 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
     final month = widget.month.value;
     await action();
     if (!mounted || month != widget.month.value) return;
+    // Una pulsación táctil no mueve necesariamente el foco. El diálogo puede
+    // restaurar el control enfocado antes del toque; volver a la cifra pulsada.
+    _focus = token;
+    _category = category;
+    _scope = scope;
     await _read();
   }
 
@@ -240,7 +246,7 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
         key: ValueKey(key),
         focusNode: _node(key),
         onFocusChange: (focused) {
-          if (focused) {
+          if (focused && !_restoring) {
             _focus = key;
             _category = detail.unclassified
                 ? 'sin-clasificar'
@@ -378,7 +384,7 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
                   minimumSize: Size(48, compact ? 40 : 48),
                 ),
                 onFocusChange: (focused) {
-                  if (!focused) return;
+                  if (!focused || _restoring) return;
                   _focus = '$id:expandir';
                   _category = id;
                   _scope = MovementCategoryScope.branch;
@@ -485,31 +491,36 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Wrap(
-              spacing: 24,
-              runSpacing: 12,
-              children: [
-                for (final (index, label) in [
-                  (0, 'Previsto agregado'),
-                  (2, 'Real agregado'),
-                  (3, 'Diferencia real − previsto'),
-                ])
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(label),
-                      _figures(
-                        'resumen-$index',
-                        'Total del mes',
-                        data.total,
-                        data.total.actualCents,
-                        compact: false,
-                        emphasized: true,
-                      )[index],
-                    ],
-                  ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) => Wrap(
+                spacing: 24,
+                runSpacing: 12,
+                children: [
+                  for (final (index, label) in [
+                    (0, 'Previsto agregado'),
+                    (2, 'Real agregado'),
+                    (3, 'Diferencia real − previsto'),
+                  ])
+                    SizedBox(
+                      width: constraints.maxWidth.clamp(0, 280),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(label),
+                          _figures(
+                            'resumen-$index',
+                            'Total del mes',
+                            data.total,
+                            data.total.actualCents,
+                            compact: false,
+                            emphasized: true,
+                          )[index],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -534,6 +545,7 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
         LayoutBuilder(
           builder: (context, constraints) {
             final table =
+                Theme.of(context).platform != TargetPlatform.android &&
                 constraints.maxWidth >= 700 &&
                 MediaQuery.textScalerOf(context).scale(14) <= 20;
             if (table) {
@@ -569,41 +581,10 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
                 ],
               );
             }
-            return Column(
+            return MonthlyStatusCards(
               key: const ValueKey('monthly-status-cards'),
-              children: [
-                for (final entry in entries(false))
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          entry.first,
-                          Text(
-                            '${widget.month.value.substring(0, 7)} · Rama completa',
-                          ),
-                          const SizedBox(height: 12),
-                          for (var i = 1; i < entry.length; i++)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                  [
-                                    'Previsto agregado',
-                                    'Real directo',
-                                    'Real agregado',
-                                    'Diferencia real − previsto',
-                                  ][i - 1],
-                                ),
-                                entry[i],
-                              ],
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
+              period: widget.month.value.substring(0, 7),
+              entries: entries(false),
             );
           },
         ),
@@ -633,6 +614,7 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
             children: [
               FilledButton(
                 key: const ValueKey('status-add'),
+                style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
                 focusNode: _node('status-add'),
                 onPressed: () => _open(
                   'status-add',
@@ -644,6 +626,9 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
               ),
               OutlinedButton(
                 key: const ValueKey('status-refresh'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                ),
                 focusNode: _node('status-refresh'),
                 onPressed: () =>
                     _open('status-refresh', _category, _scope, () async {}),
@@ -665,6 +650,9 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
                 children: [
                   Text(_error!),
                   OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                    ),
                     onPressed: _read,
                     child: const Text('Reintentar'),
                   ),

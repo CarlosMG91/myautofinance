@@ -28,6 +28,13 @@ import 'package:myautofinance/features/monthly_status/presentation/monthly_statu
 import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/features/wealth/wealth.dart';
 
+void windowsTest(String name, Future<void> Function(WidgetTester) body) =>
+    testWidgets(
+      name,
+      body,
+      variant: TargetPlatformVariant.only(TargetPlatform.windows),
+    );
+
 void main() {
   setUpAll(() async {
     if (!const bool.fromEnvironment('STATUS_CAPTURE')) return;
@@ -193,7 +200,7 @@ void main() {
     await db.close();
   });
 
-  testWidgets(
+  windowsTest(
     'tabla SQLite, tres niveles, padre no prorrateado, cero y detalle directo/rama',
     (tester) async {
       await boot(tester);
@@ -236,7 +243,7 @@ void main() {
     },
   );
 
-  testWidgets(
+  windowsTest(
     'diferencia ofrece fuentes, Escape vuelve y conserva expansión/scroll/foco',
     (tester) async {
       await boot(tester);
@@ -267,7 +274,7 @@ void main() {
     },
   );
 
-  testWidgets(
+  windowsTest(
     'cambiar mes oculta cifras anteriores y descarta loader tardío, error reintentable',
     (tester) async {
       final held = Completer<MonthlyStatusQuery>();
@@ -308,7 +315,7 @@ void main() {
     },
   );
 
-  testWidgets(
+  windowsTest(
     'volver de alta y Gestión refresca, invalidación relee catálogo y conserva ramas',
     (tester) async {
       await boot(tester);
@@ -351,7 +358,7 @@ void main() {
     },
   );
 
-  testWidgets(
+  windowsTest(
     'Windows estrecho y texto 200% usa tarjetas sin perder cifras ni expansión',
     (tester) async {
       await boot(tester, width: 320, scale: 2);
@@ -372,7 +379,7 @@ void main() {
     },
   );
 
-  testWidgets(
+  windowsTest(
     'editar real y presupuesto desde cifras refresca Estado al volver',
     (tester) async {
       await boot(tester);
@@ -400,7 +407,7 @@ void main() {
     },
   );
 
-  testWidgets('total y Sin clasificar abren sus fuentes una sola vez', (
+  windowsTest('total y Sin clasificar abren sus fuentes una sola vez', (
     tester,
   ) async {
     await boot(tester);
@@ -423,7 +430,7 @@ void main() {
     );
   });
 
-  testWidgets(
+  windowsTest(
     'recarga del mismo mes conserva scroll real y foco con filas largas',
     (tester) async {
       for (var i = 0; i < 18; i++) {
@@ -456,7 +463,7 @@ void main() {
     },
   );
 
-  testWidgets('UUID, traslado y archivo mantienen datos y árbol actual', (
+  windowsTest('UUID, traslado y archivo mantienen datos y árbol actual', (
     tester,
   ) async {
     final other = (await categories.create(
@@ -491,7 +498,7 @@ void main() {
     expect(find.text('Movimiento sintético'), findsOneWidget);
   });
 
-  testWidgets(
+  windowsTest(
     'invalidación de restauración resuelve la conexión activa nueva',
     (tester) async {
       LocalDatabase active = db;
@@ -531,7 +538,7 @@ void main() {
     },
   );
 
-  testWidgets('ruta sin pila recupera ramas, posición y foco serializados', (
+  windowsTest('ruta sin pila recupera ramas, posición y foco serializados', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -569,7 +576,7 @@ void main() {
     expect(session.context.filters['abiertas'], '$root,$child');
   });
 
-  testWidgets('totales EP-001 B/C: enero y febrero, sin fotos patrimoniales', (
+  windowsTest('totales EP-001 B/C: enero y febrero, sin fotos patrimoniales', (
     tester,
   ) async {
     final income = (await categories.create(

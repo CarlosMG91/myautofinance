@@ -14,6 +14,7 @@ class PrimaryNavigation extends StatelessWidget {
     required this.child,
     this.actions = const [],
     this.scrollController,
+    this.wrapHeader = false,
   });
 
   final NavigationSession session;
@@ -21,6 +22,7 @@ class PrimaryNavigation extends StatelessWidget {
   final Widget child;
   final List<Widget> actions;
   final ScrollController? scrollController;
+  final bool wrapHeader;
 
   static const labels = {
     SessionDestination.status: 'Estado',
@@ -37,6 +39,22 @@ class PrimaryNavigation extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final desktop = width >= 840;
+        final expandedHeader =
+            wrapHeader &&
+            (!desktop || MediaQuery.textScalerOf(context).scale(24) > 32);
+        final titleStyle = Theme.of(context).textTheme.titleLarge!;
+        final titlePainter = TextPainter(
+          text: TextSpan(text: title, style: titleStyle),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: (width - 32).clamp(1, double.infinity));
+        final headerHeight =
+            titlePainter.height +
+            (actions.isEmpty
+                ? 0
+                : 24 + MediaQuery.textScalerOf(context).scale(20) * 1.4) +
+            16;
+        titlePainter.dispose();
         Widget navigation(bool vertical) {
           final buttons = [
             for (final entry in labels.entries)
@@ -72,7 +90,25 @@ class PrimaryNavigation extends StatelessWidget {
         // El contenido conserva su posición en el árbol al cambiar de tamaño:
         // mantiene entradas, desplazamiento y foco.
         return Scaffold(
-          appBar: AppBar(title: Text(title), actions: actions),
+          appBar: AppBar(
+            automaticallyImplyLeading: !expandedHeader,
+            toolbarHeight: expandedHeader ? headerHeight : null,
+            title: expandedHeader
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: titleStyle,
+                        overflow: TextOverflow.visible,
+                      ),
+                      if (actions.isNotEmpty) Wrap(children: actions),
+                    ],
+                  )
+                : Text(title),
+            actions: expandedHeader ? null : actions,
+          ),
           bottomNavigationBar: desktop
               ? null
               : SafeArea(child: navigation(false)),

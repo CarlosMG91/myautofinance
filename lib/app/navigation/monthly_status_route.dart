@@ -145,6 +145,7 @@ class _MonthlyStatusRouteState extends State<MonthlyStatusRoute> {
           shell: (body, scroll, refresh) => PrimaryNavigation(
             session: _session,
             title: 'Estado del mes',
+            wrapHeader: true,
             scrollController: scroll,
             actions: [widget.management(origin, refresh)],
             child: body,
