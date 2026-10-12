@@ -92,3 +92,24 @@ archivos propios. README, sincronización y prototipos de otras épicas ya estab
 modificados y se excluyen. La calidad del checkout incluye dependencias de
 Drive ajenas aún sin confirmar; no acredita una clonación limpia hasta que su
 ticket las publique. Este ticket no cierra EP-021 ni la verificación E2E MA-TSK-172.
+
+## Revalidación del 2026-10-12
+
+Se revisó el ticket actual en Epic Board y se confirmó que MA-TSK-166/167/170
+siguen completados. La implementación ya estaba confirmada en `1cedc5f`;
+se publicó ese commit en `origin/ticket/ma-tsk-113`, sin cambios concurrentes.
+
+Flutter 3.47.0/Dart 3.13.0, verificador de toolchain y resolución con
+`--enforce-lockfile` pasan. Las 41 pruebas específicas de Android, matriz,
+navegación y enlaces pasan; el análisis no presenta incidencias.
+Una ejecución global simultánea con esas pruebas se detuvo por la DLL SQLite
+ocupada. La repetición secuencial de `scripts/check-quality.ps1` pasa completa:
+formato sin cambios, análisis, batería global y las cuatro variantes de arranque.
+Esto actualiza el resultado global fallido de la entrega anterior; se conserva
+su historial arriba. Logs locales: `ma-tsk-169-recheck-tests.log` y
+`ma-tsk-169-recheck-quality-sequential.log`, en `.tools` ignorada por Git.
+
+No se modifica código ya entregado ni se repiten builds: la evidencia previa
+Windows release/APK debug corresponde a esta misma implementación. Sigue sin
+acreditarse un recorrido en dispositivo Android físico. Los cambios concurrentes
+de README, sincronización y prototipos permanecen fuera de los commits del ticket.
