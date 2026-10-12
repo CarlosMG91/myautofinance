@@ -14,7 +14,8 @@ sincronización y mockups de otras épicas ya tenían cambios concurrentes.
 - HTTP **200** y apertura renderizada sin errores JavaScript. Recorrido
   publicado Inicio → Análisis → Real anual comprobado en navegador.
 - `generar.mjs --check`: salida reproducible, sin diferencias entre fuentes
-  y artefacto. Recursos incluidos, ninguna solicitud a terceros.
+  y artefacto; también comprobado sobre una copia con finales CRLF de Windows.
+  Recursos incluidos, ninguna solicitud a terceros.
 
 ## Cobertura y comprobaciones
 
