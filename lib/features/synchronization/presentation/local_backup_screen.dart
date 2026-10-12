@@ -17,6 +17,7 @@ class LocalBackupScreen extends StatefulWidget {
     this.backupId,
     this.navigation,
     this.bottomNavigation,
+    this.shell,
   });
 
   final LocalBackupController controller;
@@ -26,6 +27,7 @@ class LocalBackupScreen extends StatefulWidget {
   final String returnLabel;
   final Widget? navigation;
   final Widget? bottomNavigation;
+  final Widget Function(Widget body)? shell;
 
   @override
   State<LocalBackupScreen> createState() => _LocalBackupScreenState();
@@ -435,163 +437,156 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
     listenable: controller,
     builder: (context, _) => PopScope(
       canPop: !controller.busy,
-      child: Scaffold(
-        bottomNavigationBar: controller.busy ? null : widget.bottomNavigation,
-        body: SafeArea(
-          child: Row(
-            children: [
-              if (!controller.busy && widget.navigation != null)
-                widget.navigation!,
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final screenWidth = MediaQuery.sizeOf(context).width;
-                    final wide = screenWidth >= 840;
-                    final margin = screenWidth >= 1200
-                        ? 32.0
-                        : screenWidth >= 600
-                        ? 24.0
-                        : 16.0;
-                    final entries = controller.listing?.entries ?? [];
-                    LocalBackupCatalogEntry? selected;
-                    for (final entry in entries) {
-                      if (entry.backupId == widget.backupId) selected = entry;
-                    }
-                    return SingleChildScrollView(
-                      padding: EdgeInsets.all(margin),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: screenWidth < 840 && screenWidth >= 600
-                                ? 720
-                                : 1440,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (controller.busy ||
-                                  controller.listing == null &&
-                                      controller.error == null) ...[
-                                _heading(
-                                  controller.progress ??
-                                      'Leyendo catálogo local…',
+      child: widget.shell != null
+          ? widget.shell!(_shellContent(context))
+          : Scaffold(
+              bottomNavigationBar: controller.busy
+                  ? null
+                  : widget.bottomNavigation,
+              body: SafeArea(
+                child: Row(
+                  children: [
+                    if (!controller.busy && widget.navigation != null)
+                      widget.navigation!,
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final screenWidth = MediaQuery.sizeOf(context).width;
+                          final margin = screenWidth >= 1200
+                              ? 32.0
+                              : screenWidth >= 600
+                              ? 24.0
+                              : 16.0;
+                          return SingleChildScrollView(
+                            padding: EdgeInsets.all(margin),
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      screenWidth < 840 && screenWidth >= 600
+                                      ? 720
+                                      : 1440,
                                 ),
-                                const LinearProgressIndicator(),
-                                _notice(
-                                  'No cierre la app. Espere el resultado seguro antes de iniciar otra operación.',
-                                ),
-                              ] else ...[
-                                if (controller.activeAvailable ||
-                                    widget.backupId != null)
-                                  TextButton(
-                                    onPressed: widget.onReturn,
-                                    child: Text(widget.returnLabel),
-                                  ),
-                                _heading(
-                                  widget.backupId == null
-                                      ? 'Copias locales'
-                                      : 'Detalle de copia local',
-                                ),
-                                const Text(
-                                  'Gestión / Copias locales · Almacenamiento privado de esta instalación',
-                                ),
-                                if (!controller.activeAvailable) ...[
-                                  _notice(
-                                    'No se puede abrir la base activa. ${controller.recoveryBlocked ? 'El acceso está bloqueado. Reinicia la app para resolver la recuperación o usa una versión compatible.' : 'Puede recuperar una copia local válida.'} '
-                                    'Los archivos dañados se conservarán aislados; no se presentarán como una copia válida. '
-                                    '${controller.startupMessage ?? ''}',
-                                    error: true,
-                                  ),
-                                  if (controller.retryStartup != null &&
-                                      !controller.recoveryBlocked)
-                                    OutlinedButton(
-                                      onPressed: controller.retryOpen,
-                                      child: const Text('Reintentar apertura'),
-                                    ),
-                                ],
-                                if (controller.error != null)
-                                  _notice(controller.error!, error: true),
-                                if (controller.message != null)
-                                  _notice(controller.message!),
-                                if (controller.restoreResult?.status ==
-                                    LocalRestoreStatus.restored) ...[
-                                  _notice(
-                                    controller
-                                                .restoreResult!
-                                                .previousBackupId ==
-                                            null
-                                        ? 'Los archivos originales dañados o ausentes no se presentan como una copia válida. Los originales aislados se conservan fuera de la retención automática.'
-                                        : 'El estado anterior se conserva en una copia automática.',
-                                  ),
-                                  if (controller.restoreResult!.previousBackupId
-                                      case final id?)
-                                    OutlinedButton(
-                                      onPressed: () => widget.onOpenDetail(id),
-                                      child: const Text('Ver copia anterior'),
-                                    ),
-                                  _notice(
-                                    'Contraste con Drive pendiente. Una futura acción manual deberá contrastar la versión remota. No se ha realizado ninguna conexión.',
-                                  ),
-                                  if (controller
-                                      .restoreResult!
-                                      .maintenancePending)
-                                    _notice(
-                                      'Limpieza pendiente. Se conservan más copias hasta que sea seguro limpiar.',
-                                    ),
-                                ],
-                                if (widget.backupId == null) ...[
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      FilledButton(
-                                        focusNode: _createFocus,
-                                        onPressed:
-                                            controller.activeAvailable &&
-                                                !controller.recoveryBlocked
-                                            ? _create
-                                            : null,
-                                        child: const Text('Crear copia'),
-                                      ),
-                                      OutlinedButton(
-                                        onPressed: controller.refresh,
-                                        child: const Text(
-                                          'Reintentar catálogo',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (!controller.activeAvailable)
-                                    const Text(
-                                      'Crear copia no está disponible hasta que la base activa pueda usarse.',
-                                    ),
-                                  _catalog(wide),
-                                  _notice(
-                                    'Qué se conserva\nLas copias manuales permanecen hasta eliminación expresa. '
-                                    'Se conservan las tres automáticas más recientes anteriores a restauraciones correctas. '
-                                    'Un intento fallido no elimina ninguna; si no es seguro limpiar, se conservan más.\n'
-                                    'Estas copias permanecen en este dispositivo: no protegen frente a su pérdida o a la eliminación de los datos de la app.',
-                                  ),
-                                ] else if (selected != null)
-                                  _detail(selected)
-                                else
-                                  _notice(
-                                    'No se pudo abrir este detalle. La copia no está disponible en el catálogo. Vuelva a la lista y reintente.',
-                                    error: true,
-                                  ),
-                              ],
-                            ],
-                          ),
-                        ),
+                                child: _shellContent(context),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     ),
   );
+  Widget _shellContent(BuildContext context) {
+    final wide = MediaQuery.sizeOf(context).width >= 840;
+    final entries = controller.listing?.entries ?? [];
+    LocalBackupCatalogEntry? selected;
+    for (final entry in entries) {
+      if (entry.backupId == widget.backupId) selected = entry;
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (controller.busy ||
+            controller.listing == null && controller.error == null) ...[
+          _heading(controller.progress ?? 'Leyendo catálogo local…'),
+          const LinearProgressIndicator(),
+          _notice(
+            'No cierre la app. Espere el resultado seguro antes de iniciar otra operación.',
+          ),
+        ] else ...[
+          if (widget.shell == null &&
+              (controller.activeAvailable || widget.backupId != null))
+            TextButton(
+              onPressed: widget.onReturn,
+              child: Text(widget.returnLabel),
+            ),
+          if (widget.shell == null)
+            _heading(
+              widget.backupId == null
+                  ? 'Copias locales'
+                  : 'Detalle de copia local',
+            ),
+          const Text(
+            'Gestión / Copias locales · Almacenamiento privado de esta instalación',
+          ),
+          if (!controller.activeAvailable) ...[
+            _notice(
+              'No se puede abrir la base activa. ${controller.recoveryBlocked ? 'El acceso está bloqueado. Reinicia la app para resolver la recuperación o usa una versión compatible.' : 'Puede recuperar una copia local válida.'} '
+              'Los archivos dañados se conservarán aislados; no se presentarán como una copia válida. '
+              '${controller.startupMessage ?? ''}',
+              error: true,
+            ),
+            if (controller.retryStartup != null && !controller.recoveryBlocked)
+              OutlinedButton(
+                onPressed: controller.retryOpen,
+                child: const Text('Reintentar apertura'),
+              ),
+          ],
+          if (controller.error != null) _notice(controller.error!, error: true),
+          if (controller.message != null) _notice(controller.message!),
+          if (controller.restoreResult?.status ==
+              LocalRestoreStatus.restored) ...[
+            _notice(
+              controller.restoreResult!.previousBackupId == null
+                  ? 'Los archivos originales dañados o ausentes no se presentan como una copia válida. Los originales aislados se conservan fuera de la retención automática.'
+                  : 'El estado anterior se conserva en una copia automática.',
+            ),
+            if (controller.restoreResult!.previousBackupId case final id?)
+              OutlinedButton(
+                onPressed: () => widget.onOpenDetail(id),
+                child: const Text('Ver copia anterior'),
+              ),
+            _notice(
+              'Contraste con Drive pendiente. Una futura acción manual deberá contrastar la versión remota. No se ha realizado ninguna conexión.',
+            ),
+            if (controller.restoreResult!.maintenancePending)
+              _notice(
+                'Limpieza pendiente. Se conservan más copias hasta que sea seguro limpiar.',
+              ),
+          ],
+          if (widget.backupId == null) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton(
+                  focusNode: _createFocus,
+                  onPressed:
+                      controller.activeAvailable && !controller.recoveryBlocked
+                      ? _create
+                      : null,
+                  child: const Text('Crear copia'),
+                ),
+                OutlinedButton(
+                  onPressed: controller.refresh,
+                  child: const Text('Reintentar catálogo'),
+                ),
+              ],
+            ),
+            if (!controller.activeAvailable)
+              const Text(
+                'Crear copia no está disponible hasta que la base activa pueda usarse.',
+              ),
+            _catalog(wide),
+            _notice(
+              'Qué se conserva\nLas copias manuales permanecen hasta eliminación expresa. '
+              'Se conservan las tres automáticas más recientes anteriores a restauraciones correctas. '
+              'Un intento fallido no elimina ninguna; si no es seguro limpiar, se conservan más.\n'
+              'Estas copias permanecen en este dispositivo: no protegen frente a su pérdida o a la eliminación de los datos de la app.',
+            ),
+          ] else if (selected != null)
+            _detail(selected)
+          else
+            _notice(
+              'No se pudo abrir este detalle. La copia no está disponible en el catálogo. Vuelva a la lista y reintente.',
+              error: true,
+            ),
+        ],
+      ],
+    );
+  }
 }

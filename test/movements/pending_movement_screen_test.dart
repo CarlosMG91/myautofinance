@@ -22,6 +22,11 @@ import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
 import 'package:myautofinance/app/movement_list_factory.dart';
 import 'package:myautofinance/app/navigation/app_routes.dart';
 import 'package:myautofinance/app/pending_movement_factory.dart';
+import 'package:myautofinance/app/navigation/navigation_context.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
+
+import '../support/app_navigation.dart';
+
 import 'package:myautofinance/features/importing/importing.dart';
 import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/features/movements/presentation/pending_movement_controller.dart';
@@ -702,7 +707,14 @@ void main() {
     ]) {
       nav.pushNamed('${AppRoutes.pendingMovements}?$query');
       await settle(tester);
-      expect(find.text('No se pudo abrir la bandeja'), findsOneWidget);
+      expect(
+        find.text(
+          query.contains('#') || query.contains('&lote=')
+              ? 'No se pudo abrir este detalle'
+              : 'No se pudo abrir la bandeja',
+        ),
+        findsOneWidget,
+      );
       nav.pop();
       await settle(tester);
     }
@@ -716,21 +728,22 @@ void main() {
       final nav = await bootLinks(tester);
       nav.pushNamed('$path?a=2020&m=02');
       await settle(tester);
-      final origin = ModalRoute.of(tester.element(find.byTooltip('Gestión')));
-      await tester.tap(find.byTooltip('Gestión'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Pendientes de categorizar'));
+      final origin = ModalRoute.of(tester.element(find.byType(AfShell)));
+      await selectAppDestination(tester, SessionDestination.management);
+      await tester.ensureVisible(
+        find.widgetWithText(AfAction, 'Pendientes de categorizar'),
+      );
+      await tester.tap(
+        find.widgetWithText(AfAction, 'Pendientes de categorizar'),
+      );
       await settle(tester);
       expect(
         find.text('Total pendiente del ámbito filtrado: 4 movimientos'),
         findsOneWidget,
       );
-      nav.pop();
+      nav.popUntil((route) => identical(route, origin));
       await settle(tester);
-      expect(
-        ModalRoute.of(tester.element(find.byTooltip('Gestión'))),
-        same(origin),
-      );
+      expect(ModalRoute.of(tester.element(find.byType(AfShell))), same(origin));
       expect(tester.takeException(), isNull);
     });
   }

@@ -5,6 +5,12 @@ import 'navigation_period.dart';
 enum PeriodView { monthly, annual }
 
 enum SessionDestination {
+  home(AppRoutes.start, PeriodView.monthly),
+  movements(AppRoutes.movements, PeriodView.monthly),
+  analysis(AppRoutes.analysis, PeriodView.annual),
+  more(AppRoutes.more, PeriodView.monthly),
+  management(AppRoutes.management, PeriodView.monthly),
+  diagnostics(AppRoutes.diagnostics, PeriodView.annual),
   status(AppRoutes.monthlyStatus, PeriodView.monthly),
   wealth(AppRoutes.wealth, PeriodView.monthly),
   budget(AppRoutes.budget, PeriodView.annual),
@@ -16,6 +22,7 @@ enum SessionDestination {
   final PeriodView defaultView;
 
   static SessionDestination? fromPath(String path) {
+    path = AppRoutes.contentPath(path);
     for (final destination in values) {
       if (destination.path == path) return destination;
     }

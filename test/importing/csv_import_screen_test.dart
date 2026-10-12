@@ -182,7 +182,7 @@ void main() {
   );
 
   testWidgets(
-    'Gestión en producción activa CSV, conserva origen y periodo; XLS deshabilitado',
+    'Gestión en producción activa CSV, conserva origen y periodo; Openbank deshabilitado',
     (t) async {
       const channel = MethodChannel('autofinance/local_csv');
       var selections = 0;
@@ -205,7 +205,7 @@ void main() {
       await settle(t);
       await tap(t, 'Gestión');
       final xls = t.widget<PopupMenuItem<String>>(
-        find.widgetWithText(PopupMenuItem<String>, 'Importar XLS'),
+        find.widgetWithText(PopupMenuItem<String>, 'Importar Openbank'),
       );
       expect(xls.enabled, isFalse);
       await tap(t, 'Importar CSV');

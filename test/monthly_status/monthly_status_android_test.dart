@@ -236,7 +236,7 @@ void main() {
       );
       expect(title.didExceedMaxLines, isFalse);
       expect(
-        tester.getRect(find.text('Gestión')).right,
+        tester.getRect(find.byKey(const ValueKey('destination-more'))).right,
         lessThanOrEqualTo(320),
       );
       await tap(tester, find.byKey(ValueKey('$root:expandir')));

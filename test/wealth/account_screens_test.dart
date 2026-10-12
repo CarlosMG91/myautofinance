@@ -6,6 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/app/navigation/navigation_context.dart';
+
+import '../support/app_navigation.dart';
+
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
 import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
 import 'package:myautofinance/app/wealth_management_factory.dart';
@@ -154,7 +158,7 @@ void main() {
         () => service.photos.setValue(Month(2026, 3), account.account.id, 100),
       );
       await tester.pumpWidget(AutofinanceApp(wealth: () async => service));
-      await tap(tester, 'Gestión');
+      await selectAppDestination(tester, SessionDestination.management);
       await tester.pumpAndSettle();
       await tap(tester, 'Fichas');
       await settle(tester);

@@ -3,6 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/app/navigation/navigation_context.dart';
+
+import '../support/app_navigation.dart';
+
 import 'package:myautofinance/app/local_backup_session.dart';
 import 'package:myautofinance/app/navigation/app_routes.dart';
 import 'package:myautofinance/features/wealth/wealth.dart';
@@ -53,8 +57,9 @@ void main() {
     'Gestión abre catálogo SQLite, detalle cerrado y devuelve al origen',
     (tester) async {
       await tester.pumpWidget(AutofinanceApp(localSession: session));
-      await tester.tap(find.text('Gestión'));
+      await selectAppDestination(tester, SessionDestination.management);
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Fichas'));
       await tester.tap(find.text('Fichas'));
       await settle(tester);
       await tester.tap(find.text('Cuenta cerrada sintética'));
@@ -70,7 +75,7 @@ void main() {
       expect(find.text('Cuenta cerrada sintética'), findsOneWidget);
       await tester.tap(find.text('Volver al origen'));
       await settle(tester);
-      expect(find.text('Estado del mes'), findsOneWidget);
+      expect(find.text('Gestión'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
       await settle(tester);
     },

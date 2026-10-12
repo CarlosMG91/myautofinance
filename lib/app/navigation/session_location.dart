@@ -3,6 +3,8 @@ import 'navigation_period.dart';
 import 'navigation_session.dart';
 import '../../features/movements/movements.dart' show MovementCategoryScope;
 import 'budget_origin.dart';
+import 'app_routes.dart';
+import 'movement_links.dart';
 
 /// Resolución sin efectos: un error nunca cambia la sesión ni consulta datos.
 sealed class SessionLocationResult {
@@ -25,7 +27,17 @@ abstract final class SessionLocation {
     path: context.destination.path,
     queryParameters: {
       for (final entry in context.filters.entries)
-        if (!const {'a', 'm', 'rama', 'c', 'alcance'}.contains(entry.key))
+        if (!const {
+              'a',
+              'm',
+              'rama',
+              'c',
+              'alcance',
+              '__range',
+            }.contains(entry.key) &&
+            !(context.destination == SessionDestination.movements &&
+                context.filters['__range'] == 'period' &&
+                const {'desde', 'hasta'}.contains(entry.key)))
           entry.key: entry.value,
       'a': context.period.year.toString().padLeft(4, '0'),
       'm': context.period.month.toString().padLeft(2, '0'),
@@ -44,7 +56,8 @@ abstract final class SessionLocation {
     PeriodView? view,
   }) {
     try {
-      final uri = Uri.parse(location);
+      final raw = Uri.parse(location);
+      final uri = raw.replace(path: AppRoutes.contentPath(raw.path));
       final destination = SessionDestination.fromPath(uri.path);
       if (destination == null ||
           uri.hasScheme ||
@@ -74,6 +87,30 @@ abstract final class SessionLocation {
           : m == null
           ? session.periodForYear(int.parse(a), effectiveView)
           : NavigationPeriod(int.parse(a), int.parse(m));
+      if (destination == SessionDestination.movements) {
+        // Fechas de movimientos se validan con su parser, nunca como meses.
+        final query = MovementLinks.parse(
+          uri.toString(),
+          defaultMonth: period.civilMonth,
+        );
+        return ValidSessionLocation(
+          NavigationContext(
+            destination: destination,
+            period: period,
+            view: effectiveView,
+            branchId: query.unclassified ? 'sin-clasificar' : query.categoryId,
+            scope: query.scope,
+            filters: {
+              'desde': query.from.value,
+              if (query.until != null) 'hasta': query.until!.value,
+              if (query.accountId != null) 'cuenta': query.accountId!,
+              if (query.concept.isNotEmpty) 'concepto': query.concept,
+              if (p['origen'] != null) 'origen': p['origen']!,
+              '__range': p.containsKey('desde') ? 'custom' : 'period',
+            },
+          ),
+        );
+      }
       if (destination == SessionDestination.budget) {
         return ValidSessionLocation(
           BudgetOrigin.parse(

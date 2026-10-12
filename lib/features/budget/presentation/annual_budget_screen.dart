@@ -963,7 +963,7 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
               LayoutBuilder(
                 builder: (context, constraints) =>
                     Theme.of(context).platform == TargetPlatform.android ||
-                        MediaQuery.sizeOf(context).width < 840 ||
+                        MediaQuery.sizeOf(context).width < 848 ||
                         constraints.maxWidth < 600
                     ? _cards()
                     : _matrix(),

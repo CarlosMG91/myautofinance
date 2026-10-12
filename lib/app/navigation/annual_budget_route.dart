@@ -91,16 +91,13 @@ class _AnnualBudgetRouteState extends State<AnnualBudgetRoute> {
             wrapHeader: true,
             scrollController: scroll,
             beforeNavigate: canLeave,
-            actions: [
-              if (widget.management != null)
-                widget.management!(() => _origin().route, canLeave, refresh),
-            ],
+            periodControl: PeriodControls(
+              session: _session,
+              beforeChange: (_) => canLeave(),
+            ),
             child: child,
           ),
-          controls: (canLeave) => PeriodControls(
-            session: _session,
-            beforeChange: (_) => canLeave(),
-          ),
+          controls: (canLeave) => const SizedBox.shrink(),
           openMonth: (month, category) =>
               navigation.openMonth(month, categoryId: category),
           openYear: (category) => navigation.openYear(categoryId: category),

@@ -141,7 +141,7 @@ Future<void> pendingLifecycleJourney(
     await mount();
     const origin = '${AppRoutes.actualSpending}?a=2020&m=02';
     await route(origin);
-    await tap(find.byTooltip('Gestión'));
+    await tap(find.byType(PopupMenuButton<String>));
     await press('Pendientes de categorizar');
     count(5);
     expect(pending().query.from, isNull);

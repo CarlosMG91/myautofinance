@@ -10,6 +10,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/app/navigation/navigation_context.dart';
+
+import '../support/app_navigation.dart';
+
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
 import 'package:myautofinance/app/data/sqlite/schema_policy.dart';
 import 'package:myautofinance/app/wealth_management_factory.dart';
@@ -273,7 +277,7 @@ void main() {
     await tap(tester, 'Cancelar');
     await tap(tester, 'Volver a Patrimonio, 2026-02');
     expect(find.textContaining('01/02/2026'), findsOneWidget);
-    await tap(tester, 'Real');
+    await selectAppDestination(tester, SessionDestination.actual);
     expect(
       ModalRoute.of(tester.element(find.textContaining('Marcador técnico')))!
           .settings

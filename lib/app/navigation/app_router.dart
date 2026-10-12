@@ -18,6 +18,9 @@ import '../../features/movements/presentation/movement_list_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../ui/autofinance_ui.dart';
+import '../../core/modules/feature_module.dart' show ModuleId;
+
 import 'app_routes.dart';
 import 'navigation_context.dart';
 import 'navigation_session.dart';
@@ -59,6 +62,14 @@ abstract final class AppRouter {
     bool allowTestImports = false,
     NavigationSession? navigationSession,
   }) {
+    final originalSettings = settings;
+    final raw = Uri.tryParse(settings.name ?? '');
+    if (raw != null && AppRoutes.contentPath(raw.path) != raw.path) {
+      settings = RouteSettings(
+        name: raw.replace(path: AppRoutes.contentPath(raw.path)).toString(),
+        arguments: settings.arguments,
+      );
+    }
     Widget page;
     final uri = Uri.tryParse(settings.name ?? '');
     var destinationSettings = settings;
@@ -80,9 +91,41 @@ abstract final class AppRouter {
         );
       }
     }
-    if (invalidOrigin != null) {
+    if (uri == null ||
+        uri.hasScheme ||
+        uri.hasAuthority ||
+        uri.hasFragment ||
+        uri.queryParametersAll.values.any((v) => v.length != 1)) {
+      page = _TechnicalPlaceholder(
+        title: 'No se pudo abrir este detalle',
+        message: 'Ruta de navegación inválida.',
+        fallbackOrigin: navigationSession?.context,
+      );
+    } else if (invalidOrigin != null) {
       page = SessionNavigationError(origin: invalidOrigin);
-    } else if (uri?.path == AppRoutes.monthlyStatus && monthlyStatus != null) {
+    } else if (const {
+      AppRoutes.start,
+      AppRoutes.analysis,
+      AppRoutes.more,
+      AppRoutes.management,
+      AppRoutes.diagnostics,
+    }.contains(uri.path)) {
+      page = _ShellEntry(
+        destination: SessionDestination.fromPath(uri.path)!,
+        session: navigationSession,
+        management: _ManagementMenu(
+          categoriesAvailable: categories != null,
+          wealthAvailable: wealth != null,
+          pendingAvailable: pendingMovements != null && categories != null,
+          importsAvailable: imports != null,
+          driveAvailable: drive != null,
+          backupsAvailable: localBackups != null,
+          origin: navigationSession == null
+              ? null
+              : () => SessionLocation.encode(navigationSession.context),
+        ),
+      );
+    } else if (uri.path == AppRoutes.monthlyStatus && monthlyStatus != null) {
       page = MonthlyStatusRoute(
         settings: settings,
         load: monthlyStatus,
@@ -95,8 +138,8 @@ abstract final class AppRouter {
           onReturned: refresh,
         ),
       );
-    } else if (uri?.path == AppRoutes.importHistory ||
-        uri?.path.startsWith('${AppRoutes.importHistory}/') == true) {
+    } else if (uri.path == AppRoutes.importHistory ||
+        uri.path.startsWith('${AppRoutes.importHistory}/') == true) {
       page = imports == null
           ? const _TechnicalPlaceholder(
               title: 'Importaciones no disponibles',
@@ -110,8 +153,8 @@ abstract final class AppRouter {
               pendingMovements: categories == null ? null : pendingMovements,
             );
     } else if (budgets != null &&
-        (uri?.path == AppRoutes.budget ||
-            uri?.path.startsWith('${AppRoutes.budget}/') == true)) {
+        (uri.path == AppRoutes.budget ||
+            uri.path.startsWith('${AppRoutes.budget}/') == true)) {
       page = BudgetRoute(
         settings: destinationSettings,
         load: budgets,
@@ -129,7 +172,7 @@ abstract final class AppRouter {
           onReturned: refresh,
         ),
       );
-    } else if (uri?.path == AppRoutes.pendingMovements) {
+    } else if (uri.path == AppRoutes.pendingMovements) {
       page = pendingMovements == null || categories == null
           ? const _TechnicalPlaceholder(
               title: 'Bandeja no disponible',
@@ -147,14 +190,14 @@ abstract final class AppRouter {
                       );
                     },
             );
-    } else if (uri?.path == AppRoutes.movements && movements != null) {
+    } else if (uri.path == AppRoutes.movements && movements != null) {
       page = MovementListRoute(
         settings: settings,
         load: movements,
         categories: categories,
         navigationSession: navigationSession,
       );
-    } else if (uri?.path.startsWith('${AppRoutes.movements}/') == true &&
+    } else if (uri.path.startsWith('${AppRoutes.movements}/') == true &&
         movements != null) {
       page = MovementEditorRoute(
         settings: settings,
@@ -163,8 +206,8 @@ abstract final class AppRouter {
         navigationSession: navigationSession,
       );
     } else if (wealth != null &&
-        (uri?.path == AppRoutes.wealth ||
-            uri?.path.startsWith('${AppRoutes.wealth}/') == true)) {
+        (uri.path == AppRoutes.wealth ||
+            uri.path.startsWith('${AppRoutes.wealth}/') == true)) {
       page = _WealthRoute(
         settings: destinationSettings,
         loadManagement: wealth,
@@ -172,44 +215,38 @@ abstract final class AppRouter {
         pendingAvailable: pendingMovements != null && categories != null,
         navigationSession: navigationSession,
       );
-    } else if (uri?.path == AppRoutes.categories ||
-        uri?.path.startsWith('${AppRoutes.categories}/') == true) {
+    } else if (uri.path == AppRoutes.categories ||
+        uri.path.startsWith('${AppRoutes.categories}/') == true) {
       page = categories == null
           ? const _TechnicalPlaceholder(
               title: 'Categorías no disponibles',
               message: 'No se ha inicializado el almacenamiento local.',
             )
           : _CategoryRoute(settings: settings, loadManagement: categories);
-    } else if (uri?.path == AppRoutes.drive && drive != null) {
+    } else if (uri.path == AppRoutes.drive && drive != null) {
       page = _BackupRoute(settings: settings, drive: drive);
-    } else if (uri?.path == AppRoutes.localBackups ||
-        uri?.path.startsWith('${AppRoutes.localBackups}/') == true) {
+    } else if (uri.path == AppRoutes.localBackups ||
+        uri.path.startsWith('${AppRoutes.localBackups}/') == true) {
       page = localBackups == null
           ? const _TechnicalPlaceholder(
               title: 'Copias locales no disponibles',
               message: 'No se ha inicializado el almacenamiento local.',
             )
           : _BackupRoute(settings: settings, controller: localBackups);
-    } else if (settings.name == AppRoutes.home) {
-      page = _TechnicalIndex(
-        showManagement:
-            localBackups != null ||
-            drive != null ||
-            categories != null ||
-            wealth != null ||
-            movements != null ||
-            imports != null,
-        categoriesAvailable: categories != null,
-        wealthAvailable: wealth != null,
-        pendingAvailable: pendingMovements != null && categories != null,
-      );
     } else {
       TechnicalDestination? destination;
       for (final candidate in AppRoutes.destinations) {
-        if (candidate.path == uri?.path) {
+        if (candidate.path == uri.path) {
           destination = candidate;
           break;
         }
+      }
+      if (uri.path == AppRoutes.movements) {
+        destination = const TechnicalDestination(
+          AppRoutes.movements,
+          ModuleId.movements,
+          'Movimientos',
+        );
       }
       page = _TechnicalPlaceholder(
         showManagement:
@@ -232,7 +269,7 @@ abstract final class AppRouter {
     }
     // Conserva nombre y argumentos, también en destinos desconocidos.
     return MaterialPageRoute<Object?>(
-      settings: settings,
+      settings: originalSettings,
       builder: (context) {
         if (page is _BackupRoute || localBackups == null) return page;
         return ListenableBuilder(
@@ -329,8 +366,29 @@ class _WealthRouteState extends State<_WealthRoute> {
         }
 
         return WealthScreen(
+          shell: widget.navigationSession == null
+              ? null
+              : (body, scroll, month, select, refresh) => PrimaryNavigation(
+                  session: widget.navigationSession!,
+                  title: 'Patrimonio',
+                  scrollController: scroll,
+                  periodControl: PeriodControls(
+                    session: widget.navigationSession!,
+                    beforeChange: (period) async {
+                      select(period.civilMonth);
+                      return true;
+                    },
+                  ),
+                  child: body,
+                ),
           controller: WealthController(loadManagement: widget.loadManagement),
           initialMonth: route.month!,
+          initialScrollOffset: widget.settings.arguments is NavigationContext
+              ? (widget.settings.arguments as NavigationContext).scrollOffset
+              : 0,
+          initialFocus: widget.settings.arguments is NavigationContext
+              ? (widget.settings.arguments as NavigationContext).focus
+              : null,
           onOrigin: widget.navigationSession == null
               ? null
               : (offset, focus) {
@@ -629,7 +687,10 @@ class _BackupOrigin {
         return destination.label;
       }
     }
-    return 'Autofinance';
+    final destination = SessionDestination.fromPath(path ?? '');
+    return destination == null
+        ? 'Autofinance'
+        : PrimaryNavigation.labels[destination]!;
   }
 }
 
@@ -649,7 +710,7 @@ class _BackupRoute extends StatelessWidget {
           : null;
       final origin = settings.arguments is _BackupOrigin
           ? settings.arguments! as _BackupOrigin
-          : const _BackupOrigin(AppRoutes.monthlyStatus);
+          : const _BackupOrigin(AppRoutes.start);
       void returnToOrigin() {
         final navigator = Navigator.of(context);
         if (navigator.canPop()) {
@@ -659,89 +720,42 @@ class _BackupRoute extends StatelessWidget {
         }
       }
 
-      final width = MediaQuery.sizeOf(context).width;
-      // Solo las rutas técnicas existentes; no se implementa contenido financiero.
-      Widget destinationButton(TechnicalDestination destination) {
-        final selected = Uri.tryParse(origin.route)?.path == destination.path;
-        return Semantics(
-          selected: selected,
-          child: TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              backgroundColor: selected ? const Color(0xffeaf3fb) : null,
-              side: selected
-                  ? const BorderSide(color: Color(0xff124b7a), width: 2)
-                  : null,
-            ),
-            onPressed: drive?.busy == true
-                ? null
-                : () => Navigator.of(context)
-                      .pushNamedAndRemoveUntil(destination.path, (_) => false),
-            child: Text(
-              _shortLabel(destination.path),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ),
-        );
-      }
-
-      Widget navigation(bool vertical) {
-        if (!vertical && width < 600) {
-          final columns = MediaQuery.textScalerOf(context).scale(14) > 20
-              ? 2
-              : 3;
-          return Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 4,
-            children: [
-              for (final destination in AppRoutes.destinations)
-                SizedBox(
-                  width: (width - 16) / columns,
-                  child: destinationButton(destination),
-                ),
-            ],
-          );
-        }
-        return Flex(
-          direction: vertical ? Axis.vertical : Axis.horizontal,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final destination in AppRoutes.destinations)
-              if (vertical)
-                destinationButton(destination)
-              else
-                Expanded(child: destinationButton(destination)),
-          ],
-        );
-      }
-
-      final allowed = drive != null ? true : controller!.activeAvailable;
-      final sidebar = allowed && width >= 840
-          ? Container(
-              width: width >= 1200 ? 216 : 200,
-              color: Colors.white,
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [const Text('Autofinance'), navigation(true)],
-              ),
-            )
-          : null;
-      final bottom = allowed && width < 840
-          ? SafeArea(
-              child: Container(
-                color: Colors.white,
-                constraints: const BoxConstraints(minHeight: 64),
-                child: navigation(false),
-              ),
-            )
-          : null;
+      final session = NavigationSessionScope.maybeOf(context);
+      Widget shell(Widget body) => PrimaryNavigation(
+        session: session!,
+        title: drive != null
+            ? 'Copia en Drive'
+            : id == null
+            ? 'Copias locales'
+            : 'Detalle de copia local',
+        backLabel: id == null
+            ? 'Volver a ${origin.label}'
+            : 'Volver a Copias locales',
+        selectedDestination:
+            SessionDestination.fromPath(
+              Uri.tryParse(origin.route)?.path ?? '',
+            ) ??
+            SessionDestination.management,
+        navigationAvailable: controller?.activeAvailable ?? true,
+        beforeNavigate: () async => !(drive?.busy ?? controller!.busy),
+        periodControl: IgnorePointer(
+          ignoring: drive?.busy ?? controller!.busy,
+          child: PeriodControls(session: session),
+        ),
+        onBack: controller?.activeAvailable == false && id == null
+            ? null
+            : () async {
+                if (drive?.busy ?? controller!.busy) return false;
+                returnToOrigin();
+                return true;
+              },
+        contextTrail: Text(
+          controller?.activeAvailable == false
+              ? 'Recuperación local · sin base activa'
+              : 'Origen: ${origin.label}',
+        ),
+        child: body,
+      );
       if (drive != null) {
         return DriveScreen(
           controller: drive!,
@@ -750,8 +764,7 @@ class _BackupRoute extends StatelessWidget {
           onOpenBackups: () =>
               Navigator.of(context)
                   .pushNamed(AppRoutes.localBackups, arguments: origin),
-          navigation: sidebar,
-          bottomNavigation: bottom,
+          shell: session == null ? null : shell,
         );
       }
       return LocalBackupScreen(
@@ -764,82 +777,10 @@ class _BackupRoute extends StatelessWidget {
         returnLabel: id == null
             ? 'Volver a ${origin.label}'
             : 'Volver a Copias locales',
-        navigation: controller!.activeAvailable && width >= 840
-            ? Container(
-                width: width >= 1200 ? 216 : 200,
-                color: Colors.white,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [const Text('Autofinance'), navigation(true)],
-                ),
-              )
-            : null,
-        bottomNavigation: controller!.activeAvailable && width < 840
-            ? SafeArea(
-                child: Container(
-                  color: Colors.white,
-                  constraints: const BoxConstraints(minHeight: 64),
-                  child: navigation(false),
-                ),
-              )
-            : null,
+        shell: session == null ? null : shell,
       );
     },
   );
-
-  String _shortLabel(String path) => switch (path) {
-    AppRoutes.monthlyStatus => 'Estado',
-    AppRoutes.wealth => 'Patrimonio',
-    AppRoutes.budget => 'Presupuesto',
-    AppRoutes.actualSpending => 'Real',
-    _ => 'Indicadores',
-  };
-}
-
-class _TechnicalIndex extends StatelessWidget {
-  const _TechnicalIndex({
-    this.showManagement = false,
-    this.categoriesAvailable = false,
-    this.wealthAvailable = false,
-    this.pendingAvailable = false,
-  });
-  final bool showManagement;
-  final bool categoriesAvailable;
-  final bool wealthAvailable;
-  final bool pendingAvailable;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Autofinance · Base técnica'),
-        actions: [
-          if (showManagement)
-            _ManagementMenu(
-              categoriesAvailable: categoriesAvailable,
-              wealthAvailable: wealthAvailable,
-              pendingAvailable: pendingAvailable,
-            ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Navegación de desarrollo · Diseño pendiente'),
-              for (final destination in AppRoutes.destinations)
-                TextButton(
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed(destination.path),
-                  child: Text('${destination.label} · ${destination.path}'),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _TechnicalPlaceholder extends StatelessWidget {
@@ -882,7 +823,6 @@ class _TechnicalPlaceholder extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            PeriodControls(session: session),
             const SizedBox(height: 16),
             Text(message),
             const Text('Sin contenido de producto · Diseño pendiente'),
@@ -900,11 +840,6 @@ class _TechnicalPlaceholder extends StatelessWidget {
                   );
                 },
                 child: const Text('Ver movimientos reales'),
-              ),
-            if (Navigator.of(context).canPop())
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Volver'),
               ),
           ],
         ),
@@ -974,100 +909,280 @@ class _ManagementMenu extends StatelessWidget {
     this.categoriesAvailable = false,
     this.wealthAvailable = false,
     this.pendingAvailable = false,
+    this.importsAvailable = true,
+    this.driveAvailable = true,
+    this.backupsAvailable = true,
     this.onOpen,
     this.origin,
     this.onReturned,
     this.beforeOpen,
   });
-  final bool categoriesAvailable;
-  final bool wealthAvailable;
-  final bool pendingAvailable;
+  final bool categoriesAvailable, wealthAvailable, pendingAvailable;
+  final bool importsAvailable, driveAvailable, backupsAvailable;
   final Future<void> Function(String path)? onOpen;
   final String Function()? origin;
   final Future<void> Function()? onReturned;
   final Future<bool> Function()? beforeOpen;
+
+  List<({String id, String label, String path, bool enabled, IconData icon})>
+  get entries => [
+    (
+      id: 'csv',
+      label: 'Importar CSV',
+      path: AppRoutes.importCsv,
+      enabled: importsAvailable,
+      icon: AfIcons.importFile,
+    ),
+    (
+      id: 'openbank',
+      label: 'Importar Openbank',
+      path: '/importaciones/openbank',
+      enabled: false,
+      icon: AfIcons.importFile,
+    ),
+    (
+      id: 'imports',
+      label: 'Historial de importaciones',
+      path: AppRoutes.importHistory,
+      enabled: importsAvailable,
+      icon: AfIcons.importFile,
+    ),
+    (
+      id: 'movements',
+      label: 'Movimientos',
+      path: AppRoutes.movements,
+      enabled: true,
+      icon: AfIcons.receipt,
+    ),
+    (
+      id: 'pending',
+      label: 'Pendientes de categorizar',
+      path: AppRoutes.pendingMovements,
+      enabled: pendingAvailable,
+      icon: AfIcons.category,
+    ),
+    (
+      id: 'categories',
+      label: 'Categorías',
+      path: AppRoutes.categories,
+      enabled: categoriesAvailable,
+      icon: AfIcons.category,
+    ),
+    (
+      id: 'accounts',
+      label: 'Fichas',
+      path: AppRoutes.accounts,
+      enabled: wealthAvailable,
+      icon: AfIcons.account,
+    ),
+    (
+      id: 'drive',
+      label: 'Copia en Drive',
+      path: AppRoutes.drive,
+      enabled: driveAvailable,
+      icon: AfIcons.upload,
+    ),
+    (
+      id: 'local',
+      label: 'Copias locales',
+      path: AppRoutes.localBackups,
+      enabled: backupsAvailable,
+      icon: AfIcons.download,
+    ),
+    (
+      id: 'diagnostics',
+      label: 'Diagnóstico de coherencia',
+      path: AppRoutes.diagnostics,
+      enabled: true,
+      icon: AfIcons.analysis,
+    ),
+  ];
+
+  Future<void> open(BuildContext context, String value) async {
+    final entry = entries.firstWhere((e) => e.id == value);
+    if (!entry.enabled) return;
+    if (beforeOpen != null && !await beforeOpen!()) return;
+    if (!context.mounted) return;
+    final session = NavigationSessionScope.maybeOf(context);
+    final source =
+        origin?.call() ??
+        ModalRoute.of(context)?.settings.name ??
+        AppRoutes.home;
+    final path = entry.path;
+    if (onOpen != null) {
+      await onOpen!(path);
+    } else {
+      await Navigator.of(context).pushNamed(
+        path == AppRoutes.movements
+            ? MovementLinks.management(
+                source,
+                defaultMonth:
+                    session?.period.civilMonth ?? madridMonth(DateTime.now()),
+              )
+            : path,
+        arguments: path == AppRoutes.pendingMovements
+            ? PendingMovementOrigin(
+                route: source,
+                label: 'Volver a ${_BackupOrigin(source).label}',
+              )
+            : path == AppRoutes.importCsv
+            ? CsvImportOrigin(source, 'Volver a ${_BackupOrigin(source).label}')
+            : path == AppRoutes.movements
+            ? MovementListOrigin(source, context: session?.context)
+            : _BackupOrigin(source),
+      );
+      if (context.mounted) await onReturned?.call();
+    }
+  }
+
+  List<Widget> links(BuildContext context) => [
+    for (final e in entries)
+      AfAction(
+        label: e.label,
+        icon: e.icon,
+        unavailableReason: e.enabled
+            ? null
+            : e.id == 'openbank'
+            ? 'Recorrido pendiente de conectar.'
+            : 'Servicio local no disponible.',
+        onPressed: e.enabled ? () => open(context, e.id) : null,
+      ),
+  ];
+
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     tooltip: 'Gestión',
-    onSelected: (value) async {
-      if (beforeOpen != null && !await beforeOpen!()) return;
-      if (!context.mounted) return;
-      final source =
-          origin?.call() ??
-          ModalRoute.of(context)?.settings.name ??
-          AppRoutes.home;
-      final path = value == 'pending'
-          ? AppRoutes.pendingMovements
-          : value == 'movements'
-          ? AppRoutes.movements
-          : value == 'csv'
-          ? AppRoutes.importCsv
-          : value == 'imports'
-          ? AppRoutes.importHistory
-          : value == 'categories'
-          ? AppRoutes.categories
-          : value == 'accounts'
-          ? AppRoutes.accounts
-          : value == 'drive'
-          ? AppRoutes.drive
-          : AppRoutes.localBackups;
-      if (onOpen != null) {
-        onOpen!(path);
-      } else {
-        await Navigator.of(context).pushNamed(
-          path == AppRoutes.movements
-              ? MovementLinks.management(
-                  source,
-                  defaultMonth:
-                      NavigationSessionScope.maybeOf(context)
-                          ?.period
-                          .civilMonth ??
-                      madridMonth(DateTime.now()),
-                )
-              : path,
-          arguments: path == AppRoutes.pendingMovements
-              ? PendingMovementOrigin(
-                  route: source,
-                  label: "Volver a ${_BackupOrigin(source).label}",
-                )
-              : path == AppRoutes.importCsv
-              ? CsvImportOrigin(
-                  source,
-                  'Volver a ${_BackupOrigin(source).label}',
-                )
-              : path == AppRoutes.movements
-              ? MovementListOrigin(source)
-              : _BackupOrigin(source),
-        );
-        if (context.mounted) await onReturned?.call();
-      }
-    },
+    onSelected: (value) => open(context, value),
     itemBuilder: (_) => [
-      const PopupMenuItem(value: 'csv', child: Text('Importar CSV')),
-      const PopupMenuItem(enabled: false, child: Text('Importar XLS')),
-      const PopupMenuItem(
-        value: 'imports',
-        child: Text('Historial de importaciones'),
-      ),
-      const PopupMenuItem(value: 'movements', child: Text('Movimientos')),
-      PopupMenuItem(
-        value: 'pending',
-        enabled: pendingAvailable,
-        child: const Text('Pendientes de categorizar'),
-      ),
-      PopupMenuItem(
-        value: 'categories',
-        enabled: categoriesAvailable,
-        child: const Text('Categorías'),
-      ),
-      PopupMenuItem(
-        value: 'accounts',
-        enabled: wealthAvailable,
-        child: const Text('Fichas'),
-      ),
-      const PopupMenuItem(value: 'drive', child: Text('Copia en Drive')),
-      const PopupMenuItem(value: 'local', child: Text('Copias locales')),
+      for (final e in entries)
+        PopupMenuItem(value: e.id, enabled: e.enabled, child: Text(e.label)),
     ],
     child: const Padding(padding: EdgeInsets.all(12), child: Text('Gestión')),
   );
+}
+
+/// Agrupaciones de rutas y slots de entrada; ninguna cifra inventada.
+class _ShellEntry extends StatefulWidget {
+  const _ShellEntry({
+    required this.destination,
+    required this.management,
+    this.session,
+  });
+  final SessionDestination destination;
+  final NavigationSession? session;
+  final _ManagementMenu management;
+  @override
+  State<_ShellEntry> createState() => _ShellEntryState();
+}
+
+class _ShellEntryState extends State<_ShellEntry> {
+  late final _session = widget.session ?? NavigationSession();
+  @override
+  void initState() {
+    super.initState();
+    if (widget.session == null) _session.changeDestination(widget.destination);
+  }
+
+  @override
+  void dispose() {
+    if (widget.session == null) _session.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final destination = widget.destination;
+    void open(SessionDestination target) {
+      final next = _session.contextForDestination(target);
+      Navigator.of(context)
+          .pushNamed(SessionLocation.encode(next), arguments: next);
+    }
+
+    final argument = ModalRoute.of(context)?.settings.arguments;
+    final selected =
+        destination == SessionDestination.diagnostics &&
+            argument is _BackupOrigin &&
+            Uri.tryParse(argument.route)?.path == AppRoutes.management
+        ? SessionDestination.management
+        : destination;
+    return PrimaryNavigation(
+      session: _session,
+      title: PrimaryNavigation.labels[destination]!,
+      selectedDestination: selected,
+      detailAction: destination == SessionDestination.home
+          ? AfAction(
+              label: 'Ver detalle',
+              icon: AfIcons.analysis,
+              onPressed: () => open(SessionDestination.status),
+            )
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 16,
+        children: [
+          if (destination == SessionDestination.home) ...[
+            const Text(
+              'El resumen de Inicio se incorpora en su pantalla. La comparación mensual completa sigue disponible en Ver detalle.',
+            ),
+            AfAction(
+              label: 'Importar CSV',
+              icon: AfIcons.importFile,
+              unavailableReason: widget.management.importsAvailable
+                  ? null
+                  : 'Servicio local no disponible.',
+              onPressed: widget.management.importsAvailable
+                  ? () => widget.management.open(context, 'csv')
+                  : null,
+            ),
+            AfAction(
+              label: 'Categorizar pendientes',
+              icon: AfIcons.category,
+              unavailableReason: widget.management.pendingAvailable
+                  ? null
+                  : 'Servicio local no disponible.',
+              onPressed: widget.management.pendingAvailable
+                  ? () => widget.management.open(context, 'pending')
+                  : null,
+            ),
+          ],
+          if (destination == SessionDestination.analysis ||
+              destination == SessionDestination.more) ...[
+            if (destination == SessionDestination.more)
+              AfAction(
+                label: 'Análisis',
+                icon: AfIcons.analysis,
+                onPressed: () => open(SessionDestination.analysis),
+              ),
+            AfAction(
+              label: 'Real anual',
+              icon: AfIcons.analysis,
+              onPressed: () => open(SessionDestination.actual),
+            ),
+            AfAction(
+              label: 'Indicadores',
+              icon: AfIcons.analysis,
+              onPressed: () => open(SessionDestination.indicators),
+            ),
+            AfAction(
+              label: 'Diagnóstico de coherencia',
+              icon: AfIcons.analysis,
+              onPressed: () => open(SessionDestination.diagnostics),
+            ),
+            if (destination == SessionDestination.more)
+              AfAction(
+                label: 'Gestión',
+                icon: AfIcons.management,
+                onPressed: () => open(SessionDestination.management),
+              ),
+          ],
+          if (destination == SessionDestination.management)
+            ...widget.management.links(context),
+          if (destination == SessionDestination.diagnostics)
+            const Text(
+              'Diagnóstico no disponible: pendiente de la interfaz de EP-025. No se ejecuta automáticamente.',
+            ),
+        ],
+      ),
+    );
+  }
 }

@@ -17,7 +17,7 @@ final class NavigationSession extends ChangeNotifier {
     _context =
         initialContext ??
         NavigationContext(
-          destination: SessionDestination.status,
+          destination: SessionDestination.home,
           period: NavigationPeriod.fromMonth(madridMonth(_clock())),
         );
     _remember(_context.period);
@@ -26,10 +26,20 @@ final class NavigationSession extends ChangeNotifier {
   final NavigationClock _clock;
   late NavigationContext _context;
   final Map<int, int> _months = {};
+  final Map<SessionDestination, NavigationContext> _destinations = {};
   int _revision = 0;
+  int _navigationRevision = 0;
   bool _disposed = false;
   NavigationContext get context => _context;
   NavigationPeriod get period => context.period;
+  int get revision => _revision;
+  int get navigationRevision => _navigationRevision;
+
+  /// Recupera la captura del destino con el periodo de trabajo vigente.
+  NavigationContext contextForDestination(SessionDestination destination) =>
+      (_destinations[destination] ??
+              NavigationContext(destination: destination, period: period))
+          .withPeriod(period);
   int? rememberedMonth(int year) {
     NavigationPeriod(
       year,
@@ -59,7 +69,13 @@ final class NavigationSession extends ChangeNotifier {
     PeriodView? view,
     NavigationLeaveGuard? guard,
   }) => setContext(
-    NavigationContext(destination: destination, period: period, view: view),
+    view == null
+        ? contextForDestination(destination)
+        : NavigationContext(
+            destination: destination,
+            period: period,
+            view: view,
+          ),
     guard: guard,
   );
 
@@ -113,11 +129,18 @@ final class NavigationSession extends ChangeNotifier {
     bool deferNotification = false,
   }) async {
     if (_disposed) return false;
-    final revision = _revision;
+    final revision = _navigationRevision;
     if (guard != null && !await guard()) return false;
-    if (_disposed || revision != _revision) return false;
+    if (_disposed || revision != _navigationRevision) return false;
     if (identical(value, _context)) return true;
+    _destinations[_context.destination] = _context;
+    if (value.destination != _context.destination ||
+        value.period != _context.period ||
+        value.view != _context.view) {
+      _navigationRevision++;
+    }
     _context = value;
+    _destinations[value.destination] = value;
     _remember(value.period);
     _revision++;
     if (deferNotification) {

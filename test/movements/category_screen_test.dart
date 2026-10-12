@@ -137,14 +137,9 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(
-        ModalRoute.of(
-          tester.element(
-            find.descendant(
-              of: find.byType(AppBar),
-              matching: find.text(destination.label),
-            ),
-          ),
-        )!.settings.name,
+        ModalRoute.of(tester.element(find.text(destination.label)))!
+            .settings
+            .name,
         origin,
       );
       navigator.pop();
@@ -261,7 +256,7 @@ void main() {
       await settle(tester, until: () => selected!.node.id != tax.node.id);
       expect(selected!.node.id, isNot(tax.node.id));
       expect(selected!.path, tax.path);
-      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
+      expect(find.text('Ver detalle'), findsOneWidget);
       expect(await revision(tester), 5);
     },
   );
@@ -471,7 +466,7 @@ void main() {
       await settle(tester);
       expect(await revision(tester), 5);
       await settle(tester);
-      expect(find.text('Marcador técnico · /estado'), findsOneWidget);
+      expect(find.text('Ver detalle'), findsOneWidget);
     },
   );
 
@@ -563,7 +558,7 @@ void main() {
       );
       expect(await revision(tester), 5);
       await settle(tester);
-      expect(find.text('Estado del mes'), findsOneWidget);
+      expect(find.text('Inicio'), findsWidgets);
       await tester.pumpWidget(const SizedBox.shrink());
       await settle(tester);
     },

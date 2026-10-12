@@ -11,7 +11,7 @@ void main() {
     await entrypoint.main(initializeLocal: () async => null);
     await tester.pumpAndSettle();
 
-    expect(find.text('Marcador técnico · /estado'), findsOneWidget);
+    expect(find.text('Ver detalle'), findsOneWidget);
     expect(
       tester
           .widget<AutofinanceApp>(find.byType(AutofinanceApp))
@@ -22,10 +22,10 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Arranca con Estado técnico de Autofinance', (tester) async {
+  testWidgets('Arranca en Inicio de Autofinance', (tester) async {
     await tester.pumpWidget(const AutofinanceApp());
 
-    expect(find.text('Marcador técnico · /estado'), findsOneWidget);
+    expect(find.text('Ver detalle'), findsOneWidget);
     expect(
       tester.widget<MaterialApp>(find.byType(MaterialApp)).title,
       'Autofinance',

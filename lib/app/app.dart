@@ -6,6 +6,7 @@ import '../features/budget/presentation/budget_source.dart';
 import '../features/monthly_status/presentation/monthly_status_screen.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../ui/autofinance_ui.dart';
 
@@ -71,6 +72,7 @@ class AutofinanceApp extends StatefulWidget {
 }
 
 class _AutofinanceAppState extends State<AutofinanceApp> {
+  final _navigator = GlobalKey<NavigatorState>();
   late final NavigationSession _navigation;
   late final NavigationSessionObserver _navigationObserver;
   late final bool _ownsNavigation;
@@ -100,8 +102,22 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
     return NavigationSessionScope(
       session: _navigation,
       child: MaterialApp(
+        navigatorKey: _navigator,
+        builder: (context, child) => CallbackShortcuts(
+          bindings: {
+            const SingleActivator(
+              LogicalKeyboardKey.arrowLeft,
+              alt: true,
+            ): () =>
+                _navigator.currentState?.maybePop(),
+            const SingleActivator(LogicalKeyboardKey.escape): () =>
+                _navigator.currentState?.maybePop(),
+          },
+          child: child!,
+        ),
         navigatorObservers: [_navigationObserver],
         title: 'Autofinance',
+        debugShowCheckedModeBanner: false,
         locale: AppRegional.locale,
         supportedLocales: AppRegional.supportedLocales,
         localizationsDelegates: AppRegional.delegates,

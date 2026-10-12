@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../ui/autofinance_ui.dart';
+import 'app_routes.dart';
 import 'navigation_context.dart';
 import 'navigation_session.dart';
+import 'period_controls.dart';
 import 'session_location.dart';
 
-/// Cambiar pestaña sustituye la navegación principal; los detalles siguen
-/// usando push/pop. La composición adaptable conserva el mismo contenido.
+/// Única composición del shell. Los módulos entregan contenido y guards.
 class PrimaryNavigation extends StatelessWidget {
   const PrimaryNavigation({
     super.key,
@@ -16,6 +19,14 @@ class PrimaryNavigation extends StatelessWidget {
     this.scrollController,
     this.wrapHeader = false,
     this.beforeNavigate,
+    this.periodControl,
+    this.contextTrail,
+    this.detailAction,
+    this.status,
+    this.selectedDestination,
+    this.onBack,
+    this.navigationAvailable = true,
+    this.backLabel = 'Volver',
   });
 
   final NavigationSession session;
@@ -24,126 +35,166 @@ class PrimaryNavigation extends StatelessWidget {
   final List<Widget> actions;
   final ScrollController? scrollController;
   final bool wrapHeader;
-  final Future<bool> Function()? beforeNavigate;
+  final NavigationLeaveGuard? beforeNavigate;
+  final Widget? periodControl, contextTrail, detailAction, status;
+  final SessionDestination? selectedDestination;
+  final Future<bool> Function()? onBack;
+  final bool navigationAvailable;
+  final String backLabel;
 
   static const labels = {
+    SessionDestination.home: 'Inicio',
     SessionDestination.status: 'Estado',
     SessionDestination.wealth: 'Patrimonio',
     SessionDestination.budget: 'Presupuesto',
-    SessionDestination.actual: 'Real',
+    SessionDestination.movements: 'Movimientos',
+    SessionDestination.analysis: 'Análisis',
+    SessionDestination.more: 'Más',
+    SessionDestination.management: 'Gestión',
+    SessionDestination.actual: 'Real anual',
     SessionDestination.indicators: 'Indicadores',
+    SessionDestination.diagnostics: 'Diagnóstico de coherencia',
   };
+
+  static String selection(
+    SessionDestination destination, {
+    required bool desktop,
+  }) => switch (destination) {
+    SessionDestination.home || SessionDestination.status => 'home',
+    SessionDestination.budget => 'budget',
+    SessionDestination.movements => 'movements',
+    SessionDestination.wealth => 'wealth',
+    SessionDestination.more ||
+    SessionDestination.management => desktop ? 'management' : 'more',
+    _ => desktop ? 'analysis' : 'more',
+  };
+
+  Future<bool> _select(BuildContext context, String id) async {
+    final destination = SessionDestination.values.byName(id);
+    final route = ModalRoute.of(context);
+    final path = Uri.tryParse(route?.settings.name ?? '')?.path;
+    if (destination == session.context.destination &&
+        AppRoutes.contentPath(path ?? '') == destination.path) {
+      return true;
+    }
+    final revision = session.navigationRevision;
+    try {
+      if (beforeNavigate != null && !await beforeNavigate!()) return false;
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo resolver la salida. Sigue en esta pantalla.',
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+    if (!context.mounted ||
+        route?.isCurrent == false ||
+        revision != session.navigationRevision) {
+      return false;
+    }
+    final next = session.contextForDestination(destination);
+    final navigator = Navigator.of(context);
+    if (const {
+      SessionDestination.analysis,
+      SessionDestination.more,
+      SessionDestination.management,
+    }.contains(destination)) {
+      navigator.pushNamed(SessionLocation.encode(next), arguments: next);
+    } else {
+      navigator.pushNamedAndRemoveUntil(
+        SessionLocation.encode(next),
+        (_) => false,
+        arguments: next,
+      );
+    }
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: session,
     builder: (context, _) => LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final desktop = width >= 840;
-        final expandedHeader =
-            wrapHeader &&
-            (!desktop || MediaQuery.textScalerOf(context).scale(24) > 32);
-        final titleStyle = Theme.of(context).textTheme.titleLarge!;
-        final titlePainter = TextPainter(
-          text: TextSpan(text: title, style: titleStyle),
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-        )..layout(maxWidth: (width - 32).clamp(1, double.infinity));
-        final headerHeight =
-            titlePainter.height +
-            (actions.isEmpty
-                ? 0
-                : 24 + MediaQuery.textScalerOf(context).scale(20) * 1.4) +
-            16;
-        titlePainter.dispose();
-        Widget navigation(bool vertical) {
-          final buttons = [
-            for (final entry in labels.entries)
-              SizedBox(
-                width: vertical ? (width >= 1200 ? 216 : 200) : width / 2,
-                child: Semantics(
-                  selected: session.context.destination == entry.key,
-                  child: TextButton(
-                    // Navegación usa el rol de etiqueta (14), también con el
-                    // kit EP-026; conserva espacio para contenido al 200 %.
-                    style: TextButton.styleFrom(
-                      textStyle: Theme.of(context).textTheme.labelMedium,
-                      padding: const EdgeInsets.all(8),
-                      minimumSize: const Size(48, 48),
-                    ),
-                    key: ValueKey('destination-${entry.key.name}'),
-                    onPressed: session.context.destination == entry.key
-                        ? null
-                        : () async {
-                            if (beforeNavigate != null &&
-                                !await beforeNavigate!()) {
-                              return;
-                            }
-                            if (!context.mounted) return;
-                            final next = NavigationContext(
-                              destination: entry.key,
-                              period: session.period,
-                            );
-                            Navigator.of(context).pushNamedAndRemoveUntil(
-                              SessionLocation.encode(next),
-                              (_) => false,
-                              arguments: next,
-                            );
-                          },
-                    child: Text(entry.value),
-                  ),
-                ),
-              ),
-          ];
-          return vertical
-              ? Column(children: buttons)
-              : Wrap(alignment: WrapAlignment.center, children: buttons);
+        final desktop = constraints.maxWidth >= AfTokens.wideMin;
+        const common = [
+          AfNavItem(id: 'home', label: 'Inicio', icon: AfIcons.home),
+          AfNavItem(id: 'budget', label: 'Presupuesto', icon: AfIcons.calendar),
+          AfNavItem(
+            id: 'movements',
+            label: 'Movimientos',
+            icon: AfIcons.receipt,
+          ),
+          AfNavItem(id: 'wealth', label: 'Patrimonio', icon: AfIcons.account),
+        ];
+        Future<bool> back() async {
+          if (onBack != null) return onBack!();
+          if (beforeNavigate != null && !await beforeNavigate!()) return false;
+          if (!context.mounted) return false;
+          return Navigator.of(context).maybePop();
         }
 
-        // El contenido conserva su posición en el árbol al cambiar de tamaño:
-        // mantiene entradas, desplazamiento y foco.
-        return Scaffold(
-          appBar: AppBar(
-            automaticallyImplyLeading: !expandedHeader,
-            toolbarHeight: expandedHeader ? headerHeight : null,
-            title: expandedHeader
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: titleStyle,
-                        overflow: TextOverflow.visible,
+        return CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true):
+                back,
+            const SingleActivator(LogicalKeyboardKey.escape): back,
+          },
+          child: AfShell(
+            primaryItems: navigationAvailable
+                ? [
+                    ...common,
+                    if (desktop)
+                      const AfNavItem(
+                        id: 'analysis',
+                        label: 'Análisis',
+                        icon: AfIcons.analysis,
+                      )
+                    else
+                      const AfNavItem(
+                        id: 'more',
+                        label: 'Más',
+                        icon: AfIcons.more,
                       ),
-                      if (actions.isNotEmpty) Wrap(children: actions),
-                    ],
-                  )
-                : Text(title),
-            actions: expandedHeader ? null : actions,
-          ),
-          bottomNavigationBar: desktop
-              ? null
-              : SafeArea(child: navigation(false)),
-          body: SafeArea(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: desktop ? (width >= 1200 ? 216 : 200) : 0,
-                  child: desktop
-                      ? SingleChildScrollView(child: navigation(true))
-                      : null,
+                  ]
+                : const [],
+            utilityItems: navigationAvailable && desktop
+                ? const [
+                    AfNavItem(
+                      id: 'management',
+                      label: 'Gestión',
+                      icon: AfIcons.management,
+                    ),
+                  ]
+                : const [],
+            selectedId: selection(
+              selectedDestination ?? session.context.destination,
+              desktop: desktop,
+            ),
+            onSelect: (id) => _select(context, id),
+            onBack: onBack != null || Navigator.of(context).canPop()
+                ? back
+                : null,
+            periodControl:
+                periodControl ??
+                PeriodControls(
+                  session: session,
+                  beforeChange: (_) async =>
+                      beforeNavigate == null || await beforeNavigate!(),
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: scrollController,
-                    padding: EdgeInsets.all(desktop ? 24 : 16),
-                    child: child,
-                  ),
-                ),
-              ],
+            scrollController: scrollController,
+            backLabel: backLabel,
+            page: AfPageSlots(
+              title: title,
+              body: child,
+              actions: actions,
+              contextTrail: contextTrail,
+              detailAction: detailAction,
+              status: status,
             ),
           ),
         );

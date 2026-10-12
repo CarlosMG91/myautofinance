@@ -64,7 +64,7 @@ void main() {
     test('Nueva sesión usa Europe/Madrid en $instant', () {
       final session = NavigationSession(clock: () => DateTime.parse(instant));
       addTearDown(session.dispose);
-      expect(session.context.destination, SessionDestination.status);
+      expect(session.context.destination, SessionDestination.home);
       expect(session.period.toString(), expected);
     });
   }
@@ -93,7 +93,7 @@ void main() {
       expect(reads, 2);
       final fresh = NavigationSession(clock: clock);
       addTearDown(fresh.dispose);
-      expect(fresh.context.destination, SessionDestination.status);
+      expect(fresh.context.destination, SessionDestination.home);
       expect(fresh.period, NavigationPeriod(2027, 2));
       expect(fresh.rememberedMonth(1998), isNull);
       final explicit = NavigationSession(
@@ -349,13 +349,11 @@ void main() {
       final session = NavigationSessionScope.of(
         tester.element(find.byType(Navigator)),
       );
-      expect(session.context.destination, SessionDestination.status);
+      expect(session.context.destination, SessionDestination.home);
       expect(session.period, NavigationPeriod(2026, 7));
       expect(
-        ModalRoute.of(tester.element(find.text('Estado del mes')))!
-            .settings
-            .name,
-        '/estado?a=2026&m=07',
+        ModalRoute.of(tester.element(find.text('Inicio').last))!.settings.name,
+        '/inicio?a=2026&m=07',
       );
       final navigator = tester.state<NavigatorState>(find.byType(Navigator));
       navigator.pushNamed('/real?a=2024&m=02');
@@ -384,7 +382,7 @@ void main() {
         tester.element(find.byType(Navigator)),
       );
       expect(fresh.period, NavigationPeriod(2027, 8));
-      expect(fresh.context.destination, SessionDestination.status);
+      expect(fresh.context.destination, SessionDestination.home);
       expect(tester.takeException(), isNull);
     },
   );

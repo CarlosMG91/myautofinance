@@ -1,3 +1,5 @@
+import 'support/app_navigation.dart';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -77,9 +79,8 @@ void main() {
     for (final destination in [
       SessionDestination.wealth,
       SessionDestination.budget,
-      SessionDestination.actual,
-      SessionDestination.indicators,
-      SessionDestination.status,
+      SessionDestination.movements,
+      SessionDestination.home,
     ]) {
       await tap(
         tester,
@@ -110,7 +111,7 @@ void main() {
     final session = NavigationSession(clock: () => DateTime.utc(2026, 10, 9));
     addTearDown(session.dispose);
     await tester.pumpWidget(AutofinanceApp(navigationSession: session));
-    await tap(tester, find.byKey(const ValueKey('destination-actual')));
+    await selectAppDestination(tester, SessionDestination.actual);
     await applyYear(tester, '2031');
     expect(session.period, NavigationPeriod(2031, 1));
     await chooseMonth(tester, 'marzo');
@@ -158,7 +159,7 @@ void main() {
           .onPressed,
       isNull,
     );
-    await tap(tester, find.byKey(const ValueKey('destination-actual')));
+    await selectAppDestination(tester, SessionDestination.actual);
     expect(
       tester
           .widget<TextButton>(find.widgetWithText(TextButton, 'Año siguiente'))
@@ -313,7 +314,7 @@ void main() {
         await settle(tester);
         await chooseMonth(tester, 'diciembre');
         expect(session.period, NavigationPeriod(2030, 12));
-        await tap(tester, find.widgetWithText(TextButton, 'Real'));
+        await selectAppDestination(tester, SessionDestination.actual);
         expect(session.context.annualPeriod.focusedMonth, 12);
         expect((await tester.runAsync(db.readState))!.revision, revision);
       },
@@ -361,7 +362,7 @@ void main() {
           1,
         );
         expect(find.byKey(const Key('budget-cell-input')), findsOneWidget);
-        await tap(tester, find.widgetWithText(TextButton, 'Real'));
+        await tap(tester, find.byKey(const ValueKey('destination-analysis')));
         await tap(tester, find.text('Seguir editando'));
         expect(session.context.destination, SessionDestination.budget);
         final route = ModalRoute.of(tester.element(yearField));
@@ -395,7 +396,7 @@ void main() {
       await tap(tester, find.text('Gestión'));
       for (final label in [
         'Importar CSV',
-        'Importar XLS',
+        'Importar Openbank',
         'Historial de importaciones',
         'Movimientos',
         'Pendientes de categorizar',
@@ -404,7 +405,7 @@ void main() {
         'Copia en Drive',
         'Copias locales',
       ]) {
-        expect(find.text(label), findsOneWidget);
+        expect(find.text(label), findsWidgets);
       }
       await tap(tester, find.text('Fichas'));
       await settle(tester);

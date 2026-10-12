@@ -1,8 +1,11 @@
+import 'app_navigation.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 import 'package:myautofinance/app/navigation/navigation_context.dart';
 import 'package:myautofinance/app/navigation/navigation_period.dart';
 import 'package:myautofinance/app/navigation/navigation_session.dart';
@@ -54,8 +57,17 @@ Future<void> historicalNavigationJourney(
     await press('Ir al periodo');
   }
 
-  Future<void> destination(String label) =>
-      tap(find.widgetWithText(TextButton, label).last);
+  Future<void> destination(String label) async {
+    await selectAppDestination(tester, switch (label) {
+      'Real' => SessionDestination.actual,
+      'Indicadores' => SessionDestination.indicators,
+      'Estado' => SessionDestination.status,
+      'Patrimonio' => SessionDestination.wealth,
+      _ => SessionDestination.budget,
+    });
+    await settle();
+  }
+
   NavigatorState nav() => tester.state(find.byType(Navigator).first);
   MovementListController list() => tester
       .widget<MovementListScreen>(find.byType(MovementListScreen))
@@ -108,6 +120,13 @@ Future<void> historicalNavigationJourney(
     expect(find.text('Total mensual: −200,00 €'), findsOneWidget);
     await press('Mes siguiente');
 
+    // La captura conserva su periodo local; volver recupera el anual de marzo.
+    await press('Volver a Presupuesto anual');
+    expect(session.period, NavigationPeriod(2026, 3));
+    await tap(find.byType(DropdownButtonFormField<int>));
+    await tap(find.text('enero').last);
+    expect(session.period, NavigationPeriod(2026, 1));
+
     for (final label in [
       'Real',
       'Indicadores',
@@ -117,7 +136,10 @@ Future<void> historicalNavigationJourney(
     ]) {
       await destination(label);
       expect(session.period, NavigationPeriod(2026, 1));
-      expect(nav().canPop(), isFalse);
+      expect(
+        nav().canPop(),
+        label == 'Real' || label == 'Indicadores' || label == 'Estado',
+      );
       if (label == 'Real' || label == 'Estado' || label == 'Indicadores') {
         // Solo se verifica periodo del marcador; no hay informe financiero.
         expect(find.textContaining('€'), findsNothing);
@@ -129,14 +151,19 @@ Future<void> historicalNavigationJourney(
     expect(find.text('Total mensual: Sin presupuesto'), findsOneWidget);
     await destination('Patrimonio');
     expect(find.text('Sin dato: falta foto patrimonial'), findsOneWidget);
-    await tap(find.byTooltip('Gestión'));
-    await press('Movimientos');
+    await destination('Patrimonio');
+    await selectAppDestination(tester, SessionDestination.management);
+    await tap(find.widgetWithText(AfAction, 'Movimientos'));
     expect(list().from.value, '2035-01-01');
     expect(list().page!.subtotalCents, 0);
     expect(list().page!.records, isEmpty);
     nav().pop();
     await settle();
     expect(session.period, NavigationPeriod(2035, 1));
+    await press('Volver');
+    if (session.context.destination == SessionDestination.more) {
+      await press('Volver');
+    }
     await year('1980');
     expect(find.text('Sin dato: falta foto patrimonial'), findsOneWidget);
     expect((await io(data.database.readState)).revision, before.revision);
@@ -190,7 +217,7 @@ Future<void> historicalNavigationJourney(
     await press('Ver mes');
     expect(list().from.value, '2026-02-01');
     expect(list().page!.subtotalCents, 30000);
-    expect(session.period, NavigationPeriod(2026, 1));
+    expect(session.period, NavigationPeriod(2026, 2));
     nav().pop();
     await settle();
     expect(list(), same(originList));
@@ -269,7 +296,7 @@ Future<void> historicalNavigationJourney(
     );
     await settle();
     expect(find.text('Periodo de consulta: 2026-02'), findsOneWidget);
-    expect(find.text('Estado del mes'), findsOneWidget);
+    expect(find.text('Ver detalle'), findsOneWidget);
   } finally {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();

@@ -328,7 +328,7 @@ void main() {
       expect(find.text('−346,25 €'), findsNWidgets(3));
       expect(find.text('Supermercado'), findsOneWidget);
       final before = loads;
-      await tap(tester, find.text('Gestión'));
+      await tap(tester, find.byKey(const ValueKey('destination-management')));
       await tap(tester, find.text('Categorías'));
       final hiddenReads = loads;
       await tester.runAsync(
@@ -341,7 +341,8 @@ void main() {
       );
       await settle(tester);
       expect(loads, hiddenReads);
-      await tap(tester, find.text('Volver a Estado del mes, enero de 2026'));
+      await tap(tester, find.text('Volver a Gestión'));
+      await tap(tester, find.text('Volver'));
       expect(loads, greaterThan(before));
       expect(find.text('Alimentación actual'), findsOneWidget);
       await tester.runAsync(

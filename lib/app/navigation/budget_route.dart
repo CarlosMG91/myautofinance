@@ -26,6 +26,7 @@ import 'annual_budget_navigation.dart';
 import 'navigation_context.dart';
 import 'navigation_period.dart';
 import 'session_location.dart';
+import 'primary_navigation.dart';
 export 'budget_editor_origin.dart';
 import '../../features/wealth/wealth.dart' show Month;
 
@@ -264,6 +265,26 @@ class _BudgetRouteState extends State<BudgetRoute> {
             widget.navigationSession?.secondarySession(captureOrigin.context) ??
             NavigationSession(initialContext: captureOrigin.context);
         return MonthlyBudgetScreen(
+          shell: widget.navigationSession == null
+              ? null
+              : (body, scroll, canLeave, selected, change) => PrimaryNavigation(
+                  session: widget.navigationSession!,
+                  title: 'Presupuesto mensual',
+                  selectedDestination: SessionDestination.budget,
+                  scrollController: scroll,
+                  beforeNavigate: canLeave,
+                  periodControl: PeriodControls(
+                    session: local,
+                    beforeChange: (period) => change(period.budgetMonth),
+                  ),
+                  backLabel: 'Volver a Presupuesto anual',
+                  onBack: () async {
+                    if (!await canLeave() || !mounted) return false;
+                    back();
+                    return true;
+                  },
+                  child: body,
+                ),
           load: widget.load,
           month: month,
           onReturn: () => back(),

@@ -132,7 +132,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     if (!recovery) {
-      final context = tester.element(find.text('Marcador técnico · /estado'));
+      final context = tester.element(find.text('Ver detalle'));
       Navigator.of(context).pushNamed(AppRoutes.localBackups);
       await tester.pumpAndSettle();
     }

@@ -453,7 +453,7 @@ void main() {
       await tap(tester, find.text('Seguir editando'));
       expect(session.period.year, 2026);
       expect(tester.widget<TextField>(getInput()).controller!.text, '10');
-      await tap(tester, find.byKey(const ValueKey('destination-actual')));
+      await tap(tester, find.byKey(const ValueKey('destination-analysis')));
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await settle(tester);
       expect(session.context.destination, SessionDestination.budget);
@@ -480,8 +480,7 @@ void main() {
       await expand(tester);
       await tap(tester, cell(leaf, 1));
       await tester.enterText(getInput(), '-2');
-      await tap(tester, find.text('Gestión'));
-      await tap(tester, find.text('Categorías'));
+      await tap(tester, find.byKey(const ValueKey('destination-management')));
       await tap(tester, find.text('Seguir editando'));
       expect(getInput(), findsOneWidget);
       await tester.runAsync(() => categories.rename(leaf, name: 'Nueva ruta'));

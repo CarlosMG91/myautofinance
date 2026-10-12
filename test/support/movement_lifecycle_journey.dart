@@ -71,6 +71,12 @@ Future<void> movementLifecycleJourney(
   Future<void> tap(String label) async {
     await settle();
     debugPrint('Recorrido movimientos: $label');
+    final menu = find.widgetWithText(PopupMenuItem<String>, label);
+    if (menu.evaluate().isNotEmpty) {
+      await tester.tap(menu);
+      await settle();
+      return;
+    }
     final buttons = find.ancestor(
       of: find.text(label),
       matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),

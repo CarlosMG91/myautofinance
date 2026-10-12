@@ -7,6 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/app/navigation/navigation_context.dart';
+
+import '../support/app_navigation.dart';
+
 import 'package:myautofinance/features/synchronization/domain/drive_download.dart';
 import 'package:myautofinance/features/synchronization/domain/drive_download_application.dart';
 import 'package:myautofinance/features/synchronization/domain/drive_metadata.dart';
@@ -128,10 +132,16 @@ Future<void> open(WidgetTester tester, DriveController drive) async {
       child: AutofinanceApp(drive: drive),
     ),
   );
-  await tester.tap(find.text('Gestión'));
+  await selectAppDestination(tester, SessionDestination.management);
+  await tester.ensureVisible(find.text('Copia en Drive'));
+  await tapVisible(tester, find.text('Copia en Drive'));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Copia en Drive'));
-  await tester.pumpAndSettle();
+}
+
+Future<void> tapVisible(WidgetTester tester, Finder target) async {
+  await tester.ensureVisible(target);
+  await tester.pump();
+  await tester.tap(target);
 }
 
 void main() {
@@ -181,11 +191,11 @@ void main() {
 
           await capture('reposo');
           await tester.ensureVisible(find.text('Descargar última copia'));
-          await tester.tap(find.text('Descargar última copia'));
+          await tapVisible(tester, find.text('Descargar última copia'));
           await tester.pumpAndSettle();
           await capture('confirmacion');
           await tester.ensureVisible(find.text('Cancelar'));
-          await tester.tap(find.text('Cancelar'));
+          await tapVisible(tester, find.text('Cancelar'));
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
         },
@@ -206,12 +216,12 @@ void main() {
       expect(download.calls, 0);
       expect(find.textContaining('Remoto desconocido'), findsOneWidget);
       download.rejection = DriveDownloadStatus.noCopy;
-      await tester.tap(find.text('Descargar última copia'));
+      await tapVisible(tester, find.text('Descargar última copia'));
       await tester.pumpAndSettle();
       expect(find.text('Sin copia en Drive'), findsOneWidget);
       expect(find.textContaining('Remoto desconocido'), findsNothing);
       expect(download.applied, 0);
-      await tester.tap(find.textContaining('Volver a Estado del mes'));
+      await tapVisible(tester, find.text('Volver a Gestión'));
       await tester.pumpAndSettle();
       expect(upload.calls, 0);
       expect(download.calls, 1);
@@ -283,10 +293,10 @@ void main() {
       'Descargar última copia',
     );
     expect(tester.getSize(target).height, greaterThanOrEqualTo(48));
-    await tester.tap(target);
+    await tapVisible(tester, target);
     await tester.pumpAndSettle();
     expect(download.applied, 0);
-    await tester.tap(find.text('Descargar y sustituir'));
+    await tapVisible(tester, find.text('Descargar y sustituir'));
     await tester.pumpAndSettle();
     expect(download.applied, 1);
     expect(find.textContaining('Copia descargada.'), findsOneWidget);
@@ -301,7 +311,7 @@ void main() {
       final download = Downloader();
       final drive = controller(upload, download);
       await open(tester, drive);
-      await tester.tap(find.text('Subir copia'));
+      await tapVisible(tester, find.text('Subir copia'));
       await tester.pump();
       expect(drive.busy, true);
       expect(
@@ -317,7 +327,7 @@ void main() {
       await tester.pump();
       expect(find.text('Copia en Drive'), findsOneWidget);
       await tester.ensureVisible(find.text('Cancelar operación'));
-      await tester.tap(find.text('Cancelar operación'));
+      await tapVisible(tester, find.text('Cancelar operación'));
       await tester.pumpAndSettle();
       expect(upload.calls, 1);
       expect(download.calls, 0);
@@ -334,7 +344,7 @@ void main() {
       final upload = Uploader()..status = status;
       final drive = controller(upload, Downloader());
       await open(tester, drive);
-      await tester.tap(find.text('Subir copia'));
+      await tapVisible(tester, find.text('Subir copia'));
       await tester.pumpAndSettle();
       expect(drive.error, true);
       expect(find.textContaining('Copia subida'), findsNothing);
@@ -356,7 +366,7 @@ void main() {
       final download = Downloader()..localStatus = SyncLocalStatus.clean;
       final drive = controller(Uploader(), download);
       await open(tester, drive);
-      await tester.tap(find.text('Descargar última copia'));
+      await tapVisible(tester, find.text('Descargar última copia'));
       await tester.pumpAndSettle();
       expect(find.byType(AlertDialog), findsNothing);
       expect(download.applied, 1);
@@ -375,7 +385,7 @@ void main() {
       final download = Downloader()..rejection = rejection;
       final drive = controller(Uploader(), download);
       await open(tester, drive);
-      await tester.tap(find.text('Descargar última copia'));
+      await tapVisible(tester, find.text('Descargar última copia'));
       await tester.pumpAndSettle();
       expect(download.applied, 0);
       expect(drive.error, true);
@@ -389,9 +399,9 @@ void main() {
       final download = Downloader()..wait = Completer<void>();
       final drive = controller(Uploader(), download);
       await open(tester, drive);
-      await tester.tap(find.text('Descargar última copia'));
+      await tapVisible(tester, find.text('Descargar última copia'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Descargar y sustituir'));
+      await tapVisible(tester, find.text('Descargar y sustituir'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(
@@ -400,7 +410,7 @@ void main() {
       );
       expect(drive.busy, true);
       await tester.ensureVisible(find.text('Cancelar operación'));
-      await tester.tap(find.text('Cancelar operación'));
+      await tapVisible(tester, find.text('Cancelar operación'));
       await tester.pumpAndSettle();
       expect(download.applied, 0);
       expect(drive.error, false);
@@ -413,9 +423,9 @@ void main() {
         ..status = DriveDownloadApplicationStatus.recoveryRequired;
       final drive = controller(Uploader(), download);
       await open(tester, drive);
-      await tester.tap(find.text('Descargar última copia'));
+      await tapVisible(tester, find.text('Descargar última copia'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Descargar y sustituir'));
+      await tapVisible(tester, find.text('Descargar y sustituir'));
       await tester.pumpAndSettle();
       expect(drive.recoveryBlocked, true);
       expect(drive.error, true);
@@ -453,10 +463,10 @@ void main() {
       await open(tester, drive);
       await tester.ensureVisible(find.text('Descargar última copia'));
       expect(tester.takeException(), isNull);
-      await tester.tap(find.text('Descargar última copia'));
+      await tapVisible(tester, find.text('Descargar última copia'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Cancelar'));
-      await tester.tap(find.text('Cancelar'));
+      await tapVisible(tester, find.text('Cancelar'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });

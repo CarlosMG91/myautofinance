@@ -11,6 +11,16 @@ class TechnicalDestination {
 
 abstract final class AppRoutes {
   static const home = '/';
+  static const start = '/inicio';
+  static const analysis = '/analisis';
+  static const more = '/mas';
+  static const management = '/gestion';
+  static const diagnostics = '/diagnostico';
+  static const budgetDetail = '/presupuesto/detalle';
+  static const movementDetail = '/movimientos/detalle';
+  static const wealthDetail = '/patrimonio/detalle';
+  static const actualDetail = '/real/detalle';
+  static const indicatorDetail = '/indicadores/detalle';
   static const importHistory = '/importaciones';
   static const importReview = '/importaciones/revision';
   static const importCsv = '/importaciones/csv';
@@ -33,6 +43,17 @@ abstract final class AppRoutes {
   static const localBackups = '/copias-locales';
   static const categories = '/categorias';
   static const newCategory = '/categorias/nueva';
+
+  /// Solo aliases estáticos acordados. Nunca reescribe UUID ni prefijos.
+  static String contentPath(String path) => switch (path) {
+    home => start,
+    budgetDetail => budget,
+    movementDetail => movements,
+    wealthDetail => wealth,
+    actualDetail => actualSpending,
+    indicatorDetail => indicators,
+    _ => path,
+  };
 
   static const destinations = <TechnicalDestination>[
     TechnicalDestination(

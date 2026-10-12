@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import 'navigation_context.dart';
 import 'navigation_period.dart';
@@ -18,6 +17,20 @@ class PeriodControls extends StatefulWidget {
 }
 
 class _PeriodControlsState extends State<PeriodControls> {
+  static const _monthNames = [
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ];
   final _year = TextEditingController();
   int? _month;
   NavigationPeriod? _shown;
@@ -39,6 +52,16 @@ class _PeriodControlsState extends State<PeriodControls> {
           period,
           guard: () async =>
               widget.beforeChange == null || await widget.beforeChange!(period),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo resolver la salida. Sigue en este periodo.',
+            ),
+          ),
         );
       }
     } finally {
@@ -123,9 +146,7 @@ class _PeriodControlsState extends State<PeriodControls> {
                     for (var m = 1; m <= 12; m++)
                       DropdownMenuItem(
                         value: m,
-                        child: Text(
-                          DateFormat.MMMM('es_ES').format(DateTime(2026, m)),
-                        ),
+                        child: Text(_monthNames[m - 1]),
                       ),
                   ],
                   onChanged: _busy

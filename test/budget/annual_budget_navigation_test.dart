@@ -361,7 +361,11 @@ void main() {
           .widget<SingleChildScrollView>(
             find.descendant(
               of: find.byType(MonthlyBudgetScreen),
-              matching: find.byType(SingleChildScrollView),
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is SingleChildScrollView &&
+                    widget.controller != null,
+              ),
             ),
           )
           .controller!;

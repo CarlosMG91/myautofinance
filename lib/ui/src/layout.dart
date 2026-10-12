@@ -47,6 +47,8 @@ class AfShell extends StatefulWidget {
     required this.periodControl,
     required this.page,
     this.onBack,
+    this.scrollController,
+    this.backLabel = 'Volver',
   });
   final List<AfNavItem> primaryItems;
   final List<AfNavItem> utilityItems;
@@ -55,6 +57,10 @@ class AfShell extends StatefulWidget {
   final Widget periodControl;
   final AfPageSlots page;
   final Future<bool> Function()? onBack;
+
+  /// T06 conecta la posición que conserva el propietario del contenido.
+  final ScrollController? scrollController;
+  final String backLabel;
   @override
   State<AfShell> createState() => _AfShellState();
 }
@@ -71,60 +77,64 @@ class _AfShellState extends State<AfShell> {
     }
   }
 
-  Widget _item(AfNavItem item, {bool compact = false}) => Semantics(
-    selected: item.id == widget.selectedId,
-    child: Container(
-      decoration: BoxDecoration(
-        color: item.id == widget.selectedId ? AfTokens.accentTint : null,
-        border: item.id == widget.selectedId
-            ? Border.all(
-                color: MediaQuery.highContrastOf(context)
-                    ? AfTokens.text
-                    : AfTokens.accent,
-                width: 2,
-              )
-            : null,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: TextButton(
-        style: ButtonStyle(
-          animationDuration: AfTokens.duration(context),
-          padding: compact
-              ? const WidgetStatePropertyAll(
-                  EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+  Widget _item(AfNavItem item, {bool compact = false}) => Tooltip(
+    message: item.label,
+    child: Semantics(
+      key: ValueKey('destination-${item.id}'),
+      selected: item.id == widget.selectedId,
+      child: Container(
+        decoration: BoxDecoration(
+          color: item.id == widget.selectedId ? AfTokens.accentTint : null,
+          border: item.id == widget.selectedId
+              ? Border.all(
+                  color: MediaQuery.highContrastOf(context)
+                      ? AfTokens.text
+                      : AfTokens.accent,
+                  width: 2,
                 )
               : null,
+          borderRadius: BorderRadius.circular(8),
         ),
-        onPressed: _selecting || item.unavailableReason != null
-            ? null
-            : () => _select(item),
-        child: compact
-            ? Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AfIcon(item.icon, color: AfTokens.accent),
-                  Text(
-                    item.label,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(letterSpacing: 0),
-                  ),
-                ],
-              )
-            : Row(
-                spacing: 12,
-                children: [
-                  AfIcon(item.icon, color: AfTokens.accent),
-                  Expanded(child: Text(item.label)),
-                  if (item.unavailableReason != null)
-                    Expanded(
-                      child: Text(
-                        item.unavailableReason!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+        child: TextButton(
+          style: ButtonStyle(
+            animationDuration: AfTokens.duration(context),
+            padding: compact
+                ? const WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+                  )
+                : null,
+          ),
+          onPressed: _selecting || item.unavailableReason != null
+              ? null
+              : () => _select(item),
+          child: compact
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AfIcon(item.icon, color: AfTokens.accent),
+                    Text(
+                      item.label,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(letterSpacing: 0),
                     ),
-                ],
-              ),
+                  ],
+                )
+              : Row(
+                  spacing: 12,
+                  children: [
+                    AfIcon(item.icon, color: AfTokens.accent),
+                    Expanded(child: Text(item.label)),
+                    if (item.unavailableReason != null)
+                      Expanded(
+                        child: Text(
+                          item.unavailableReason!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                  ],
+                ),
+        ),
       ),
     ),
   );
@@ -173,37 +183,49 @@ class _AfShellState extends State<AfShell> {
             spacing: 12,
             children: [
               if (widget.onBack != null)
-                AfAction(
-                  label: 'Volver',
-                  icon: AfIcons.back,
-                  onPressed: () async {
-                    await widget.onBack!();
-                  },
+                Tooltip(
+                  message: widget.backLabel,
+                  child: AfAction(
+                    label: widget.backLabel,
+                    icon: AfIcons.back,
+                    onPressed: () async {
+                      await widget.onBack!();
+                    },
+                  ),
                 ),
-              widget.periodControl,
+              FocusTraversalOrder(
+                order: const NumericFocusOrder(1),
+                child: widget.periodControl,
+              ),
               if (!wide)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final item in widget.utilityItems)
-                      SizedBox(
-                        width: reflow ? constraints.maxWidth - 32 : 200,
-                        child: _item(item),
-                      ),
-                  ],
+                FocusTraversalOrder(
+                  order: const NumericFocusOrder(0),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final item in widget.utilityItems)
+                        SizedBox(
+                          width: reflow ? constraints.maxWidth - 32 : 200,
+                          child: _item(item),
+                        ),
+                    ],
+                  ),
                 ),
               if (!wide && reflow)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final item in widget.primaryItems)
-                      SizedBox(
-                        width: constraints.maxWidth - 32,
-                        child: _item(item),
-                      ),
-                  ],
+                FocusTraversalOrder(
+                  order: const NumericFocusOrder(0),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final item in widget.primaryItems)
+                        SizedBox(
+                          width: constraints.maxWidth - 32,
+                          child: _item(item),
+                        ),
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -215,11 +237,15 @@ class _AfShellState extends State<AfShell> {
           children: [
             Expanded(
               child: SingleChildScrollView(
+                controller: widget.scrollController,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     header,
-                    AfPageLayout(page: widget.page),
+                    FocusTraversalOrder(
+                      order: const NumericFocusOrder(2),
+                      child: AfPageLayout(page: widget.page),
+                    ),
                   ],
                 ),
               ),
@@ -280,11 +306,11 @@ class _AfShellState extends State<AfShell> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (navigation != null)
-                  FocusTraversalOrder(
-                    order: const NumericFocusOrder(0),
-                    child: navigation,
-                  ),
+                // Mantener el índice y tipo del contenido al cruzar 840 px.
+                FocusTraversalOrder(
+                  order: const NumericFocusOrder(0),
+                  child: SizedBox(width: wide ? 232 : 0, child: navigation),
+                ),
                 main,
               ],
             ),

@@ -5,6 +5,7 @@ import 'navigation_session.dart';
 import 'session_location.dart';
 import 'budget_origin.dart';
 import 'app_routes.dart';
+import 'movement_list_route.dart' show MovementListOrigin;
 
 /// Solo app importa este acceso. Los módulos reciben periodo/callbacks por
 /// constructor para conservar el grafo de arquitectura existente.
@@ -67,6 +68,11 @@ class NavigationSessionObserver extends NavigatorObserver {
         ? null
         : SessionDestination.fromPath(uri.path);
     if (destination == null) return;
+    if (destination == SessionDestination.movements &&
+        (route.settings.arguments is MovementListOrigin ||
+            uri!.queryParameters.containsKey('origen'))) {
+      return;
+    }
     final result = SessionLocation.resolve(route.settings.name!, session);
     if (result is ValidSessionLocation) {
       final argument = route.settings.arguments;

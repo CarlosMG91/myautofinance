@@ -109,6 +109,17 @@ abstract final class MovementLinks {
         uri.hasFragment ||
         ![
           AppRoutes.home,
+          AppRoutes.start,
+          AppRoutes.movements,
+          AppRoutes.analysis,
+          AppRoutes.more,
+          AppRoutes.management,
+          AppRoutes.diagnostics,
+          AppRoutes.budgetDetail,
+          AppRoutes.movementDetail,
+          AppRoutes.wealthDetail,
+          AppRoutes.actualDetail,
+          AppRoutes.indicatorDetail,
           AppRoutes.monthlyBudget,
           ...AppRoutes.destinations.map((d) => d.path),
         ].contains(uri.path)) {

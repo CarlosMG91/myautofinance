@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/app/navigation/navigation_context.dart';
+
+import 'app_navigation.dart';
+
 import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
 import 'package:myautofinance/app/local_backup_session.dart';
 import 'package:myautofinance/features/movements/movements.dart'
@@ -537,7 +541,7 @@ Future<void> wealthLifecycleJourney(
     expect(find.text('Cuenta nueva'), findsOneWidget);
     await capture('08-historico-tras-reapertura');
     // Navegar a otra vista transmite el periodo, sin escribir.
-    await tap('Real');
+    await selectAppDestination(tester, SessionDestination.actual);
     expect(
       ModalRoute.of(tester.element(find.textContaining('Marcador técnico')))!
           .settings

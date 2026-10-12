@@ -8,8 +8,9 @@ import 'wealth_route.dart';
 import 'movement_editor_route.dart';
 import 'movement_links.dart';
 import 'navigation_session.dart';
-import 'session_location.dart';
 import 'navigation_context.dart';
+import 'primary_navigation.dart';
+import '../../ui/autofinance_ui.dart';
 import 'monthly_status_origin.dart';
 import '../category_selector_navigation.dart';
 import '../../features/movements/presentation/category_tree_screen.dart';
@@ -55,15 +56,22 @@ class _MovementListRouteState extends State<MovementListRoute> {
   void initState() {
     super.initState();
     final p = Uri.tryParse(widget.settings.name ?? '')?.queryParameters;
-    _explicitPeriod =
-        p?.containsKey('a') == true || p?.containsKey('desde') == true;
+    final saved = widget.settings.arguments;
+    _explicitPeriod = saved is NavigationContext
+        ? saved.filters['__range'] == 'custom'
+        : p?.containsKey('desde') == true;
     widget.navigationSession?.addListener(_periodChanged);
   }
 
   void _periodChanged() {
     final session = widget.navigationSession;
     final controller = _controller;
-    if (_explicitPeriod || session == null || controller == null) return;
+    if (_explicitPeriod ||
+        session == null ||
+        controller == null ||
+        ModalRoute.of(context)?.isCurrent == false) {
+      return;
+    }
     final period = session.period;
     final until = period.next?.firstDay;
     if (controller.from.value != period.firstDay.value ||
@@ -87,6 +95,7 @@ class _MovementListRouteState extends State<MovementListRoute> {
             widget.navigationSession?.period.civilMonth ??
             madridMonth(DateTime.now()),
       );
+      final firstBuild = _controller == null;
       final controller = _controller ??= MovementListController(
         load: widget.load,
         from: query.from,
@@ -97,10 +106,17 @@ class _MovementListRouteState extends State<MovementListRoute> {
         accountId: query.accountId,
         concept: query.concept,
       );
+      final saved = widget.settings.arguments;
+      if (firstBuild && saved is NavigationContext) {
+        controller.scrollOffset = saved.scrollOffset;
+        controller.focus = saved.focus;
+      }
+      final principal =
+          widget.settings.arguments is! MovementListOrigin &&
+          MovementLinks.origin(widget.settings.name!) == null;
       final origin = widget.settings.arguments is MovementListOrigin
           ? (widget.settings.arguments as MovementListOrigin).route
-          : MovementLinks.origin(widget.settings.name!) ??
-                AppRoutes.monthlyStatus;
+          : MovementLinks.origin(widget.settings.name!) ?? AppRoutes.start;
       String currentRoute() => MovementLinks.list(
         MovementListQuery(
           from: controller.from,
@@ -111,63 +127,86 @@ class _MovementListRouteState extends State<MovementListRoute> {
           unclassified: controller.unclassified,
           concept: controller.concept,
         ),
-        origin: origin,
+        origin: principal ? null : origin,
       );
-      final width = MediaQuery.sizeOf(context).width;
-      Widget navigation(bool vertical) => Wrap(
-        direction: vertical ? Axis.vertical : Axis.horizontal,
-        spacing: 4,
-        children: [
-          for (final destination in AppRoutes.destinations)
-            SizedBox(
-              width: vertical
-                  ? 168
-                  : (width - 24) /
-                        (MediaQuery.textScalerOf(context).scale(14) >= 21
-                            ? 2
-                            : 3),
-              child: TextButton(
-                onPressed: controller.batchActive
-                    ? null
-                    : () => Navigator.of(context).pushNamedAndRemoveUntil(
-                        widget.navigationSession == null
-                            ? '${destination.path}?a=${controller.from.value.substring(0, 4)}&m=${controller.from.value.substring(5, 7)}'
-                            : SessionLocation.encode(
-                                NavigationContext(
-                                  destination: SessionDestination.fromPath(
-                                    destination.path,
-                                  )!,
-                                  period: widget.navigationSession!.period,
-                                ),
-                              ),
-                        (_) => false,
-                      ),
-                child: Text(switch (destination.path) {
-                  AppRoutes.monthlyStatus => 'Estado',
-                  AppRoutes.wealth => 'Patrimonio',
-                  AppRoutes.budget => 'Presupuesto',
-                  AppRoutes.actualSpending => 'Real',
-                  _ => 'Indicadores',
-                }),
-              ),
-            ),
-        ],
-      );
+      void capture(double offset, String? focus) {
+        final session = widget.navigationSession;
+        if (!principal ||
+            session == null ||
+            ModalRoute.of(context)?.isCurrent == false) {
+          return;
+        }
+        session.setContext(
+          NavigationContext(
+            destination: SessionDestination.movements,
+            period: session.period,
+            branchId: controller.unclassified
+                ? 'sin-clasificar'
+                : controller.categoryId,
+            scope: controller.scope,
+            scrollOffset: offset,
+            focus: focus,
+            filters: {
+              'desde': controller.from.value,
+              if (controller.until != null) 'hasta': controller.until!.value,
+              if (controller.accountId != null) 'cuenta': controller.accountId!,
+              if (controller.concept.isNotEmpty) 'concepto': controller.concept,
+              '__range': _explicitPeriod ? 'custom' : 'period',
+            },
+          ),
+          deferNotification: true,
+        );
+      }
+
       return MovementListScreen(
         returnLabel: 'Volver a ${MovementListOrigin(origin).label}',
-        navigation: width >= 840
-            ? Container(
-                width: width >= 1200 ? 216 : 200,
-                color: Colors.white,
-                padding: const EdgeInsets.all(16),
-                child: navigation(true),
-              )
-            : null,
-        bottomNavigation: width < 840
-            ? SafeArea(child: navigation(false))
-            : null,
+        shell: widget.navigationSession == null
+            ? null
+            : (body, scroll, canLeave) => PrimaryNavigation(
+                session: widget.navigationSession!,
+                title: 'Movimientos',
+                backLabel: 'Volver a ${MovementListOrigin(origin).label}',
+                scrollController: scroll,
+                beforeNavigate: canLeave,
+                contextTrail: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_explicitPeriod)
+                      Text(
+                        'Rango propio: ${controller.from.value} → ${controller.until?.value ?? 'fin del calendario'}',
+                      ),
+                    if (_explicitPeriod)
+                      AfAction(
+                        label: 'Usar mes seleccionado',
+                        icon: AfIcons.calendar,
+                        onPressed: () async {
+                          if (!await canLeave() || !mounted) return;
+                          setState(() => _explicitPeriod = false);
+                          _periodChanged();
+                          capture(0, null);
+                        },
+                      ),
+                  ],
+                ),
+                onBack: principal
+                    ? null
+                    : () async {
+                        if (!await canLeave() || !context.mounted) return false;
+                        if (Navigator.of(context).canPop()) {
+                          return Navigator.of(context).maybePop();
+                        }
+                        Navigator.of(context).pushReplacementNamed(origin);
+                        return true;
+                      },
+                child: body,
+              ),
+        onOrigin: capture,
         controller: controller,
-        onFiltersApplied: () => _explicitPeriod = true,
+        onFiltersApplied: () {
+          _explicitPeriod = true;
+          capture(0, null);
+          setState(() {});
+        },
         onReturn: () {
           final navigator = Navigator.of(context);
           if (navigator.canPop()) {

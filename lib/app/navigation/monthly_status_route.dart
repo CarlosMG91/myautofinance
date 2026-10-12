@@ -141,13 +141,13 @@ class _MonthlyStatusRouteState extends State<MonthlyStatusRoute> {
               await _session.returnToOrigin(SecondaryNavigationContext(saved));
             }
           },
-          periodControls: PeriodControls(session: _session),
+          periodControls: const SizedBox.shrink(),
           shell: (body, scroll, refresh) => PrimaryNavigation(
             session: _session,
             title: 'Estado del mes',
             wrapHeader: true,
             scrollController: scroll,
-            actions: [widget.management(origin, refresh)],
+            periodControl: PeriodControls(session: _session),
             child: body,
           ),
         );

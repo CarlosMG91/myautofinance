@@ -190,8 +190,8 @@ void main() {
     (tester) async {
       await boot(tester);
       await tap(tester, find.byKey(const ValueKey('destination-budget')));
-      await tap(tester, find.byTooltip('Gestión'));
-      await tap(tester, find.text('Movimientos'));
+      await tap(tester, find.byKey(const ValueKey('destination-management')));
+      await tap(tester, find.text('Movimientos').last);
       expect(list(tester).from.value, '2026-01-01');
       expect(list(tester).page!.subtotalCents, 200);
       expect(list(tester).paths[categoryId], 'Histórico sintético');
@@ -377,7 +377,13 @@ void main() {
           list(tester).page!.records.length,
           savedDate.startsWith('2026-01') ? 3 : 2,
         );
-        expect(session.period, NavigationPeriod(2026, 1));
+        expect(
+          session.period,
+          NavigationPeriod(
+            int.parse(savedDate.substring(0, 4)),
+            int.parse(savedDate.substring(5, 7)),
+          ),
+        );
         nav(tester).pop();
         await settle(tester);
         expect(list(tester), same(c));

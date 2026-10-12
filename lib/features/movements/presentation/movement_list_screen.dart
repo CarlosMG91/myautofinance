@@ -18,6 +18,8 @@ class MovementListScreen extends StatefulWidget {
     this.navigation,
     this.bottomNavigation,
     this.returnLabel = 'Volver al origen',
+    this.shell,
+    this.onOrigin,
   });
   final MovementListController controller;
   final Future<void> Function(String id) onOpen;
@@ -30,6 +32,13 @@ class MovementListScreen extends StatefulWidget {
   final VoidCallback? onFiltersApplied;
   final Widget? navigation, bottomNavigation;
   final String returnLabel;
+  final void Function(double offset, String? focus)? onOrigin;
+  final Widget Function(
+    Widget body,
+    ScrollController scroll,
+    Future<bool> Function() canLeave,
+  )?
+  shell;
   @override
   State<MovementListScreen> createState() => _MovementListScreenState();
 }
@@ -44,6 +53,65 @@ class _MovementListScreenState extends State<MovementListScreen> {
   late MovementCategoryScope _scope;
   bool _unclassified = false;
   int _shownPeriodRevision = 0;
+  bool _restored = false;
+  bool _allowPop = false;
+  bool _askingLeave = false;
+  bool get _dirtyFilters =>
+      _search.text != c.concept ||
+      _from.text != c.from.value ||
+      _until.text != (c.until?.value ?? '') ||
+      _accountId != c.accountId ||
+      _categoryId != c.categoryId ||
+      _scope != c.scope ||
+      _unclassified != c.unclassified;
+
+  Future<bool> _canLeave() async {
+    if (c.batchActive || _askingLeave) return false;
+    if (!_dirtyFilters) return true;
+    _askingLeave = true;
+    final focus = FocusManager.instance.primaryFocus;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        title: const Text('Filtros sin aplicar'),
+        content: const Text(
+          'Hay cambios de filtros sin aplicar. ¿Quieres descartarlos?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Seguir editando'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Descartar cambios'),
+          ),
+        ],
+      ),
+    );
+    _askingLeave = false;
+    if (!mounted) return false;
+    if (discard != true) {
+      if (focus?.context != null) focus!.requestFocus();
+      return false;
+    }
+    setState(() {
+      _search.text = c.concept;
+      _from.text = c.from.value;
+      _until.text = c.until?.value ?? '';
+      _accountId = c.accountId;
+      _categoryId = c.categoryId;
+      _scope = c.scope;
+      _unclassified = c.unclassified;
+    });
+    return true;
+  }
+
+  void _draftChanged() {
+    if (mounted) setState(() {});
+  }
+
   MovementListController get c => widget.controller;
   @override
   void initState() {
@@ -56,6 +124,10 @@ class _MovementListScreenState extends State<MovementListScreen> {
     _from.text = c.from.value;
     _until.text = c.until?.value ?? '';
     c.addListener(_changed);
+    for (final field in [_search, _from, _until]) {
+      field.addListener(_draftChanged);
+    }
+    _scroll.addListener(() => widget.onOrigin?.call(_scroll.offset, c.focus));
     c.refresh();
   }
 
@@ -72,6 +144,24 @@ class _MovementListScreenState extends State<MovementListScreen> {
     }
     widget.onSelection?.call(c.selection, c.context);
     if (mounted) setState(() {});
+    _restorePosition();
+  }
+
+  void _restorePosition() {
+    if (_restored || c.page == null || !mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          _restored ||
+          ModalRoute.of(context)?.isCurrent == false ||
+          !_scroll.hasClients ||
+          !_scroll.position.hasContentDimensions) {
+        return;
+      }
+      _restored = true;
+      _scroll.jumpTo(c.scrollOffset.clamp(0, _scroll.position.maxScrollExtent));
+      final focus = _focus[c.focus];
+      if (focus?.context != null) focus?.requestFocus();
+    });
   }
 
   @override
@@ -371,9 +461,145 @@ class _MovementListScreenState extends State<MovementListScreen> {
   ];
   @override
   Widget build(BuildContext context) {
+    _restorePosition();
     final wide =
         MediaQuery.sizeOf(context).width >= 840 &&
         MediaQuery.textScalerOf(context).scale(14) < 21;
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Periodo ${c.from.value} → ${c.until?.value ?? 'fin del calendario'} · Recientes primero',
+        ),
+        Text(
+          'Resultados: ${c.accountId == null ? 'Todas las cuentas' : c.accounts[c.accountId] ?? c.accountId} · ${c.unclassified
+              ? 'Sin clasificar'
+              : c.categoryId == null
+              ? 'Todas las categorías'
+              : c.categoryLabel(c.categoryId)} · ${c.scope == MovementCategoryScope.branch ? 'Rama completa' : 'Solo directos'} · Concepto: ${c.concept.isEmpty ? 'Todos' : c.concept}',
+        ),
+        _filters(),
+        if (widget.onCreate != null)
+          FilledButton(
+            onPressed: c.locked ? null : _create,
+            child: const Text('Añadir movimiento'),
+          ),
+        if (_validation != null)
+          Semantics(liveRegion: true, child: Text(_validation!)),
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            '${c.selected.length} seleccionados · UUID: ${c.selected.join(', ')}',
+          ),
+        ),
+        if (c.notice != null)
+          Semantics(liveRegion: true, child: Text(c.notice!)),
+        Wrap(
+          spacing: 12,
+          children: [
+            OutlinedButton(
+              onPressed: c.locked || c.page == null || c.page!.records.isEmpty
+                  ? null
+                  : c.selectPage,
+              child: Text(
+                'Seleccionar página visible (${c.page?.records.length ?? 0})',
+              ),
+            ),
+            TextButton(
+              onPressed: c.locked
+                  ? null
+                  : () {
+                      c.clearSelection();
+                      _changed();
+                    },
+              child: const Text('Quitar selección'),
+            ),
+            if (widget.selectCategory != null)
+              OutlinedButton(
+                onPressed: c.locked || c.selection == null || c.page == null
+                    ? null
+                    : () => _batch(MovementBatchAction.assignCategory),
+                child: const Text('Asignar categoría'),
+              ),
+            OutlinedButton(
+              onPressed: c.locked || c.selection == null || c.page == null
+                  ? null
+                  : () => _batch(MovementBatchAction.removeCategory),
+              child: const Text('Quitar categoría'),
+            ),
+            OutlinedButton(
+              onPressed: c.locked || c.selection == null || c.page == null
+                  ? null
+                  : () => _batch(MovementBatchAction.delete),
+              child: Text('Borrar seleccionados (${c.selected.length})'),
+            ),
+          ],
+        ),
+        if (c.loading)
+          Semantics(liveRegion: true, child: Text('Cargando movimientos…')),
+        if (c.batchActive)
+          Semantics(
+            liveRegion: true,
+            child: const Text('Operación sobre la selección en curso…'),
+          ),
+        if (c.error != null) ...[
+          Semantics(liveRegion: true, child: Text(c.error!)),
+          FilledButton(
+            onPressed: c.locked ? null : () => c.refresh(),
+            child: const Text('Reintentar'),
+          ),
+        ],
+        if (c.page != null) ...[
+          Text('Subtotal filtrado: ${movementEuro(c.page!.subtotalCents)}'),
+          if (c.page!.records.isEmpty)
+            const Text(
+              'No hay movimientos que coincidan con este periodo y filtros.',
+            ),
+          if (c.page!.records.isNotEmpty)
+            MovementRecordList(
+              records: c.page!.records,
+              labels: const [
+                'Fecha',
+                'Concepto',
+                'Cuenta',
+                'Categoría',
+                'Importe EUR',
+              ],
+              values: _values,
+              checkbox: _check,
+              actions: _openButton,
+              wide: wide,
+            ),
+        ],
+        Wrap(
+          spacing: 12,
+          children: [
+            TextButton(
+              onPressed: c.locked || c.pageIndex == 0 ? null : c.previous,
+              child: const Text('Página anterior'),
+            ),
+            Text('Página ${c.pageIndex + 1}'),
+            TextButton(
+              onPressed: c.locked || c.page?.nextCursor == null ? null : c.next,
+              child: const Text('Página siguiente'),
+            ),
+          ],
+        ),
+      ],
+    );
+    if (widget.shell != null) {
+      return PopScope(
+        canPop: _allowPop || (!c.batchActive && !_dirtyFilters),
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop || !await _canLeave() || !mounted) return;
+          setState(() => _allowPop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) Navigator.of(context).pop(result);
+          });
+        },
+        child: widget.shell!(body, _scroll, _canLeave),
+      );
+    }
     return PopScope(
       canPop: !c.batchActive,
       child: Scaffold(
@@ -399,148 +625,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
             child: SingleChildScrollView(
               controller: _scroll,
               padding: EdgeInsets.all(wide ? 24 : 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Periodo ${c.from.value} → ${c.until?.value ?? 'fin del calendario'} · Recientes primero',
-                  ),
-                  Text(
-                    'Resultados: ${c.accountId == null ? 'Todas las cuentas' : c.accounts[c.accountId] ?? c.accountId} · ${c.unclassified
-                        ? 'Sin clasificar'
-                        : c.categoryId == null
-                        ? 'Todas las categorías'
-                        : c.categoryLabel(c.categoryId)} · ${c.scope == MovementCategoryScope.branch ? 'Rama completa' : 'Solo directos'} · Concepto: ${c.concept.isEmpty ? 'Todos' : c.concept}',
-                  ),
-                  _filters(),
-                  if (widget.onCreate != null)
-                    FilledButton(
-                      onPressed: c.locked ? null : _create,
-                      child: const Text('Añadir movimiento'),
-                    ),
-                  if (_validation != null)
-                    Semantics(liveRegion: true, child: Text(_validation!)),
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      '${c.selected.length} seleccionados · UUID: ${c.selected.join(', ')}',
-                    ),
-                  ),
-                  if (c.notice != null)
-                    Semantics(liveRegion: true, child: Text(c.notice!)),
-                  Wrap(
-                    spacing: 12,
-                    children: [
-                      OutlinedButton(
-                        onPressed:
-                            c.locked ||
-                                c.page == null ||
-                                c.page!.records.isEmpty
-                            ? null
-                            : c.selectPage,
-                        child: Text(
-                          'Seleccionar página visible (${c.page?.records.length ?? 0})',
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: c.locked
-                            ? null
-                            : () {
-                                c.clearSelection();
-                                _changed();
-                              },
-                        child: const Text('Quitar selección'),
-                      ),
-                      if (widget.selectCategory != null)
-                        OutlinedButton(
-                          onPressed:
-                              c.locked || c.selection == null || c.page == null
-                              ? null
-                              : () =>
-                                    _batch(MovementBatchAction.assignCategory),
-                          child: const Text('Asignar categoría'),
-                        ),
-                      OutlinedButton(
-                        onPressed:
-                            c.locked || c.selection == null || c.page == null
-                            ? null
-                            : () => _batch(MovementBatchAction.removeCategory),
-                        child: const Text('Quitar categoría'),
-                      ),
-                      OutlinedButton(
-                        onPressed:
-                            c.locked || c.selection == null || c.page == null
-                            ? null
-                            : () => _batch(MovementBatchAction.delete),
-                        child: Text(
-                          'Borrar seleccionados (${c.selected.length})',
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (c.loading)
-                    Semantics(
-                      liveRegion: true,
-                      child: Text('Cargando movimientos…'),
-                    ),
-                  if (c.batchActive)
-                    Semantics(
-                      liveRegion: true,
-                      child: const Text(
-                        'Operación sobre la selección en curso…',
-                      ),
-                    ),
-                  if (c.error != null) ...[
-                    Semantics(liveRegion: true, child: Text(c.error!)),
-                    FilledButton(
-                      onPressed: c.locked ? null : () => c.refresh(),
-                      child: const Text('Reintentar'),
-                    ),
-                  ],
-                  if (c.page != null) ...[
-                    Text(
-                      'Subtotal filtrado: ${movementEuro(c.page!.subtotalCents)}',
-                    ),
-                    if (c.page!.records.isEmpty)
-                      const Text(
-                        'No hay movimientos que coincidan con este periodo y filtros.',
-                      ),
-                    if (c.page!.records.isNotEmpty)
-                      MovementRecordList(
-                        records: c.page!.records,
-                        labels: const [
-                          'Fecha',
-                          'Concepto',
-                          'Cuenta',
-                          'Categoría',
-                          'Importe EUR',
-                        ],
-                        values: _values,
-                        checkbox: _check,
-                        actions: _openButton,
-                        wide: wide,
-                      ),
-                  ],
-                  Wrap(
-                    spacing: 12,
-                    children: [
-                      TextButton(
-                        onPressed: c.locked || c.pageIndex == 0
-                            ? null
-                            : c.previous,
-                        child: const Text('Página anterior'),
-                      ),
-                      Text('Página ${c.pageIndex + 1}'),
-                      TextButton(
-                        onPressed: c.locked || c.page?.nextCursor == null
-                            ? null
-                            : c.next,
-                        child: const Text('Página siguiente'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              child: body,
             ),
           ),
         ),

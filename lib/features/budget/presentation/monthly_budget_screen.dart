@@ -24,6 +24,7 @@ class MonthlyBudgetScreen extends StatefulWidget {
     this.onReturn,
     this.initialScrollOffset = 0,
     this.initialFocus,
+    this.shell,
   });
   final BudgetLoader load;
   final BudgetMonth month;
@@ -46,6 +47,14 @@ class MonthlyBudgetScreen extends StatefulWidget {
   final VoidCallback? onReturn;
   final double initialScrollOffset;
   final String? initialFocus;
+  final Widget Function(
+    Widget body,
+    ScrollController scroll,
+    Future<bool> Function() canLeave,
+    BudgetMonth month,
+    Future<bool> Function(BudgetMonth) change,
+  )?
+  shell;
   @override
   State<MonthlyBudgetScreen> createState() => _MonthlyBudgetScreenState();
 }
@@ -70,6 +79,14 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
   String? _originFocus;
   int _request = 0;
   bool _restoringOrigin = true;
+
+  Future<bool> _canLeave() async {
+    if (locked || !await discard() || !mounted) return false;
+    _clear();
+    _publishOrigin();
+    return true;
+  }
+
   @override
   bool get dirty =>
       _draft != null &&
@@ -448,6 +465,172 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
           ),
       ],
     );
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.shell == null && widget.onReturn != null)
+          TextButton(
+            onPressed: locked ? null : () => leave(widget.onReturn!),
+            child: const Text('Volver a Presupuesto anual'),
+          ),
+        if (widget.shell == null && widget.periodControls != null)
+          widget.periodControls!(_month, _change),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            if (widget.periodControls == null) ...[
+              SizedBox(
+                width: 120,
+                child: TextField(
+                  controller: _year,
+                  enabled: !locked,
+                  decoration: const InputDecoration(labelText: 'Año'),
+                  keyboardType: TextInputType.number,
+                  onSubmitted: (value) {
+                    try {
+                      _change(
+                        BudgetMonth(
+                          int.parse(value),
+                          int.parse(_month.value.substring(5, 7)),
+                        ),
+                      );
+                    } catch (_) {
+                      _year.text = _month.value.substring(0, 4);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Año inválido: usa 1 a 9999.'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+              SizedBox(
+                width: compact ? width - 32 : 240,
+                child: DropdownButton<int>(
+                  isExpanded: true,
+                  value: int.parse(_month.value.substring(5, 7)),
+                  items: [
+                    for (var m = 1; m <= 12; m++)
+                      DropdownMenuItem(
+                        value: m,
+                        child: Text(
+                          const [
+                            'Enero',
+                            'Febrero',
+                            'Marzo',
+                            'Abril',
+                            'Mayo',
+                            'Junio',
+                            'Julio',
+                            'Agosto',
+                            'Septiembre',
+                            'Octubre',
+                            'Noviembre',
+                            'Diciembre',
+                          ][m - 1],
+                        ),
+                      ),
+                  ],
+                  onChanged: locked
+                      ? null
+                      : (m) => _change(
+                          BudgetMonth(
+                            int.parse(_month.value.substring(0, 4)),
+                            m!,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+            FilledButton(
+              focusNode: _newFocus,
+              onPressed: locked || _loading || _readError != null
+                  ? null
+                  : () => _open(null, _newFocus),
+              child: const Text('Crear partida'),
+            ),
+            if (widget.onProposal != null)
+              OutlinedButton(
+                focusNode: _proposalFocus,
+                onPressed: locked || _loading || _readError != null
+                    ? null
+                    : () async {
+                        if (!await discard() || !mounted) {
+                          return;
+                        }
+                        final offset = _scroll.hasClients
+                            ? _scroll.offset
+                            : 0.0;
+                        _clear();
+                        _publishOrigin('budget-proposal');
+                        await widget.onProposal!(_month);
+                        if (mounted) {
+                          await _read(restoreOffset: offset);
+                          _proposalFocus.requestFocus();
+                        }
+                      },
+                child: const Text('Proponer año siguiente'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Cada confirmación guarda solo una partida. El subtotal de rama es de solo lectura.',
+        ),
+        if (_loading)
+          Semantics(liveRegion: true, child: Text('Consultando presupuesto…'))
+        else if (_readError != null) ...[
+          Semantics(liveRegion: true, child: Text(_readError!)),
+          TextButton(onPressed: _read, child: const Text('Reintentar')),
+        ] else if (_data != null) ...[
+          if (!compact)
+            const Padding(
+              padding: EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Categoría',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Importe propio · editable',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Subtotal de rama · solo lectura',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (_data!.activeTree.isEmpty)
+            const Text('No hay categorías activas. Usa Gestión → Categorías.'),
+          for (final row in _data!.activeTree) _row(row, compact),
+          if (_data!.archivedBudgets.isNotEmpty) ...[
+            const Text('Histórico archivado · incluido en el total'),
+            for (final row in _data!.archivedBudgets) _row(row, true),
+          ],
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              'Total mensual: ${budgetTotal([..._data!.activeTree, ..._data!.archivedBudgets].where((r) => r.budget != null).isEmpty ? null : [..._data!.activeTree, ..._data!.archivedBudgets].fold<BigInt>(BigInt.zero, (n, r) => n + BigInt.from(r.ownAmountCents ?? 0)))}',
+            ),
+          ),
+        ],
+      ],
+    );
     return PopScope(
       canPop: allowPop || (!dirty && !locked),
       onPopInvokedWithResult: (didPop, _) {
@@ -463,245 +646,49 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
             }
           },
         },
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Presupuesto mensual'),
-            automaticallyImplyLeading: false,
-            actions: [
-              widget.management(_month, _read, () async {
-                if (locked || !await discard() || !mounted) return false;
-                _clear();
-                _publishOrigin();
-                return true;
-              }),
-            ],
-          ),
-          bottomNavigationBar: compact
-              ? SafeArea(child: navigation(false))
-              : null,
-          body: SafeArea(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: compact ? 0 : (width >= 1200 ? 216 : 200),
-                  child: compact ? null : navigation(true),
+        child: widget.shell != null
+            ? widget.shell!(body, _scroll, _canLeave, _month, _change)
+            : Scaffold(
+                appBar: AppBar(
+                  title: const Text('Presupuesto mensual'),
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    widget.management(_month, _read, () async {
+                      if (locked || !await discard() || !mounted) return false;
+                      _clear();
+                      _publishOrigin();
+                      return true;
+                    }),
+                  ],
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scroll,
-                    padding: EdgeInsets.all(
-                      compact
-                          ? 16
-                          : width >= 1200
-                          ? 32
-                          : 24,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (widget.onReturn != null)
-                          TextButton(
-                            onPressed: locked
-                                ? null
-                                : () => leave(widget.onReturn!),
-                            child: const Text('Volver a Presupuesto anual'),
+                bottomNavigationBar: compact
+                    ? SafeArea(child: navigation(false))
+                    : null,
+                body: SafeArea(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: compact ? 0 : (width >= 1200 ? 216 : 200),
+                        child: compact ? null : navigation(true),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          controller: _scroll,
+                          padding: EdgeInsets.all(
+                            compact
+                                ? 16
+                                : width >= 1200
+                                ? 32
+                                : 24,
                           ),
-                        if (widget.periodControls != null)
-                          widget.periodControls!(_month, _change),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            if (widget.periodControls == null) ...[
-                              SizedBox(
-                                width: 120,
-                                child: TextField(
-                                  controller: _year,
-                                  enabled: !locked,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Año',
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  onSubmitted: (value) {
-                                    try {
-                                      _change(
-                                        BudgetMonth(
-                                          int.parse(value),
-                                          int.parse(
-                                            _month.value.substring(5, 7),
-                                          ),
-                                        ),
-                                      );
-                                    } catch (_) {
-                                      _year.text = _month.value.substring(0, 4);
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Año inválido: usa 1 a 9999.',
-                                              ),
-                                            ),
-                                          );
-                                    }
-                                  },
-                                ),
-                              ),
-                              SizedBox(
-                                width: compact ? width - 32 : 240,
-                                child: DropdownButton<int>(
-                                  isExpanded: true,
-                                  value: int.parse(
-                                    _month.value.substring(5, 7),
-                                  ),
-                                  items: [
-                                    for (var m = 1; m <= 12; m++)
-                                      DropdownMenuItem(
-                                        value: m,
-                                        child: Text(
-                                          const [
-                                            'Enero',
-                                            'Febrero',
-                                            'Marzo',
-                                            'Abril',
-                                            'Mayo',
-                                            'Junio',
-                                            'Julio',
-                                            'Agosto',
-                                            'Septiembre',
-                                            'Octubre',
-                                            'Noviembre',
-                                            'Diciembre',
-                                          ][m - 1],
-                                        ),
-                                      ),
-                                  ],
-                                  onChanged: locked
-                                      ? null
-                                      : (m) => _change(
-                                          BudgetMonth(
-                                            int.parse(
-                                              _month.value.substring(0, 4),
-                                            ),
-                                            m!,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                            ],
-                            FilledButton(
-                              focusNode: _newFocus,
-                              onPressed:
-                                  locked || _loading || _readError != null
-                                  ? null
-                                  : () => _open(null, _newFocus),
-                              child: const Text('Crear partida'),
-                            ),
-                            if (widget.onProposal != null)
-                              OutlinedButton(
-                                focusNode: _proposalFocus,
-                                onPressed:
-                                    locked || _loading || _readError != null
-                                    ? null
-                                    : () async {
-                                        if (!await discard() || !mounted) {
-                                          return;
-                                        }
-                                        final offset = _scroll.hasClients
-                                            ? _scroll.offset
-                                            : 0.0;
-                                        _clear();
-                                        _publishOrigin('budget-proposal');
-                                        await widget.onProposal!(_month);
-                                        if (mounted) {
-                                          await _read(restoreOffset: offset);
-                                          _proposalFocus.requestFocus();
-                                        }
-                                      },
-                                child: const Text('Proponer año siguiente'),
-                              ),
-                          ],
+                          child: body,
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Cada confirmación guarda solo una partida. El subtotal de rama es de solo lectura.',
-                        ),
-                        if (_loading)
-                          Semantics(
-                            liveRegion: true,
-                            child: Text('Consultando presupuesto…'),
-                          )
-                        else if (_readError != null) ...[
-                          Semantics(liveRegion: true, child: Text(_readError!)),
-                          TextButton(
-                            onPressed: _read,
-                            child: const Text('Reintentar'),
-                          ),
-                        ] else if (_data != null) ...[
-                          if (!compact)
-                            const Padding(
-                              padding: EdgeInsets.all(10),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: Text(
-                                      'Categoría',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: Text(
-                                      'Importe propio · editable',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                      'Subtotal de rama · solo lectura',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          if (_data!.activeTree.isEmpty)
-                            const Text(
-                              'No hay categorías activas. Usa Gestión → Categorías.',
-                            ),
-                          for (final row in _data!.activeTree)
-                            _row(row, compact),
-                          if (_data!.archivedBudgets.isNotEmpty) ...[
-                            const Text(
-                              'Histórico archivado · incluido en el total',
-                            ),
-                            for (final row in _data!.archivedBudgets)
-                              _row(row, true),
-                          ],
-                          Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              'Total mensual: ${budgetTotal([..._data!.activeTree, ..._data!.archivedBudgets].where((r) => r.budget != null).isEmpty ? null : [..._data!.activeTree, ..._data!.archivedBudgets].fold<BigInt>(BigInt.zero, (n, r) => n + BigInt.from(r.ownAmountCents ?? 0)))}',
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
     );
   }

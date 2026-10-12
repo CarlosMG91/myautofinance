@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/app/navigation/navigation_context.dart';
 import 'package:myautofinance/app/category_selector_navigation.dart';
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
@@ -13,6 +14,8 @@ import 'package:myautofinance/app/navigation/app_routes.dart';
 import 'package:myautofinance/features/budget/budget.dart';
 import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/features/wealth/wealth.dart';
+
+import 'app_navigation.dart';
 
 /// El mismo guion para widgets y Windows/Android nativos, con archivo sintético.
 Future<void> categoryLifecycleJourney(
@@ -57,6 +60,11 @@ Future<void> categoryLifecycleJourney(
   }
 
   Future<void> tap(String label) async {
+    if (label == 'Gestión' && find.text(label).evaluate().isEmpty) {
+      await selectAppDestination(tester, SessionDestination.management);
+      await settle();
+      return;
+    }
     debugPrint('Recorrido categorías: $label');
     final buttons = find.ancestor(
       of: find.text(label),
