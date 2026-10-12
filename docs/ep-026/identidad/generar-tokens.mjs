@@ -16,6 +16,6 @@ lines.push('}', '');
 const css = lines.join('\n');
 const file = new URL('tokens.css', root);
 if (process.argv.includes('--check')) {
-  if (readFileSync(file, 'utf8') !== css) throw Error('tokens.css desactualizado');
+  if (readFileSync(file, 'utf8').replace(/\r\n/g, '\n') !== css) throw Error('tokens.css desactualizado');
   console.log('Tokens CSS coinciden con JSON.');
 } else writeFileSync(file, css);
