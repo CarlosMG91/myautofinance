@@ -65,6 +65,13 @@ class PrimaryNavigation extends StatelessWidget {
                 child: Semantics(
                   selected: session.context.destination == entry.key,
                   child: TextButton(
+                    // Navegación usa el rol de etiqueta (14), también con el
+                    // kit EP-026; conserva espacio para contenido al 200 %.
+                    style: TextButton.styleFrom(
+                      textStyle: Theme.of(context).textTheme.labelMedium,
+                      padding: const EdgeInsets.all(8),
+                      minimumSize: const Size(48, 48),
+                    ),
                     key: ValueKey('destination-${entry.key.name}'),
                     onPressed: session.context.destination == entry.key
                         ? null

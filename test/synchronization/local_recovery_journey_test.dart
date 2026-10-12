@@ -379,13 +379,17 @@ void main() {
           await Directory(p.dirname(destination)).create(recursive: true);
           await File(path).copy(destination);
         }
-        await for (final file in Directory(
-          'lib',
-        ).list(recursive: true, followLinks: false)) {
-          if (file is! File) continue;
-          final destination = p.join(worker.path, file.path);
-          await Directory(p.dirname(destination)).create(recursive: true);
-          await file.copy(destination);
+        // El pubspec declara las fuentes locales del kit. El proceso hijo
+        // necesita el bundle completo, aunque esta prueba no abra pantallas.
+        for (final source in ['lib', 'assets']) {
+          await for (final file in Directory(
+            source,
+          ).list(recursive: true, followLinks: false)) {
+            if (file is! File) continue;
+            final destination = p.join(worker.path, file.path);
+            await Directory(p.dirname(destination)).create(recursive: true);
+            await file.copy(destination);
+          }
         }
         final process = await Process.start(
           p.join(

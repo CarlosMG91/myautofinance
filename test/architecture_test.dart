@@ -76,6 +76,13 @@ void main() {
             final isLocalPackage = uri.startsWith('package:myautofinance/');
             final parsed = Uri.parse(uri);
             if (parsed.hasScheme && !isLocalPackage) {
+              if (sourceParts.first == 'ui') {
+                expect(
+                  uri.startsWith('dart:') || uri.startsWith('package:flutter/'),
+                  isTrue,
+                  reason: '$source → $uri',
+                );
+              }
               if (sourceParts.contains('domain') ||
                   sourceParts.first == 'core') {
                 expect(uri, startsWith('dart:'), reason: '$source → $uri');
@@ -92,12 +99,20 @@ void main() {
             if (sourceParts.first == 'core') {
               expect(targetParts.first, 'core', reason: reason);
             }
+            if (sourceParts.first == 'ui') {
+              expect(targetParts.first, 'ui', reason: reason);
+            }
             if (sourceParts.first != 'features') continue;
             expect(
               targetParts.first,
-              isIn(['core', 'features']),
+              isIn(['core', 'features', 'ui']),
               reason: reason,
             );
+            if (targetParts.first == 'ui') {
+              expect(sourceParts, contains('presentation'), reason: reason);
+              expect(target, 'ui/autofinance_ui.dart', reason: reason);
+              continue;
+            }
             if (targetParts.first == 'core') continue;
             if (sourceParts[1] != targetParts[1]) {
               expect(

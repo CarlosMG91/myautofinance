@@ -40,6 +40,13 @@ la instantánea SQLite sobre los repositorios existentes. Ver el
 
 ## Reglas de dependencias
 
+MA-TSK-208 añade `lib/ui/autofinance_ui.dart` como entrada pública de
+presentación compartida conforme al contrato EP-026. `app` puede consumirla;
+las funcionalidades solo desde `presentation`. `core`, `domain` y `data` no
+importan UI. El kit solo depende de Dart/Flutter y de sí mismo, sin importar
+app/features ni consultar datos. La prueba de arquitectura comprueba esta
+excepción explícita y mantiene las demás fronteras y el grafo acíclico.
+
 - `app` compone módulos y adaptadores; ninguna funcionalidad importa `app` ni
   `main.dart`. `main.dart` reexporta `AutofinanceApp` para conservar el import
   de la prueba de arranque de MA-TSK-023.
