@@ -14,11 +14,42 @@ final class SqliteMovementRepository
     implements
         MovementRepository,
         PendingMovementRepository,
-        MonthlyMovementTotalsReader {
+        MonthlyMovementTotalsReader,
+        AnnualMovementTotalsReader {
   SqliteMovementRepository(this.database);
   final LocalDatabase database;
   static const _select =
       'SELECT m.*,r.batch_id,r.source_ordinal FROM movements m LEFT JOIN import_rows r ON r.id=m.import_row_id';
+
+  @override
+  Future<List<AnnualMovementTotal>> readYearTotals(int year) async {
+    final filter = _filter(
+      from: ValueDate(year, 1, 1),
+      until: year == 9999 ? null : ValueDate(year + 1, 1, 1),
+    );
+    final rows = await database
+        .customSelect(
+          'SELECT CAST(substr(m.value_date,6,2) AS INTEGER) AS month, '
+          'm.category_id, count(*) AS movement_count, '
+          'movement_subtotal(m.amount_cents) AS subtotal '
+          'FROM movements m WHERE ${filter.where} '
+          'GROUP BY month,m.category_id',
+          variables: filter.arguments,
+        )
+        .get();
+    return List.unmodifiable(
+      rows.map((row) {
+        final amount = row.readNullable<int>('subtotal');
+        if (amount == null) throw const MovementTotalsOverflow();
+        return AnnualMovementTotal(
+          month: row.read<int>('month'),
+          categoryId: row.readNullable<String>('category_id'),
+          amountCents: amount,
+          movementCount: row.read<int>('movement_count'),
+        );
+      }),
+    );
+  }
 
   @override
   Future<List<MonthlyMovementTotal>> readMonthTotals(
