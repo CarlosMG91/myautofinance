@@ -1,0 +1,671 @@
+{
+  "version": 1,
+  "ticket": "MA-TSK-205",
+  "status": "design-awaiting-MA-TSK-207",
+  "activationOwner": "MA-TSK-209",
+  "navigation": {
+    "windows": {
+      "primary": [
+        "home",
+        "budget",
+        "movements",
+        "wealth",
+        "analysis"
+      ],
+      "utilities": [
+        "management"
+      ]
+    },
+    "android": {
+      "primary": [
+        "home",
+        "budget",
+        "movements",
+        "wealth",
+        "more"
+      ],
+      "utilities": []
+    }
+  },
+  "entrySelection": {
+    "windows": {
+      "home": "home",
+      "monthlyComparison": "home",
+      "budget": "budget",
+      "movements": "movements",
+      "wealth": "wealth",
+      "analysis": "analysis",
+      "actual": "analysis",
+      "indicators": "analysis",
+      "more": "management",
+      "management": "management",
+      "diagnostics": "analysis"
+    },
+    "android": {
+      "home": "home",
+      "monthlyComparison": "home",
+      "budget": "budget",
+      "movements": "movements",
+      "wealth": "wealth",
+      "analysis": "more",
+      "actual": "more",
+      "indicators": "more",
+      "more": "more",
+      "management": "more",
+      "diagnostics": "more"
+    }
+  },
+  "destinations": [
+    {
+      "id": "home",
+      "label": "Inicio",
+      "path": "/inicio",
+      "module": "monthlyStatus",
+      "kind": "summary",
+      "state": "new",
+      "period": "monthly",
+      "owner": "MA-TSK-210",
+      "children": [
+        "monthlyComparison",
+        "movements",
+        "pending",
+        "importCsv",
+        "wealthPhoto",
+        "wealth",
+        "management"
+      ]
+    },
+    {
+      "id": "monthlyComparison",
+      "label": "Comparación mensual",
+      "path": "/estado",
+      "module": "monthlyStatus",
+      "kind": "detail",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-210",
+      "children": [
+        "movementRecords",
+        "budgetRecords"
+      ]
+    },
+    {
+      "id": "budget",
+      "label": "Presupuesto",
+      "path": "/presupuesto",
+      "module": "budget",
+      "kind": "summary",
+      "state": "existing",
+      "period": "annual",
+      "owner": "MA-TSK-211",
+      "children": [
+        "budgetDetail",
+        "monthlyBudget",
+        "budgetProposal",
+        "budgetRecords"
+      ]
+    },
+    {
+      "id": "budgetDetail",
+      "label": "Ver detalle",
+      "path": "/presupuesto/detalle",
+      "module": "budget",
+      "kind": "detail",
+      "state": "new",
+      "period": "annual",
+      "owner": "MA-TSK-211",
+      "children": [
+        "budgetRecords",
+        "budgetNew",
+        "budgetEditor"
+      ]
+    },
+    {
+      "id": "monthlyBudget",
+      "label": "Captura mensual",
+      "path": "/presupuesto/mensual",
+      "module": "budget",
+      "kind": "editor",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-211",
+      "children": [
+        "budgetRecords",
+        "budgetNew",
+        "budgetEditor",
+        "categories"
+      ]
+    },
+    {
+      "id": "budgetProposal",
+      "label": "Preparar año siguiente",
+      "path": "/presupuesto/propuesta",
+      "module": "budget",
+      "kind": "editor",
+      "state": "existing",
+      "period": "annual",
+      "owner": "MA-TSK-211",
+      "children": []
+    },
+    {
+      "id": "budgetRecords",
+      "label": "Partidas de origen",
+      "path": "/presupuesto/partidas",
+      "module": "budget",
+      "kind": "records",
+      "state": "existing",
+      "period": "range",
+      "owner": "EP-024",
+      "children": [
+        "budgetNew",
+        "budgetEditor"
+      ]
+    },
+    {
+      "id": "budgetNew",
+      "label": "Crear partida",
+      "path": "/presupuesto/partidas/nueva",
+      "module": "budget",
+      "kind": "editor",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-211",
+      "children": [
+        "categories"
+      ]
+    },
+    {
+      "id": "budgetEditor",
+      "label": "Editar partida",
+      "path": "/presupuesto/partidas/:id",
+      "module": "budget",
+      "kind": "editor",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-211",
+      "children": [
+        "categories"
+      ]
+    },
+    {
+      "id": "movements",
+      "label": "Movimientos",
+      "path": "/movimientos",
+      "module": "movements",
+      "kind": "summary",
+      "state": "existing",
+      "period": "range",
+      "owner": "MA-TSK-213",
+      "children": [
+        "movementNew",
+        "movementEditor",
+        "pending",
+        "importCsv",
+        "importOpenbank",
+        "importHistory",
+        "movementRecords"
+      ]
+    },
+    {
+      "id": "movementRecords",
+      "label": "Ver detalle de movimientos",
+      "path": "/movimientos/detalle",
+      "module": "movements",
+      "kind": "records",
+      "state": "new",
+      "period": "range",
+      "owner": "MA-TSK-213",
+      "children": [
+        "movementEditor"
+      ]
+    },
+    {
+      "id": "movementNew",
+      "label": "Registrar movimiento",
+      "path": "/movimientos/nuevo",
+      "module": "movements",
+      "kind": "editor",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-213",
+      "children": [
+        "categories",
+        "accounts"
+      ]
+    },
+    {
+      "id": "movementEditor",
+      "label": "Detalle y edición de movimiento",
+      "path": "/movimientos/:id",
+      "module": "movements",
+      "kind": "editor",
+      "state": "existing",
+      "period": "range",
+      "owner": "MA-TSK-213",
+      "children": [
+        "categories",
+        "accounts"
+      ]
+    },
+    {
+      "id": "pending",
+      "label": "Categorizar pendientes",
+      "path": "/pendientes-categorizacion",
+      "module": "movements",
+      "kind": "editor",
+      "state": "existing",
+      "period": "range",
+      "owner": "MA-TSK-213",
+      "children": [
+        "categories",
+        "movementEditor"
+      ]
+    },
+    {
+      "id": "wealth",
+      "label": "Patrimonio",
+      "path": "/patrimonio",
+      "module": "wealth",
+      "kind": "summary",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-212",
+      "children": [
+        "wealthDetail",
+        "wealthPhoto",
+        "accounts"
+      ]
+    },
+    {
+      "id": "wealthDetail",
+      "label": "Ver detalle",
+      "path": "/patrimonio/detalle",
+      "module": "wealth",
+      "kind": "detail",
+      "state": "new",
+      "period": "monthly",
+      "owner": "MA-TSK-212",
+      "children": [
+        "wealthPhoto",
+        "accounts"
+      ]
+    },
+    {
+      "id": "wealthPhoto",
+      "label": "Registrar o corregir foto",
+      "path": "/patrimonio/foto",
+      "module": "wealth",
+      "kind": "editor",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-212",
+      "children": [
+        "accounts"
+      ]
+    },
+    {
+      "id": "accounts",
+      "label": "Cuentas, deudas y carteras",
+      "path": "/patrimonio/fichas",
+      "module": "wealth",
+      "kind": "catalog",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-215",
+      "children": [
+        "accountNew",
+        "accountEditor"
+      ]
+    },
+    {
+      "id": "accountNew",
+      "label": "Crear ficha",
+      "path": "/patrimonio/fichas/nueva",
+      "module": "wealth",
+      "kind": "editor",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-215",
+      "children": []
+    },
+    {
+      "id": "accountEditor",
+      "label": "Editar ficha y liquidez",
+      "path": "/patrimonio/fichas/:id",
+      "module": "wealth",
+      "kind": "editor",
+      "state": "existing",
+      "period": "monthly",
+      "owner": "MA-TSK-215",
+      "children": []
+    },
+    {
+      "id": "analysis",
+      "label": "Análisis",
+      "path": "/analisis",
+      "module": null,
+      "kind": "group",
+      "state": "new",
+      "period": "annual",
+      "owner": "MA-TSK-209",
+      "children": [
+        "actual",
+        "indicators",
+        "diagnostics"
+      ]
+    },
+    {
+      "id": "actual",
+      "label": "Real anual",
+      "path": "/real",
+      "module": "actualSpending",
+      "kind": "summary",
+      "state": "marker",
+      "period": "annual",
+      "owner": "EP-022",
+      "children": [
+        "actualDetail",
+        "movementRecords"
+      ]
+    },
+    {
+      "id": "actualDetail",
+      "label": "Ver detalle",
+      "path": "/real/detalle",
+      "module": "actualSpending",
+      "kind": "detail",
+      "state": "new",
+      "period": "annual",
+      "owner": "EP-022",
+      "children": [
+        "movementRecords"
+      ]
+    },
+    {
+      "id": "indicators",
+      "label": "Indicadores",
+      "path": "/indicadores",
+      "module": "indicators",
+      "kind": "summary",
+      "state": "marker",
+      "period": "monthly",
+      "owner": "EP-023",
+      "children": [
+        "indicatorDetail",
+        "wealthPhoto",
+        "budget"
+      ]
+    },
+    {
+      "id": "indicatorDetail",
+      "label": "Ver detalle del colchón",
+      "path": "/indicadores/detalle",
+      "module": "indicators",
+      "kind": "detail",
+      "state": "new",
+      "period": "monthly",
+      "owner": "EP-023",
+      "children": [
+        "wealthPhoto",
+        "budget"
+      ]
+    },
+    {
+      "id": "more",
+      "label": "Más",
+      "path": "/mas",
+      "surfaces": ["android"],
+      "module": null,
+      "kind": "group",
+      "state": "new",
+      "period": "context",
+      "owner": "MA-TSK-209",
+      "children": [
+        "analysis",
+        "actual",
+        "indicators",
+        "management"
+      ]
+    },
+    {
+      "id": "management",
+      "label": "Gestión",
+      "path": "/gestion",
+      "module": null,
+      "kind": "group",
+      "state": "new",
+      "period": "context",
+      "owner": "MA-TSK-209",
+      "children": [
+        "importCsv",
+        "importOpenbank",
+        "importHistory",
+        "categories",
+        "accounts",
+        "drive",
+        "backups",
+        "diagnostics"
+      ]
+    },
+    {
+      "id": "importCsv",
+      "label": "Importar CSV",
+      "path": "/importaciones/csv",
+      "module": "importing",
+      "kind": "flow",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-214",
+      "children": [
+        "importReview",
+        "importHistory"
+      ]
+    },
+    {
+      "id": "importOpenbank",
+      "label": "Importar Openbank XLS",
+      "path": "/importaciones/openbank",
+      "module": "importing",
+      "kind": "flow",
+      "state": "integrationPending",
+      "period": "context",
+      "owner": "MA-TSK-214",
+      "children": [
+        "importReview",
+        "importHistory"
+      ]
+    },
+    {
+      "id": "importReview",
+      "label": "Revisar importación",
+      "path": "/importaciones/revision",
+      "module": "importing",
+      "kind": "flow",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-214",
+      "children": [
+        "importHistory",
+        "importBatch",
+        "pending"
+      ]
+    },
+    {
+      "id": "importHistory",
+      "label": "Historial de importaciones",
+      "path": "/importaciones",
+      "module": "importing",
+      "kind": "catalog",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-214",
+      "children": [
+        "importBatch"
+      ]
+    },
+    {
+      "id": "importBatch",
+      "label": "Detalle del lote",
+      "path": "/importaciones/lotes/:id",
+      "module": "importing",
+      "kind": "detail",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-214",
+      "children": [
+        "importRow",
+        "pending"
+      ]
+    },
+    {
+      "id": "importRow",
+      "label": "Procedencia de la fila",
+      "path": "/importaciones/origen/:id",
+      "module": "importing",
+      "kind": "detail",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-214",
+      "children": [
+        "movementEditor",
+        "budgetEditor"
+      ]
+    },
+    {
+      "id": "categories",
+      "label": "Categorías",
+      "path": "/categorias",
+      "module": "movements",
+      "kind": "catalog",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-215",
+      "children": [
+        "categoryNew",
+        "categoryEditor"
+      ]
+    },
+    {
+      "id": "categoryNew",
+      "label": "Crear categoría",
+      "path": "/categorias/nueva",
+      "module": "movements",
+      "kind": "editor",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-215",
+      "children": []
+    },
+    {
+      "id": "categoryEditor",
+      "label": "Editar categoría y rama",
+      "path": "/categorias/:id",
+      "module": "movements",
+      "kind": "editor",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-215",
+      "children": []
+    },
+    {
+      "id": "drive",
+      "label": "Copia en Drive",
+      "path": "/drive",
+      "module": "synchronization",
+      "kind": "flow",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-216",
+      "children": []
+    },
+    {
+      "id": "backups",
+      "label": "Copias locales y recuperación",
+      "path": "/copias-locales",
+      "module": "synchronization",
+      "kind": "flow",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-216",
+      "children": [
+        "backupDetail"
+      ]
+    },
+    {
+      "id": "backupDetail",
+      "label": "Detalle y restauración de copia",
+      "path": "/copias-locales/:id",
+      "module": "synchronization",
+      "kind": "flow",
+      "state": "existing",
+      "period": "context",
+      "owner": "MA-TSK-216",
+      "children": []
+    },
+    {
+      "id": "diagnostics",
+      "label": "Diagnóstico de coherencia",
+      "path": "/diagnostico",
+      "module": null,
+      "kind": "flow",
+      "state": "backlog",
+      "period": "context",
+      "owner": "EP-025",
+      "children": []
+    }
+  ],
+  "summaries": {
+    "home": "monthlyComparison",
+    "budget": "budgetDetail",
+    "movements": "movementRecords",
+    "wealth": "wealthDetail",
+    "actual": "actualDetail",
+    "indicators": "indicatorDetail"
+  },
+  "aliases": [
+    {
+      "path": "/",
+      "destination": "home",
+      "policy": "startup-only"
+    }
+  ],
+  "systemRoutes": [
+    {
+      "path": "/error",
+      "behavior": "retain-error-and-offer-return-or-recovery"
+    }
+  ],
+  "startup": {
+    "activeDatabase": "home",
+    "unavailableDatabase": "backups",
+    "requiresDatabase": false
+  },
+  "contextualActions": {
+    "home": [
+      "importCsv",
+      "pending",
+      "wealthPhoto"
+    ],
+    "movements": [
+      "movementNew",
+      "importCsv",
+      "importOpenbank",
+      "pending"
+    ],
+    "wealth": [
+      "wealthPhoto"
+    ],
+    "indicators": [
+      "wealthPhoto",
+      "budget"
+    ]
+  },
+  "rules": {
+    "maximumPrimaryActions": 2,
+    "periodSource": "NavigationSession",
+    "contextSource": "NavigationContext",
+    "automaticDrive": false,
+    "photoReference": "first-day",
+    "financialModulesAdded": []
+  }
+}
