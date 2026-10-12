@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "status": "propuesta-ma-tsk-206-pendiente-ma-tsk-207",
+  "color": {
+    "canvas": "#F6F5F1", "surface": "#FFFFFF", "surfaceSubtle": "#EFEEE8",
+    "text": "#202E32", "muted": "#526267", "border": "#D5DDDC", "controlBorder": "#738481",
+    "accent": "#14645F", "accentHover": "#104E4A", "accentTint": "#E5F2EE", "onAccent": "#FFFFFF",
+    "favorable": "#21613D", "favorableTint": "#EAF3EB",
+    "unfavorable": "#923B32", "unfavorableTint": "#FBEFEA",
+    "warning": "#775015", "warningTint": "#FFF4DA",
+    "error": "#9A3038", "errorTint": "#FCEDEF",
+    "focus": "#284DB1", "seriesReal": "#14645F", "seriesBudget": "#65569C",
+    "seriesAsset": "#355F91", "seriesDebt": "#923B32"
+  },
+  "space": {"xs": 4, "sm": 8, "md": 12, "lg": 16, "xl": 24, "xxl": 32, "section": 48},
+  "radius": {"control": 8, "card": 16, "badge": 6},
+  "type": {
+    "family": "AfRoboto",
+    "hero": {"size": 36, "weight": 700, "lineHeight": 1.15},
+    "page": {"size": 28, "weight": 700, "lineHeight": 1.25},
+    "section": {"size": 20, "weight": 700, "lineHeight": 1.35},
+    "body": {"size": 16, "weight": 400, "lineHeight": 1.5},
+    "label": {"size": 14, "weight": 500, "lineHeight": 1.5},
+    "table": {"size": 14, "weight": 400, "lineHeight": 1.5}
+  },
+  "layout": {"compactMax": 599, "wideMin": 840, "contentMax": 1200, "formMax": 560, "touchTarget": 48, "desktopRowMin": 44},
+  "motion": {"durationMs": 120, "reducedDurationMs": 0},
+  "contrastPairs": [
+    ["text", "surface", 4.5], ["text", "canvas", 4.5], ["muted", "surface", 4.5], ["muted", "canvas", 4.5],
+    ["muted", "surfaceSubtle", 4.5], ["accent", "accentTint", 4.5], ["onAccent", "accent", 4.5],
+    ["onAccent", "accentHover", 4.5], ["favorable", "favorableTint", 4.5], ["unfavorable", "unfavorableTint", 4.5],
+    ["warning", "warningTint", 4.5], ["error", "errorTint", 4.5], ["focus", "surface", 3], ["focus", "canvas", 3],
+    ["controlBorder", "surface", 3], ["seriesReal", "surface", 3], ["seriesBudget", "surface", 3],
+    ["seriesAsset", "surface", 3], ["seriesDebt", "surface", 3]
+  ]
+}
