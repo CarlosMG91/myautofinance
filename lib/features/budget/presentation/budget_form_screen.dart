@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../ui/autofinance_ui.dart';
 import '../domain/budget_repository.dart';
 import '../../movements/movements.dart';
 import 'budget_source.dart';
@@ -279,149 +280,157 @@ class _BudgetFormScreenState extends BudgetDraftState<BudgetFormScreen> {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 760),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextButton(
-                          onPressed: locked
-                              ? null
-                              : () => leave(widget.onReturn),
-                          child: Text(
-                            'Volver a Presupuesto, ${widget.month.value.substring(0, 7)}',
-                          ),
-                        ),
-                        if (_loading)
-                          const Text('Leyendo partida…')
-                        else if (_readError != null) ...[
-                          Semantics(liveRegion: true, child: Text(_readError!)),
+                    child: AfCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           TextButton(
-                            onPressed: _load,
-                            child: const Text('Reintentar'),
-                          ),
-                        ] else ...[
-                          const Text(
-                            'Indica mes, categoría e importe firmado. Cero registra una partida.',
-                          ),
-                          TextField(
-                            key: const Key('budget-period'),
-                            controller: _period,
-                            focusNode: _periodFocus,
-                            enabled: _editing && !locked,
-                            onChanged: (_) => setState(() {}),
-                            decoration: InputDecoration(
-                              labelText: 'Año/mes (AAAA-MM)',
-                              errorText: _periodError,
+                            onPressed: locked
+                                ? null
+                                : () => leave(widget.onReturn),
+                            child: Text(
+                              'Volver a Presupuesto, ${widget.month.value.substring(0, 7)}',
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Categoría: ${_category?.path ?? 'Sin seleccionar'}${_category?.node.archived == true ? ' · Archivada (se puede conservar)' : ''}',
-                          ),
-                          if (_category != null)
-                            Text(
-                              _category!.node.isIncome
-                                  ? 'Ingreso heredado de la raíz'
-                                  : 'Salida heredada de la raíz',
-                            ),
-                          if (_editing)
-                            OutlinedButton(
-                              focusNode: _categoryFocus,
-                              onPressed: locked ? null : _pick,
-                              child: const Text('Seleccionar categoría'),
-                            ),
-                          if (_categoryError != null)
+                          if (_loading)
+                            const Text('Leyendo partida…')
+                          else if (_readError != null) ...[
                             Semantics(
                               liveRegion: true,
-                              child: Text(_categoryError!),
+                              child: Text(_readError!),
                             ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            key: const Key('budget-form-amount'),
-                            controller: _amount,
-                            focusNode: _amountFocus,
-                            enabled: _editing && !locked,
-                            onChanged: (_) => setState(() {}),
-                            onSubmitted: (_) => _save(),
-                            keyboardType: const TextInputType.numberWithOptions(
-                              signed: true,
-                              decimal: true,
+                            TextButton(
+                              onPressed: _load,
+                              child: const Text('Reintentar'),
                             ),
-                            decoration: InputDecoration(
-                              labelText: 'Importe firmado (€)',
-                              helperText: 'Coma o punto; hasta dos decimales. Vaciar no elimina.',
-                              errorText: _amountError,
+                          ] else ...[
+                            const Text(
+                              'Indica mes, categoría e importe firmado. Cero registra una partida.',
                             ),
-                          ),
-                          if (_old != null) ...[
+                            TextField(
+                              key: const Key('budget-period'),
+                              controller: _period,
+                              focusNode: _periodFocus,
+                              enabled: _editing && !locked,
+                              onChanged: (_) => setState(() {}),
+                              decoration: InputDecoration(
+                                labelText: 'Año/mes (AAAA-MM)',
+                                errorText: _periodError,
+                              ),
+                            ),
                             const SizedBox(height: 16),
-                            const Text('Metadatos históricos · solo lectura'),
                             Text(
-                              'ID: ${_old!.id}\nConcepto: ${_old!.data.concept ?? 'Sin dato'}\nDiscrecionalidad: ${_old!.data.discretion ?? 'Sin dato'}\nLote CSV: ${_old!.batchId ?? 'Sin dato'}\nFila de origen: ${_old!.importRowId ?? 'Sin dato'}\nOrdinal CSV: ${_old!.sourceOrdinal ?? 'Sin dato'}',
+                              'Categoría: ${_category?.path ?? 'Sin seleccionar'}${_category?.node.archived == true ? ' · Archivada (se puede conservar)' : ''}',
                             ),
-                          ],
-                          if (_error != null)
-                            Semantics(
-                              liveRegion: true,
-                              child: Text(
-                                _error!,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
+                            if (_category != null)
+                              Text(
+                                _category!.node.isIncome
+                                    ? 'Ingreso heredado de la raíz'
+                                    : 'Salida heredada de la raíz',
+                              ),
+                            if (_editing)
+                              OutlinedButton(
+                                focusNode: _categoryFocus,
+                                onPressed: locked ? null : _pick,
+                                child: const Text('Seleccionar categoría'),
+                              ),
+                            if (_categoryError != null)
+                              Semantics(
+                                liveRegion: true,
+                                child: Text(_categoryError!),
+                              ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              key: const Key('budget-form-amount'),
+                              controller: _amount,
+                              focusNode: _amountFocus,
+                              enabled: _editing && !locked,
+                              onChanged: (_) => setState(() {}),
+                              onSubmitted: (_) => _save(),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    signed: true,
+                                    decimal: true,
+                                  ),
+                              decoration: InputDecoration(
+                                labelText: 'Importe firmado (€)',
+                                helperText: 'Coma o punto; hasta dos decimales. Vaciar no elimina.',
+                                errorText: _amountError,
                               ),
                             ),
-                          if (busy)
-                            Semantics(
-                              liveRegion: true,
-                              child: Text('Persistiendo partida…'),
-                            ),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              TextButton(
-                                onPressed: locked
-                                    ? null
-                                    : () => leave(widget.onReturn),
-                                child: const Text('Cancelar'),
+                            if (_old != null) ...[
+                              const SizedBox(height: 16),
+                              const Text('Metadatos históricos · solo lectura'),
+                              Text(
+                                'ID: ${_old!.id}\nConcepto: ${_old!.data.concept ?? 'Sin dato'}\nDiscrecionalidad: ${_old!.data.discretion ?? 'Sin dato'}\nLote CSV: ${_old!.batchId ?? 'Sin dato'}\nFila de origen: ${_old!.importRowId ?? 'Sin dato'}\nOrdinal CSV: ${_old!.sourceOrdinal ?? 'Sin dato'}',
                               ),
-                              if (!_editing)
-                                FilledButton(
-                                  onPressed: locked
-                                      ? null
-                                      : () {
-                                          setState(() => _editing = true);
-                                          _periodFocus.requestFocus();
-                                        },
-                                  child: const Text('Editar'),
-                                )
-                              else
-                                FilledButton(
-                                  onPressed: locked ? null : _save,
-                                  child: Text(
-                                    _saveFailed
-                                        ? 'Reintentar'
-                                        : 'Guardar partida',
+                            ],
+                            if (_error != null)
+                              Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  _error!,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
                                   ),
                                 ),
-                              if (_old != null)
-                                OutlinedButton(
-                                  onPressed: locked ? null : _delete,
-                                  child: const Text('Eliminar partida'),
+                              ),
+                            if (busy)
+                              Semantics(
+                                liveRegion: true,
+                                child: Text('Persistiendo partida…'),
+                              ),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                TextButton(
+                                  onPressed: locked
+                                      ? null
+                                      : () => leave(widget.onReturn),
+                                  child: const Text('Cancelar'),
+                                ),
+                                if (!_editing)
+                                  FilledButton(
+                                    onPressed: locked
+                                        ? null
+                                        : () {
+                                            setState(() => _editing = true);
+                                            _periodFocus.requestFocus();
+                                          },
+                                    child: const Text('Editar'),
+                                  )
+                                else
+                                  FilledButton(
+                                    onPressed: locked ? null : _save,
+                                    child: Text(
+                                      _saveFailed
+                                          ? 'Reintentar'
+                                          : 'Guardar partida',
+                                    ),
+                                  ),
+                                if (_old != null)
+                                  OutlinedButton(
+                                    onPressed: locked ? null : _delete,
+                                    child: const Text('Eliminar partida'),
+                                  ),
+                              ],
+                            ),
+                          ],
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              for (final d in widget.destinations.entries)
+                                TextButton(
+                                  onPressed: locked
+                                      ? null
+                                      : () => leave(d.value),
+                                  child: Text(d.key),
                                 ),
                             ],
                           ),
                         ],
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            for (final d in widget.destinations.entries)
-                              TextButton(
-                                onPressed: locked ? null : () => leave(d.value),
-                                child: Text(d.key),
-                              ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),

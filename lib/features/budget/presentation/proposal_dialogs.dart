@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../ui/autofinance_ui.dart';
 import '../domain/budget_proposal_editor.dart';
 import '../domain/budget_proposal_saver.dart';
 import '../domain/budget_repository.dart';
@@ -251,20 +252,28 @@ class _ProposalComparisonDialogState extends State<ProposalComparisonDialog> {
             for (final change in review.changes)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${change.month.value.substring(0, 7)} · ${change.categoryPath} · ${_kind(change.kind)}',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      'Anterior: ${change.before == null ? 'Sin partida' : budgetEuro(change.before!.data.amountCents)}',
-                    ),
-                    Text(
-                      'Nuevo: ${change.after == null ? 'Retirada · sin partida' : budgetEuro(change.after!.amountCents)}',
-                    ),
-                  ],
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AfTokens.surface,
+                    border: Border.all(color: AfTokens.border),
+                    borderRadius: BorderRadius.circular(AfTokens.cardRadius),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${change.month.value.substring(0, 7)} · ${change.categoryPath} · ${_kind(change.kind)}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        'Anterior: ${change.before == null ? 'Sin partida' : budgetEuro(change.before!.data.amountCents)}',
+                      ),
+                      Text(
+                        'Nuevo: ${change.after == null ? 'Retirada · sin partida' : budgetEuro(change.after!.amountCents)}',
+                      ),
+                    ],
+                  ),
                 ),
               ),
             CheckboxListTile(

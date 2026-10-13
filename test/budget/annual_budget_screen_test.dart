@@ -140,6 +140,10 @@ void main() {
       ),
     );
     await settle(tester);
+    if (origin?.focus != 'capture' &&
+        find.byKey(const Key('budget-show-detail')).evaluate().isNotEmpty) {
+      await tap(tester, find.byKey(const Key('budget-show-detail')));
+    }
   }
 
   Future<void> expand(WidgetTester tester) async {
@@ -276,7 +280,9 @@ void main() {
       final revision = (await db.readState()).revision;
       await tester.runAsync(() async {
         final button = tester.widget<IconButton>(
-          find.widgetWithIcon(IconButton, Icons.check),
+          find.byWidgetPredicate(
+            (w) => w is IconButton && w.tooltip == 'Confirmar celda',
+          ),
         );
         button.onPressed!();
         button.onPressed!();
@@ -636,8 +642,8 @@ void main() {
       await boot(tester, origin: captureOrigin);
       expect(
         tester
-            .widget<TextButton>(
-              find.widgetWithText(TextButton, 'Captura mensual'),
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Captura mensual'),
             )
             .focusNode!
             .hasFocus,

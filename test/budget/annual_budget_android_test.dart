@@ -136,6 +136,9 @@ void main() {
       ),
     );
     await settle(tester);
+    if (find.byKey(const Key('budget-show-detail')).evaluate().isNotEmpty) {
+      await tap(tester, find.byKey(const Key('budget-show-detail')));
+    }
   }
 
   Future<void> expand(WidgetTester tester) async {

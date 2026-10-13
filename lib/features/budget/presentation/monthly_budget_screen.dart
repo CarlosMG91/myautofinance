@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../ui/autofinance_ui.dart';
+
 import '../domain/budget_repository.dart';
 import '../domain/monthly_budget_query.dart';
 import '../../movements/movements.dart';
@@ -410,7 +412,7 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
       constraints: const BoxConstraints(minHeight: 40),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AfTokens.surface,
         border: Border(
           bottom: BorderSide(color: Theme.of(context).dividerColor),
         ),
@@ -586,6 +588,39 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
           Semantics(liveRegion: true, child: Text(_readError!)),
           TextButton(onPressed: _read, child: const Text('Reintentar')),
         ] else if (_data != null) ...[
+          AfCard(
+            tone: AfCardTone.budget,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 12,
+              children: [
+                const Text('Resultado presupuestado del mes'),
+                AfNumericText(
+                  budgetTotal(
+                    [
+                          ..._data!.activeTree,
+                          ..._data!.archivedBudgets,
+                        ].where((r) => r.budget != null).isEmpty
+                        ? null
+                        : [
+                            ..._data!.activeTree,
+                            ..._data!.archivedBudgets,
+                          ].fold<BigInt>(
+                            BigInt.zero,
+                            (n, r) => n + BigInt.from(r.ownAmountCents ?? 0),
+                          ),
+                  ),
+                ),
+                Text(
+                  '${_month.value.substring(0, 7)} · ${[..._data!.activeTree, ..._data!.archivedBudgets].where((r) => r.budget != null).length} partidas',
+                ),
+                const Text(
+                  'Importes propios. Los subtotales de rama no se vuelven a sumar.',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           if (!compact)
             const Padding(
               padding: EdgeInsets.all(10),

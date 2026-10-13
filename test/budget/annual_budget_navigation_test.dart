@@ -400,8 +400,8 @@ void main() {
       );
       expect(
         tester
-            .widget<TextButton>(
-              find.widgetWithText(TextButton, 'Preparar año siguiente'),
+            .widget<OutlinedButton>(
+              find.widgetWithText(OutlinedButton, 'Preparar año siguiente'),
             )
             .onPressed,
         isNull,

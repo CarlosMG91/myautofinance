@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../ui/autofinance_ui.dart';
 import '../domain/annual_budget_query.dart';
 import '../domain/budget_repository.dart';
 import 'annual_budget_cards.dart';
+import 'annual_budget_summary.dart';
 import 'budget_source.dart';
 import 'budget_ui.dart';
 
@@ -96,7 +98,7 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
   StreamSubscription<int>? _subscription;
   Object? _subscribedInvalidation;
   bool _loading = true, _syncingScroll = false, _initial = true;
-  bool _opening = false;
+  bool _opening = false, _showDetail = false;
   int _request = 0;
   double _initialHorizontal = 0, _initialVertical = 0;
 
@@ -116,6 +118,14 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
   void initState() {
     super.initState();
     _focusToken = widget.initialFocus;
+    _showDetail =
+        _focusToken != null &&
+        !(_focusToken!.startsWith('summary') &&
+            _focusToken != 'summary-year') &&
+        !const {'capture', 'proposal'}.contains(_focusToken);
+    if (_focusToken?.startsWith('detail|') == true) {
+      _focusToken = _focusToken!.substring('detail|'.length);
+    }
     final position = RegExp(r'^(.*)\|matrix=([0-9.]+),([0-9.]+)$')
         .firstMatch(_focusToken ?? '');
     if (position != null) {
@@ -266,6 +276,19 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
     }
   }
 
+  Future<void> _toggleDetail(bool detail) async {
+    if (!await _canLeave() || !mounted) return;
+    setState(() {
+      _showDetail = detail;
+      _focusToken = detail ? 'detail' : 'summary';
+    });
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+    _publish();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus(detail ? 'summary' : 'detail').requestFocus();
+    });
+  }
+
   void _publish() {
     if (!mounted || ModalRoute.of(context)?.isCurrent == false) return;
     final position =
@@ -279,7 +302,9 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
     widget.onOrigin(
       {..._expanded},
       _scroll.hasClients ? _scroll.offset : 0,
-      position,
+      _showDetail && const {'capture', 'proposal'}.contains(_focusToken)
+          ? 'detail|$position'
+          : position,
       {..._expandedMonths},
     );
   }
@@ -445,10 +470,10 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
               key: ValueKey('expand-${node.id}'),
               tooltip:
                   '${_expanded.contains(node.id) ? 'Contraer' : 'Expandir'} ${row.category.path}',
-              icon: Icon(
+              icon: AfIcon(
                 _expanded.contains(node.id)
-                    ? Icons.expand_less
-                    : Icons.expand_more,
+                    ? AfIcons.close
+                    : AfIcons.chevronDown,
               ),
               onPressed: locked
                   ? null
@@ -513,7 +538,7 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
         key: ValueKey('cell-$token'),
         focusNode: _focus(token),
         style: TextButton.styleFrom(
-          backgroundColor: subtotal ? const Color(0xffeef2f6) : null,
+          backgroundColor: subtotal ? AfTokens.surfaceSubtle : null,
         ),
         onPressed: locked || archivedAbsence
             ? null
@@ -543,6 +568,7 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
                     : cell.hasOwnBudget
                     ? 'Propio · Editar'
                     : 'Crear partida'}',
+          style: Theme.of(context).textTheme.bodySmall,
         ),
       ),
     );
@@ -569,18 +595,18 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
         children: [
           IconButton(
             tooltip: 'Confirmar celda',
-            icon: const Icon(Icons.check),
+            icon: const AfIcon(AfIcons.confirm),
             onPressed: locked || _loading ? null : _save,
           ),
           IconButton(
             tooltip: 'Cancelar edición',
-            icon: const Icon(Icons.close),
+            icon: const AfIcon(AfIcons.close),
             onPressed: locked ? null : _canLeave,
           ),
           if (_draftCell!.ownBudget != null)
             IconButton(
               tooltip: 'Formulario / Eliminar partida',
-              icon: const Icon(Icons.edit_note),
+              icon: const AfIcon(AfIcons.edit),
               onPressed: locked ? null : _openDraftForm,
             ),
         ],
@@ -657,9 +683,9 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         color: focused
-            ? const Color(0xffeaf3fb)
+            ? AfTokens.accentTint
             : Theme.of(context).colorScheme.surface,
-        border: const Border(bottom: BorderSide(color: Color(0xffdbe2ea))),
+        border: const Border(bottom: BorderSide(color: AfTokens.border)),
       ),
       child: child,
     );
@@ -693,7 +719,7 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Desplaza la matriz con la barra horizontal o enfoca la región y usa ← →. Categoría y cabecera permanecen visibles.',
+          'Desplaza la matriz con la barra horizontal o enfoca la región y usa las flechas izquierda y derecha. Categoría y cabecera permanecen visibles.',
         ),
         CallbackShortcuts(
           bindings: {
@@ -854,14 +880,24 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-    canPop: allowPop || (!dirty && !locked),
+    canPop: allowPop || (!_showDetail && !dirty && !locked),
     onPopInvokedWithResult: (didPop, _) {
-      if (!didPop) leave(() => Navigator.of(context).pop());
+      if (!didPop) {
+        if (_showDetail) {
+          _toggleDetail(false);
+        } else {
+          leave(() => Navigator.of(context).pop());
+        }
+      }
     },
     child: CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): () {
-          if (_draftCell != null) _canLeave();
+          if (_draftCell != null) {
+            _canLeave();
+          } else if (_showDetail) {
+            _toggleDetail(false);
+          }
         },
       },
       child: widget.shell(
@@ -869,17 +905,19 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             widget.controls(_canLeave),
+            const SizedBox(height: 16),
             Wrap(
               spacing: 12,
+              runSpacing: 12,
               children: [
-                TextButton(
+                FilledButton(
                   focusNode: _focus('capture'),
                   onPressed: locked
                       ? null
                       : () => _open(widget.openCapture, 'capture'),
                   child: const Text('Captura mensual'),
                 ),
-                TextButton(
+                OutlinedButton(
                   focusNode: _focus('proposal'),
                   onPressed: locked || widget.openProposal == null
                       ? null
@@ -892,12 +930,21 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
                 ),
               ],
             ),
-            const Text(
-              'Propio: editable · Subtotal: solo lectura · Sin presupuesto: ausencia · Cero registrado: partida existente',
-            ),
-            const Text(
-              'Cada confirmación guarda solo una partida. Vaciar no elimina. El borrado se confirma en el formulario.',
-            ),
+            const SizedBox(height: 24),
+            if (_showDetail) ...[
+              TextButton(
+                key: const Key('budget-show-summary'),
+                focusNode: _focus('summary'),
+                onPressed: locked ? null : () => _toggleDetail(false),
+                child: const Text('Volver al resumen'),
+              ),
+              const Text(
+                'Propio: editable · Subtotal: solo lectura · Sin presupuesto: ausencia · Cero registrado: partida existente',
+              ),
+              const Text(
+                'Cada confirmación guarda solo una partida. Vaciar no elimina. El borrado se confirma en el formulario.',
+              ),
+            ],
             if (_draftCell != null &&
                 (MediaQuery.sizeOf(context).width < 848 ||
                     _loading ||
@@ -927,9 +974,9 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
                 ),
             ],
             if (_loading)
-              Semantics(
-                liveRegion: true,
-                child: const Text('Cargando presupuesto anual…'),
+              const AfStatus(
+                kind: AfStatusKind.loading,
+                message: 'Cargando presupuesto anual…',
               ),
             if (_readError != null)
               Semantics(
@@ -946,28 +993,50 @@ class _AnnualBudgetScreenState extends BudgetDraftState<AnnualBudgetScreen> {
                 ),
               ),
             if (_data != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                'Total anual ${widget.year}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              _total(
-                _data!.annualTotal,
-                'summary-year',
-                () => widget.openYear(null),
-              ),
-              if (!_data!.annualTotal.hasBudget)
-                const Text(
-                  'Este año no tiene partidas. El árbol activo permite capturarlas.',
+              if (!_showDetail)
+                AnnualBudgetSummary(
+                  detailFocus: _focus('detail'),
+                  data: _data!,
+                  focusedMonth: widget.focusedMonth,
+                  monthLabel: _months[widget.focusedMonth - 1],
+                  onMonth: locked
+                      ? null
+                      : () => _open(
+                          () => widget.openMonth(widget.focusedMonth, null),
+                          'summary-month',
+                        ),
+                  onYear: locked
+                      ? null
+                      : (id) => _open(
+                          () => widget.openYear(id),
+                          'summary-root-$id',
+                        ),
+                  onDetail: locked ? null : () => _toggleDetail(true),
                 ),
-              LayoutBuilder(
-                builder: (context, constraints) =>
-                    Theme.of(context).platform == TargetPlatform.android ||
-                        MediaQuery.sizeOf(context).width < 848 ||
-                        constraints.maxWidth < 600
-                    ? _cards()
-                    : _matrix(),
-              ),
+              if (_showDetail) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Total anual ${widget.year}',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                _total(
+                  _data!.annualTotal,
+                  'summary-year',
+                  () => widget.openYear(null),
+                ),
+                if (!_data!.annualTotal.hasBudget)
+                  const Text(
+                    'Este año no tiene partidas. El árbol activo permite capturarlas.',
+                  ),
+                LayoutBuilder(
+                  builder: (context, constraints) =>
+                      Theme.of(context).platform == TargetPlatform.android ||
+                          MediaQuery.sizeOf(context).width < 848 ||
+                          constraints.maxWidth < 600
+                      ? _cards()
+                      : _matrix(),
+                ),
+              ],
             ],
           ],
         ),

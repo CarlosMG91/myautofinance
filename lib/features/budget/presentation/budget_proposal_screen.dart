@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../ui/autofinance_ui.dart';
 import '../domain/budget_proposal.dart';
 import '../domain/budget_proposal_editor.dart';
 import '../domain/budget_proposal_saver.dart';
@@ -47,6 +48,10 @@ class _BudgetProposalScreenState
   BudgetSource? _source;
   String? _error;
   bool _stale = false;
+  bool _showDetail = false;
+  int _reviewMonth = 1;
+  final _monthReview = GlobalKey();
+  final _cellFocus = <String, FocusNode>{};
   late int _returnYear;
   @override
   bool get dirty => _editor != null;
@@ -63,6 +68,9 @@ class _BudgetProposalScreenState
     _year.dispose();
     _yearFocus.dispose();
     _signFocus.dispose();
+    for (final node in _cellFocus.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -314,99 +322,226 @@ class _BudgetProposalScreenState
     );
   }
 
-  Widget _draft(bool compact) {
+  Widget _monthlyReview() {
+    final draft = _editor!.draft;
+    final roots = {
+      for (final row in draft.sourceRows) row.categoryId: row.root,
+    };
+    return AfResponsiveGrid(
+      columns: 2,
+      children: [
+        for (final root in roots.values)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: AfCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 12,
+                children: [
+                  Text(
+                    root.path,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(root.node.isIncome ? 'Ingreso' : 'Salida'),
+                  for (final row in draft.sourceRows.where(
+                    (r) =>
+                        r.categoryId == root.node.id &&
+                        int.parse(r.targetMonth.value.substring(5, 7)) ==
+                            _reviewMonth,
+                  ))
+                    _month(row),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _selectMonth(int month) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _reviewMonth = month);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _monthReview.currentContext != null) {
+        Scrollable.ensureVisible(_monthReview.currentContext!);
+      }
+    });
+  }
+
+  Widget _proposalCell(BudgetProposalRow row) {
+    final token = 'proposal-cell-${row.categoryId}-${row.targetMonth.value}';
+    final focus = _cellFocus.putIfAbsent(token, FocusNode.new);
+    final amount = budgetTotal(_total(_allocations(row)));
+    return Builder(
+      builder: (cellContext) => Focus(
+        onFocusChange: (focused) {
+          if (!focused) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (cellContext.mounted && focus.hasFocus) {
+              // La etiqueta fija no debe cubrir una celda enfocada por Tab.
+              Scrollable.ensureVisible(cellContext, alignment: 1);
+            }
+          });
+        },
+        canRequestFocus: false,
+        child: TextButton(
+          key: ValueKey(token),
+          focusNode: focus,
+          onPressed: locked
+              ? null
+              : () => _selectMonth(
+                  int.parse(row.targetMonth.value.substring(5, 7)),
+                ),
+          child: Semantics(
+            label:
+                'Borrador ${row.root.path}, ${row.targetMonth.value.substring(0, 7)}, $amount. Revisar partidas',
+            child: ExcludeSemantics(child: AfNumericText(amount)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _annualDetail(bool compact) {
     final draft = _editor!.draft;
     final roots = {
       for (final row in draft.sourceRows) row.categoryId: row.root,
     };
     if (compact) {
-      return Column(
-        children: [
-          for (final root in roots.values)
-            Card(
-              child: ExpansionTile(
-                key: PageStorageKey('root-${root.node.id}'),
-                title: Text(root.path),
-                subtitle: Text(
-                  'Total anual: ${budgetTotal(_total([for (final row in draft.sourceRows.where((r) => r.categoryId == root.node.id)) ..._allocations(row)]))}',
-                ),
-                children: [
-                  for (final row in draft.sourceRows.where(
-                    (r) => r.categoryId == root.node.id,
-                  ))
-                    ExpansionTile(
-                      key: PageStorageKey(
-                        'month-${root.node.id}-${row.targetMonth.value}',
-                      ),
-                      title: Text(
-                        proposalMonths[int.parse(
-                              row.targetMonth.value.substring(5, 7),
-                            ) -
-                            1],
-                      ),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: _month(row),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-        ],
-      );
-    }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SizedBox(
-        width: 240 + 12 * 300,
-        child: Table(
-          border: TableBorder.all(color: Theme.of(context).dividerColor),
-          columnWidths: const {0: FixedColumnWidth(240)},
-          defaultColumnWidth: const FixedColumnWidth(300),
+      return AfCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TableRow(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text('Raíz · total anual'),
+            const Text('Todos los meses del destino'),
+            for (var m = 1; m <= 12; m++)
+              AfValueRow(
+                label: '${proposalMonths[m - 1]} ${draft.targetYear}',
+                value: AfNumericText(
+                  budgetTotal(
+                    _total(
+                      draft.allocations.where(
+                        (a) => int.parse(a.month.value.substring(5, 7)) == m,
+                      ),
+                    ),
+                  ),
                 ),
-                for (final month in proposalMonths)
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(month),
-                  ),
-              ],
-            ),
-            for (final root in roots.values)
-              TableRow(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      '${root.path}\nTotal anual: ${budgetTotal(_total([for (final row in draft.sourceRows.where((r) => r.categoryId == root.node.id)) ..._allocations(row)]))}',
-                    ),
-                  ),
-                  for (final row in draft.sourceRows.where(
-                    (r) => r.categoryId == root.node.id,
-                  ))
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: _month(row),
-                    ),
-                ],
+                onPressed: locked ? null : () => _selectMonth(m),
               ),
           ],
         ),
-      ),
+      );
+    }
+    return AfDetailTable(
+      caption:
+          'Borrador ${draft.targetYear} · Pulsa una cifra para revisar y editar sus partidas',
+      columns: [...proposalMonths, 'Total anual'],
+      cellWidth: 170,
+      rows: [
+        for (final root in roots.values)
+          AfDetailRow(
+            label: root.path,
+            values: [
+              for (final row in draft.sourceRows.where(
+                (r) => r.categoryId == root.node.id,
+              ))
+                _proposalCell(row),
+              AfNumericText(
+                budgetTotal(
+                  _total([
+                    for (final row in draft.sourceRows.where(
+                      (r) => r.categoryId == root.node.id,
+                    ))
+                      ..._allocations(row),
+                  ]),
+                ),
+              ),
+            ],
+          ),
+        AfDetailRow(
+          label: 'Total mensual · solo raíces',
+          total: true,
+          values: [
+            for (var m = 1; m <= 12; m++)
+              AfNumericText(
+                budgetTotal(
+                  _total(
+                    draft.allocations.where(
+                      (a) => int.parse(a.month.value.substring(5, 7)) == m,
+                    ),
+                  ),
+                ),
+              ),
+            AfNumericText(budgetTotal(_total(draft.allocations))),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _summary() {
+    final draft = _editor!.draft;
+    final source = draft.sourceRows.fold(
+      BigInt.zero,
+      (n, row) => n + BigInt.from(row.sourceAmountCents),
+    );
+    return AfResponsiveGrid(
+      columns: 2,
+      children: [
+        AfCard(
+          tone: AfCardTone.real,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
+            children: [
+              Text('Real de origen · ${draft.sourceYear}'),
+              Text(
+                budgetTotal(source),
+                style:
+                    (AfTokens.reflow(context, MediaQuery.sizeOf(context).width)
+                            ? Theme.of(context).textTheme.bodyLarge
+                            : Theme.of(context).textTheme.headlineMedium)
+                        ?.copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+              ),
+              const Text('Raíces incluidas · Suma de los meses equivalentes'),
+            ],
+          ),
+        ),
+        AfCard(
+          tone: AfCardTone.budget,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
+            children: [
+              Text('Borrador · ${draft.targetYear}'),
+              Text(
+                budgetTotal(_total(draft.allocations)),
+                style:
+                    (AfTokens.reflow(context, MediaQuery.sizeOf(context).width)
+                            ? Theme.of(context).textTheme.bodyLarge
+                            : Theme.of(context).textTheme.headlineMedium)
+                        ?.copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+              ),
+              Text(
+                '${draft.allocations.length} partidas · Incluye tus ediciones · Pendiente de guardar',
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final draft = _editor?.draft;
-    final compact = MediaQuery.sizeOf(context).width < 840;
+    final compact =
+        Theme.of(context).platform == TargetPlatform.android ||
+        MediaQuery.sizeOf(context).width < 840 ||
+        MediaQuery.textScalerOf(context).scale(16) >= 24;
     return PopScope(
       canPop: allowPop,
       onPopInvokedWithResult: (didPop, result) {
@@ -471,11 +606,9 @@ class _BudgetProposalScreenState
                     ],
                   ),
                   if (busy)
-                    Semantics(
-                      liveRegion: true,
-                      child: const Text(
-                        'Calculando o comprobando el guardado…',
-                      ),
+                    const AfStatus(
+                      kind: AfStatusKind.loading,
+                      message: 'Calculando o comprobando el guardado…',
                     ),
                   if (_error != null)
                     Padding(
@@ -510,7 +643,51 @@ class _BudgetProposalScreenState
                       const Text(
                         'No hay raíces activas para proponer. No se inventan partidas.',
                       ),
-                    _draft(compact),
+                    const SizedBox(height: 24),
+                    _summary(),
+                    const SizedBox(height: 24),
+                    AfPageHeader(
+                      title: 'Revisar y editar',
+                      actions: [
+                        AfAction(
+                          key: const Key('proposal-show-detail'),
+                          label: _showDetail
+                              ? 'Ocultar detalle anual'
+                              : 'Ver detalle',
+                          onPressed: locked
+                              ? null
+                              : () =>
+                                    setState(() => _showDetail = !_showDetail),
+                        ),
+                      ],
+                    ),
+                    if (_showDetail) ...[
+                      _annualDetail(compact),
+                      const SizedBox(height: 24),
+                    ],
+                    SizedBox(
+                      key: _monthReview,
+                      width: 300,
+                      child: AfPeriodSelector(
+                        key: ValueKey('proposal-review-month-$_reviewMonth'),
+                        label: 'Mes de revisión · ${draft.targetYear}',
+                        options: [
+                          for (var m = 1; m <= 12; m++)
+                            AfPeriodOption(
+                              id: '$m',
+                              label: proposalMonths[m - 1],
+                            ),
+                        ],
+                        selectedId: '$_reviewMonth',
+                        onChanged: locked
+                            ? null
+                            : (value) => setState(
+                                () => _reviewMonth = int.parse(value),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _monthlyReview(),
                     Text(
                       'Total anual del borrador: ${budgetTotal(_total(draft.allocations))}',
                     ),

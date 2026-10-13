@@ -49,6 +49,8 @@ void main() {
   }
 
   Future<void> tap(WidgetTester tester, Finder finder) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await tester.ensureVisible(finder);
     await tester.pumpAndSettle();
     await tester.runAsync(() => tester.tap(finder));
@@ -244,10 +246,12 @@ void main() {
     (tester) async {
       await boot(tester);
       await generate(tester);
+      await tap(tester, find.byKey(const Key('proposal-show-detail')));
       expect(find.text('Diciembre'), findsOneWidget);
       expect(find.text('Real fuente: −350,25 €'), findsOneWidget);
       expect(find.text('Propuesto inicial: −360,00 €'), findsOneWidget);
-      expect(find.text('Sin reales · cero explícito'), findsNWidgets(22));
+      expect(find.text('Sin reales · cero explícito'), findsNothing);
+      expect(find.text('0,00 €'), findsWidgets);
       await capture(tester, 'windows');
       expect(await tester.runAsync(() => budgets.readYear(2027)), isEmpty);
       await editAmount(tester, root, '-370');
@@ -493,9 +497,9 @@ void main() {
         platform: TargetPlatform.android,
       );
       await generate(tester);
-      await tap(tester, find.text('Alimentación'));
-      expect(find.text('Diciembre'), findsOneWidget);
-      await tap(tester, find.text('Enero').first);
+      await tap(tester, find.byKey(const Key('proposal-show-detail')));
+      expect(find.text('Diciembre 2027'), findsOneWidget);
+      await tap(tester, find.text('Enero 2027'));
       await tap(tester, edit(root));
       await capture(tester, 'android-edit-200');
       await tester.enterText(

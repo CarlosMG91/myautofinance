@@ -114,7 +114,11 @@ Future<void> annualBudgetLifecycleJourney(
     await settle();
   }
 
-  Future<void> annual(int year) => route('/presupuesto?a=$year&m=01');
+  Future<void> annual(int year) async {
+    await route('/presupuesto?a=$year&m=01');
+    await tap(find.byKey(const Key('budget-show-detail')));
+  }
+
   Future<LocalDatabase> db() => local.store.open();
   Future<List<BudgetRecord>> records(int year) =>
       io(() async => SqliteBudgetRepository(await db()).readYear(year));
@@ -158,6 +162,10 @@ Future<void> annualBudgetLifecycleJourney(
   Future<AnnualBudget> projection(int year) =>
       io(() async => (await local.budgets()).annual!.read(year));
   Future<void> total(int cents, int count, {int year = 2026}) async {
+    await settle();
+    if (find.byKey(const Key('budget-show-detail')).evaluate().isNotEmpty) {
+      await tap(find.byKey(const Key('budget-show-detail')));
+    }
     final data = await projection(year);
     expect(data.annualTotal.amountCents, cents);
     expect(data.annualTotal.budgetCount, count);
@@ -360,6 +368,7 @@ Future<void> annualBudgetLifecycleJourney(
     await mount();
 
     debugPrint('EP-021 E: matriz real, doce meses y 48 UUID de origen');
+    await tap(find.byKey(const Key('budget-show-detail')));
     await total(1320000, 48);
     final reference = await projection(2026);
     expect(reference.months.map((m) => m.amountCents), List.filled(12, 110000));
