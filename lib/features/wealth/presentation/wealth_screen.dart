@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 
 import '../../../ui/autofinance_ui.dart';
 
@@ -8,6 +9,8 @@ import '../domain/wealth_reading.dart';
 import '../domain/wealth_repository.dart';
 import 'account_catalog_screen.dart';
 import 'wealth_controller.dart';
+import 'wealth_overview.dart';
+import 'wealth_history.dart';
 
 /// Consulta fotos manuales, sin calcular saldos desde movimientos.
 class WealthScreen extends StatefulWidget {
@@ -65,11 +68,13 @@ class _WealthScreenState extends State<WealthScreen> {
   late final Map<int, int> _remembered = {_year: _number};
   late Future<List<WealthReading>> _data = _readYear(_year);
   final _scroll = ScrollController();
+  final _pageFocus = FocusNode(debugLabel: 'wealth-page');
   final _originNodes = <String, FocusNode>{};
   FocusNode _node(String token) =>
       _originNodes.putIfAbsent(token, () => FocusNode(debugLabel: token));
   String? _yearError;
   bool _changingPeriod = false;
+  bool _showDetail = false;
   String? _originFocus;
   ({
     String month,
@@ -95,12 +100,13 @@ class _WealthScreenState extends State<WealthScreen> {
   @override
   void initState() {
     super.initState();
+    _showDetail = widget.initialFocus?.startsWith('detail|') ?? false;
     _scroll.addListener(_publishOrigin);
     _restore = (
       month: _month.value,
       data: _data,
       offset: widget.initialScrollOffset,
-      focus: widget.initialFocus,
+      focus: widget.initialFocus?.replaceFirst('detail|', ''),
     );
   }
 
@@ -109,7 +115,7 @@ class _WealthScreenState extends State<WealthScreen> {
     _originFocus = focus ?? _originFocus;
     widget.onOrigin?.call(
       _scroll.hasClients ? _scroll.offset : 0,
-      _originFocus,
+      _showDetail ? 'detail|${_originFocus ?? 'summary'}' : _originFocus,
     );
   }
 
@@ -117,6 +123,7 @@ class _WealthScreenState extends State<WealthScreen> {
   void dispose() {
     _yearInput.dispose();
     _scroll.dispose();
+    _pageFocus.dispose();
     for (final node in _originNodes.values) {
       node.dispose();
     }
@@ -165,6 +172,7 @@ class _WealthScreenState extends State<WealthScreen> {
   void _select(int year, int number, {bool publish = true}) {
     if (year != _year || number != _number) {
       _changingPeriod = true;
+      _showDetail = false;
       _restore = null;
       _originFocus = null;
       if (_scroll.hasClients) _scroll.jumpTo(0);
@@ -203,232 +211,236 @@ class _WealthScreenState extends State<WealthScreen> {
     );
   }
 
-  String _status(WealthSnapshotStatus status) => switch (status) {
-    WealthSnapshotStatus.absent => 'Sin dato: falta foto patrimonial',
-    WealthSnapshotStatus.incomplete => 'Sin dato: foto patrimonial incompleta',
-    WealthSnapshotStatus.complete => 'Foto completa',
-  };
-  String _money(int cents) {
-    final digits = cents.toString().replaceFirst('-', '').padLeft(3, '0');
-    final whole = digits
-        .substring(0, digits.length - 2)
-        .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.');
-    return '${cents < 0 ? '−' : ''}$whole,${digits.substring(digits.length - 2)}\u00a0€';
+  void _toggleDetail(bool detail) {
+    setState(() => _showDetail = detail);
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+    _publishOrigin(detail ? 'summary' : 'detail');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _node(detail ? 'summary' : 'detail').requestFocus();
+    });
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final width = constraints.maxWidth;
-      final desktop = width >= 840;
-      final body = Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Foto del día 1 · ${_month.value.substring(8, 10)}/${_month.value.substring(5, 7)}/${_month.value.substring(0, 4)} · $_period',
-          ),
-          const Text(
-            'Fotos manuales, independientes de los movimientos. Las deudas se restan de los activos.',
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              FilledButton(
-                focusNode: _node('photo'),
-                onPressed: () => _open('photo', () => widget.onPhoto(_month)),
-                child: const Text('Registrar / editar foto'),
-              ),
-              TextButton(
-                focusNode: _node('catalog'),
-                onPressed: () =>
-                    _open('catalog', () => widget.onCatalog(_month)),
-                child: const Text('Gestionar fichas'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          FutureBuilder<List<WealthReading>>(
-            future: _data,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const Column(
+  Widget build(BuildContext context) => PopScope(
+    canPop: !_showDetail,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop && _showDetail) _toggleDetail(false);
+    },
+    child: CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (_showDetail) _toggleDetail(false);
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        focusNode: _pageFocus,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final desktop = width >= 840 && !AfTokens.reflow(context, width);
+            final body = Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Foto del día 1 · ${_month.value.substring(8, 10)}/${_month.value.substring(5, 7)}/${_month.value.substring(0, 4)} · $_period',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const Text(
+                  'Fotos manuales, independientes de los movimientos. Las deudas se restan de los activos.',
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
-                    Text('Cargando patrimonio…'),
-                    LinearProgressIndicator(
-                      semanticsLabel: 'Leyendo las doce fotos',
+                    FilledButton(
+                      focusNode: _node('photo'),
+                      onPressed: () =>
+                          _open('photo', () => widget.onPhoto(_month)),
+                      child: const Text('Registrar / editar foto'),
+                    ),
+                    TextButton(
+                      focusNode: _node('catalog'),
+                      onPressed: () =>
+                          _open('catalog', () => widget.onCatalog(_month)),
+                      child: const Text('Gestionar fichas'),
+                    ),
+                    TextButton(
+                      key: const Key('wealth-toggle-detail'),
+                      focusNode: _node(_showDetail ? 'summary' : 'detail'),
+                      onPressed: () => _toggleDetail(!_showDetail),
+                      child: Text(
+                        _showDetail ? 'Volver al resumen' : 'Ver detalle',
+                      ),
                     ),
                   ],
-                );
-              }
-              _restoreAfterRead();
-              if (snapshot.hasError) {
-                final error = snapshot.error;
-                final cause = switch (error) {
-                  WealthFailure() => error.message,
-                  AccountFailure() => error.message,
-                  _ => 'El almacenamiento local no está disponible.',
-                };
-                return Semantics(
-                  liveRegion: true,
-                  child: Column(
-                    children: [
-                      Text('No se pudo cargar el patrimonio. $cause'),
-                      TextButton(
-                        onPressed: _refresh,
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              final readings = snapshot.data!;
-              final reading = readings[_number - 1];
-              final totals = reading.totals;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(_status(reading.status)),
-                  ),
-                  if (reading.values.isEmpty && reading.pending.isEmpty)
-                    const Text(
-                      'No hay fichas vigentes en este mes. Crea una cuenta, cartera o deuda desde Gestionar fichas.',
-                    ),
-                  if (reading.pending.isNotEmpty)
-                    Text(
-                      'Pendientes: ${reading.pending.map((a) => a.name).join(', ')}',
-                    ),
-                  Card(
-                    color: Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                ),
+                const SizedBox(height: 16),
+                FutureBuilder<List<WealthReading>>(
+                  future: _data,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Column(
                         children: [
-                          Text(
-                            'Patrimonio neto: ${totals == null ? 'Sin dato' : _money(totals.netWorthCents)}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            'Activos líquidos: ${totals == null ? 'Sin dato' : _money(totals.liquidAssetsCents)}',
-                          ),
-                          Text(
-                            'Activos totales: ${totals == null ? 'Sin dato' : _money(totals.assetsCents)}',
-                          ),
-                          Text(
-                            'Deudas: ${totals == null ? 'Sin dato' : _money(totals.debtsCents)}',
+                          Text('Cargando patrimonio…'),
+                          LinearProgressIndicator(
+                            semanticsLabel: 'Leyendo las doce fotos',
                           ),
                         ],
-                      ),
-                    ),
+                      );
+                    }
+                    _restoreAfterRead();
+                    if (snapshot.hasError) {
+                      final error = snapshot.error;
+                      final cause = switch (error) {
+                        WealthFailure() => error.message,
+                        AccountFailure() => error.message,
+                        _ => 'El almacenamiento local no está disponible.',
+                      };
+                      return Semantics(
+                        liveRegion: true,
+                        child: Column(
+                          children: [
+                            Text('No se pudo cargar el patrimonio. $cause'),
+                            TextButton(
+                              onPressed: _refresh,
+                              child: const Text('Reintentar'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    final readings = snapshot.data!;
+                    final reading = readings[_number - 1];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(wealthPhotoStatus(reading.status)),
+                        ),
+                        if (reading.values.isEmpty && reading.pending.isEmpty)
+                          const Text(
+                            'No hay fichas vigentes en este mes. Crea una cuenta, cartera o deuda desde Gestionar fichas.',
+                          ),
+                        if (reading.pending.isNotEmpty)
+                          Text(
+                            'Pendientes: ${reading.pending.map((a) => a.name).join(', ')}',
+                          ),
+                        const SizedBox(height: 16),
+                        WealthOverview(reading: reading, period: _period),
+                        if (_showDetail)
+                          for (final group in [
+                            Liquidity.liquid,
+                            Liquidity.medium,
+                            Liquidity.illiquid,
+                            null,
+                          ])
+                            _group(reading, group, desktop),
+                        const SizedBox(height: 24),
+                        WealthHistory(
+                          readings: readings,
+                          year: _year,
+                          detail: _showDetail,
+                          onSelect: (month) => _select(
+                            _year,
+                            int.parse(month.value.substring(5, 7)),
+                          ),
+                          onPhoto: (month) =>
+                              _open('history', () => widget.onPhoto(month)),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                if (widget.onReturn != null)
+                  TextButton(
+                    onPressed: widget.onReturn,
+                    child: const Text('Volver al origen'),
                   ),
-                  for (final group in [
-                    Liquidity.liquid,
-                    Liquidity.medium,
-                    Liquidity.illiquid,
-                    null,
-                  ])
-                    _group(reading, group, desktop),
-                  ExpansionTile(
-                    key: const PageStorageKey('wealth-twelve-months'),
-                    title: Text('Las doce fotos de $_year · sin suma anual'),
+              ],
+            );
+            void select(Month month) => _select(
+              int.parse(month.value.substring(0, 4)),
+              int.parse(month.value.substring(5, 7)),
+              publish: false,
+            );
+            if (widget.shell != null) {
+              return widget.shell!(body, _scroll, _month, select, _refresh);
+            }
+            return AfShell(
+              primaryItems: [
+                for (final entry in widget.destinations.entries)
+                  AfNavItem(
+                    id: entry.key,
+                    label: entry.value,
+                    icon: AfIcons.account,
+                  ),
+              ],
+              utilityItems: const [],
+              selectedId: '/patrimonio',
+              onSelect: (path) async {
+                widget.onNavigate(path, _month);
+                return true;
+              },
+              scrollController: _scroll,
+              periodControl:
+                  widget.periodControls?.call(_month, select) ??
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      for (var i = 0; i < readings.length; i++)
-                        TextButton(
-                          onPressed: () => _select(_year, i + 1),
-                          child: Text(
-                            '${_monthName(i + 1)}: ${_status(readings[i].status)}${readings[i].totals == null ? '' : ' · Neto ${_money(readings[i].totals!.netWorthCents)}'}',
+                      SizedBox(
+                        width: 160,
+                        child: TextField(
+                          controller: _yearInput,
+                          keyboardType: TextInputType.number,
+                          onSubmitted: (_) => _applyYear(),
+                          decoration: InputDecoration(
+                            labelText: 'Año',
+                            errorText: _yearError,
                           ),
                         ),
+                      ),
+                      TextButton(
+                        onPressed: _applyYear,
+                        child: const Text('Aplicar año'),
+                      ),
+                      SizedBox(
+                        width: 180,
+                        child: DropdownButtonFormField<int>(
+                          key: ValueKey(_month.value),
+                          initialValue: _number,
+                          isExpanded: true,
+                          decoration: const InputDecoration(labelText: 'Mes'),
+                          items: [
+                            for (var i = 1; i <= 12; i++)
+                              DropdownMenuItem(
+                                value: i,
+                                child: Text(_monthName(i)),
+                              ),
+                          ],
+                          onChanged: (number) {
+                            if (number != null) {
+                              _select(_year, number);
+                            }
+                          },
+                        ),
+                      ),
                     ],
                   ),
-                ],
-              );
-            },
-          ),
-          if (widget.onReturn != null)
-            TextButton(
-              onPressed: widget.onReturn,
-              child: const Text('Volver al origen'),
-            ),
-        ],
-      );
-      void select(Month month) => _select(
-        int.parse(month.value.substring(0, 4)),
-        int.parse(month.value.substring(5, 7)),
-        publish: false,
-      );
-      if (widget.shell != null) {
-        return widget.shell!(body, _scroll, _month, select, _refresh);
-      }
-      return AfShell(
-        primaryItems: [
-          for (final entry in widget.destinations.entries)
-            AfNavItem(id: entry.key, label: entry.value, icon: AfIcons.account),
-        ],
-        utilityItems: const [],
-        selectedId: '/patrimonio',
-        onSelect: (path) async {
-          widget.onNavigate(path, _month);
-          return true;
-        },
-        scrollController: _scroll,
-        periodControl:
-            widget.periodControls?.call(_month, select) ??
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                SizedBox(
-                  width: 160,
-                  child: TextField(
-                    controller: _yearInput,
-                    keyboardType: TextInputType.number,
-                    onSubmitted: (_) => _applyYear(),
-                    decoration: InputDecoration(
-                      labelText: 'Año',
-                      errorText: _yearError,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: _applyYear,
-                  child: const Text('Aplicar año'),
-                ),
-                SizedBox(
-                  width: 180,
-                  child: DropdownButtonFormField<int>(
-                    key: ValueKey(_month.value),
-                    initialValue: _number,
-                    isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Mes'),
-                    items: [
-                      for (var i = 1; i <= 12; i++)
-                        DropdownMenuItem(value: i, child: Text(_monthName(i))),
-                    ],
-                    onChanged: (number) {
-                      if (number != null) {
-                        _select(_year, number);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-        page: AfPageSlots(
-          title: 'Patrimonio',
-          actions: [widget.management(_month, _refresh)],
-          body: body,
+              page: AfPageSlots(
+                title: 'Patrimonio',
+                actions: [widget.management(_month, _refresh)],
+                body: body,
+              ),
+            );
+          },
         ),
-      );
-    },
+      ),
+    ),
   );
 
   Widget _group(WealthReading reading, Liquidity? liquidity, bool desktop) {
@@ -448,7 +460,7 @@ class _WealthScreenState extends State<WealthScreen> {
         : 'Cuentas y carteras · ${liquidityLabel(liquidity)}';
     String value(AccountRecord account) => amounts[account.id] == null
         ? 'Pendiente'
-        : _money(amounts[account.id]!);
+        : AfAmount(amounts[account.id]!).format(signed: false);
     Widget name(AccountRecord account) => TextButton(
       focusNode: _node('account:${account.id}'),
       style: TextButton.styleFrom(alignment: Alignment.centerLeft),
@@ -468,10 +480,8 @@ class _WealthScreenState extends State<WealthScreen> {
       child: Semantics(
         label:
             'Valor manual de ${account.name}, $_period: ${value(account)}. Editar foto',
-        child: Text(
-          value(account),
-          style: TextStyle(fontSize: desktop ? 14 : 16),
-        ),
+        excludeSemantics: true,
+        child: AfNumericText(value(account)),
       ),
     );
     return Padding(
@@ -483,67 +493,24 @@ class _WealthScreenState extends State<WealthScreen> {
             title,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
-          if (desktop)
-            Table(
-              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-              columnWidths: const {
-                0: FlexColumnWidth(3),
-                1: FlexColumnWidth(2),
-                2: FlexColumnWidth(3),
-              },
-              children: [
-                const TableRow(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Text('Ficha', style: TextStyle(fontSize: 14)),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Text('Tipo', style: TextStyle(fontSize: 14)),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Text(
-                        'Valor de foto · día 1',
-                        style: TextStyle(fontSize: 14),
-                      ),
-                    ),
-                  ],
-                ),
-                for (final account in accounts)
-                  TableRow(
-                    children: [
-                      name(account),
-                      Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Text(
-                          accountKindLabel(account.kind),
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                      amount(account),
-                    ],
-                  ),
-              ],
-            )
-          else
-            for (final account in accounts)
-              Card(
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
+          AfResponsiveGrid(
+            columns: desktop ? 2 : 1,
+            children: [
+              for (final account in accounts)
+                AfCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: 8,
                     children: [
                       name(account),
                       Text(accountKindLabel(account.kind)),
-                      const Text('Valor de foto · día 1'),
+                      Text('Valor de foto · día 1 · $_period'),
                       amount(account),
                     ],
                   ),
                 ),
-              ),
+            ],
+          ),
         ],
       ),
     );

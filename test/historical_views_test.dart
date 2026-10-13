@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/wealth_summary.dart';
+
 import 'package:myautofinance/app/app.dart';
 import 'package:myautofinance/app/budget_factory.dart';
 import 'package:myautofinance/app/category_management_factory.dart';
@@ -155,13 +158,13 @@ void main() {
       await boot(tester);
       final revision = (await tester.runAsync(db.readState))!.revision;
       await tap(tester, find.byKey(const ValueKey('destination-wealth')));
-      expect(find.text('Patrimonio neto: 800,00\u00a0€'), findsOneWidget);
+      expect(wealthSummary('Patrimonio neto', '800,00\u00a0€'), findsOneWidget);
       await tap(tester, find.text('Mes siguiente'));
       expect(
         find.text('Sin dato: foto patrimonial incompleta'),
         findsOneWidget,
       );
-      expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
+      expect(wealthSummary('Patrimonio neto', 'Sin dato'), findsOneWidget);
       expect(find.text('Pendientes: Deuda sintética'), findsOneWidget);
       await tap(tester, find.text('Mes siguiente'));
       expect(find.text('Sin dato: falta foto patrimonial'), findsOneWidget);
@@ -209,7 +212,7 @@ void main() {
       expect(session.period, NavigationPeriod(2026, 1));
       await tap(tester, find.widgetWithText(TextButton, 'Patrimonio'));
       expect(session.period, NavigationPeriod(2026, 1));
-      expect(find.text('Patrimonio neto: 800,00\u00a0€'), findsOneWidget);
+      expect(wealthSummary('Patrimonio neto', '800,00\u00a0€'), findsOneWidget);
     },
   );
 
@@ -332,7 +335,7 @@ void main() {
       expect(find.text('Sin dato: falta foto patrimonial'), findsOneWidget);
       gate.complete(wealth);
       await settle(tester);
-      expect(find.text('Patrimonio neto: 800,00\u00a0€'), findsNothing);
+      expect(wealthSummary('Patrimonio neto', '800,00\u00a0€'), findsNothing);
       fail = true;
       await tester.enterText(find.byKey(const Key('period-year')), '2036');
       await tap(tester, find.text('Ir al periodo'));
@@ -482,6 +485,7 @@ void main() {
         tester.view.physicalSize = Size(width, 1000);
         await tester.pumpAndSettle();
         await tap(tester, find.byKey(const ValueKey('destination-wealth')));
+        await tap(tester, find.text('Ver detalle'));
         final button = find.widgetWithText(TextButton, last.name);
         await tester.ensureVisible(button);
         await tester.pumpAndSettle();
@@ -498,7 +502,7 @@ void main() {
         final revision = (await tester.runAsync(db.readState))!.revision;
         await tap(tester, button);
         expect(session.context.scrollOffset, closeTo(offset, 1));
-        expect(session.context.focus, 'account:${last.id}');
+        expect(session.context.focus, 'detail|account:${last.id}');
         await tap(tester, find.text('Volver a Patrimonio, 2026-01'));
         expect(session.period, NavigationPeriod(2026, 1));
         expect(scroll.offset, closeTo(offset, 1));

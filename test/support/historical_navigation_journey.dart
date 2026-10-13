@@ -4,6 +4,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'wealth_summary.dart';
+
 import 'package:myautofinance/app/app.dart';
 import 'package:myautofinance/ui/autofinance_ui.dart';
 import 'package:myautofinance/app/navigation/navigation_context.dart';
@@ -94,14 +97,14 @@ Future<void> historicalNavigationJourney(
     expect(find.text('Pendientes: Deuda sintética'), findsOneWidget);
     await press('Mes anterior');
     expect(session.period, NavigationPeriod(2025, 12));
-    expect(find.text('Patrimonio neto: 800,00\u00a0€'), findsOneWidget);
+    expect(wealthSummary('Patrimonio neto', '800,00\u00a0€'), findsOneWidget);
     await press('Mes siguiente');
     expect(session.period, NavigationPeriod(2026, 1));
     await press('Mes siguiente');
-    expect(find.text('Patrimonio neto: 0,00\u00a0€'), findsOneWidget);
+    expect(wealthSummary('Patrimonio neto', '0,00\u00a0€'), findsOneWidget);
     await press('Mes siguiente');
     expect(find.text('Sin dato: falta foto patrimonial'), findsOneWidget);
-    expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
+    expect(wealthSummary('Patrimonio neto', 'Sin dato'), findsOneWidget);
 
     await destination('Presupuesto');
     expect(session.context.view, PeriodView.annual);
@@ -172,7 +175,7 @@ Future<void> historicalNavigationJourney(
     await press('Mes actual');
     expect(session.context.destination, SessionDestination.wealth);
     expect(session.period, NavigationPeriod(2026, 2));
-    expect(find.text('Patrimonio neto: 0,00\u00a0€'), findsOneWidget);
+    expect(wealthSummary('Patrimonio neto', '0,00\u00a0€'), findsOneWidget);
     await press('Mes anterior');
 
     // El filtro explícito sigue siendo local al listado y vuelve intacto.

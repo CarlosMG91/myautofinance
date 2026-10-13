@@ -4,6 +4,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'wealth_summary.dart';
+
 import 'package:myautofinance/app/app.dart';
 import 'package:myautofinance/app/navigation/navigation_context.dart';
 
@@ -59,6 +62,10 @@ Future<void> wealthLifecycleJourney(
 
   Future<void> tap(String label) async {
     debugPrint('Recorrido patrimonio: $label');
+    if (find.text(label).evaluate().isEmpty &&
+        find.text('Ver detalle').evaluate().isNotEmpty) {
+      await tap('Ver detalle');
+    }
     final buttons = find.ancestor(
       of: find.text(label),
       matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
@@ -200,7 +207,7 @@ Future<void> wealthLifecycleJourney(
   final february = [620000, 1050000, 1670000, 480000, 1190000];
   try {
     await mount(1);
-    expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
+    expect(wealthSummary('Patrimonio neto', 'Sin dato'), findsOneWidget);
     await tap('Gestionar fichas');
     // Cancelar sin edición y descartar con cambios no crean una ficha.
     final empty = await image();
@@ -258,7 +265,7 @@ Future<void> wealthLifecycleJourney(
       debt: '5000',
     });
     await totals(1, january);
-    expect(find.textContaining('Patrimonio neto: 14.000,00'), findsOneWidget);
+    expect(wealthSummary('Patrimonio neto', '14.000,00'), findsOneWidget);
     await capture('01-enero-completo');
 
     await choose<int>('febrero');
@@ -269,7 +276,7 @@ Future<void> wealthLifecycleJourney(
     debugPrint(
       'Patrimonio verificado: febrero ausente, sin arrastre ni totales',
     );
-    expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
+    expect(wealthSummary('Patrimonio neto', 'Sin dato'), findsOneWidget);
     await capture('02-febrero-ausente');
     await tap('Registrar / editar foto');
     await enter(find.byKey(ValueKey('photo-value-$debt')), '-4800');
@@ -296,7 +303,7 @@ Future<void> wealthLifecycleJourney(
       'Deudas',
       'Patrimonio neto',
     ]) {
-      expect(find.text('$label: Sin dato'), findsOneWidget);
+      expect(wealthSummary(label, 'Sin dato'), findsOneWidget);
     }
     await capture('03-febrero-parcial');
     await photo({saving: '0', portfolio: '10500'});
@@ -438,7 +445,7 @@ Future<void> wealthLifecycleJourney(
       afterLiquidity['wealth_snapshots'],
       beforeLiquidity['wealth_snapshots'],
     );
-    expect(find.textContaining('Activos líquidos: 16.700,00'), findsOneWidget);
+    expect(wealthSummary('Activos líquidos', '16.700,00'), findsOneWidget);
     await capture('06-liquidez-desde-febrero');
     await tap('Cartera');
     await tap('Corregir liquidez histórica');
@@ -537,7 +544,8 @@ Future<void> wealthLifecycleJourney(
     await totals(2, february);
     expect((await read(6)).totals, isNull);
     await tap('Las doce fotos de 2026 · sin suma anual');
-    await tap('marzo: Foto completa · Neto 11.900,00\u00a0€');
+    await tap('marzo: Foto completa');
+    await tap('Ver detalle');
     expect(find.text('Cuenta nueva'), findsOneWidget);
     await capture('08-historico-tras-reapertura');
     // Navegar a otra vista transmite el periodo, sin escribir.

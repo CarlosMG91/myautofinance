@@ -8,8 +8,12 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/wealth_summary.dart';
+
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:myautofinance/app/app.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 import 'package:myautofinance/app/navigation/navigation_context.dart';
 
 import '../support/app_navigation.dart';
@@ -116,12 +120,13 @@ void main() {
       );
       await tester.pumpWidget(screen());
       await settle(tester);
-      expect(find.textContaining('Patrimonio neto: 1.000,00'), findsOneWidget);
+      expect(wealthSummary('Patrimonio neto', '1.000,00'), findsOneWidget);
       await tap(tester, 'Las doce fotos de 2026 · sin suma anual');
-      expect(find.textContaining('diciembre: Sin dato'), findsOneWidget);
+      // El histórico muestra una lectura por serie: activos y deudas.
+      expect(find.textContaining('diciembre: Sin dato'), findsNWidgets(2));
       await tap(tester, 'febrero: Sin dato: foto patrimonial incompleta');
-      expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
-      expect(find.text('Activos líquidos: Sin dato'), findsOneWidget);
+      expect(wealthSummary('Patrimonio neto', 'Sin dato'), findsOneWidget);
+      expect(wealthSummary('Activos líquidos', 'Sin dato'), findsOneWidget);
       expect(find.text('Pendientes: Deuda sintética'), findsOneWidget);
       final year = find.widgetWithText(TextField, 'Año');
       await tester.ensureVisible(year);
@@ -134,7 +139,7 @@ void main() {
       await tester.enterText(year, '0');
       await tap(tester, 'Aplicar año');
       expect(find.text('Introduce un año entre 1 y 9999.'), findsOneWidget);
-      expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
+      expect(wealthSummary('Patrimonio neto', 'Sin dato'), findsOneWidget);
     },
   );
 
@@ -174,12 +179,13 @@ void main() {
       );
       await settle(tester);
       await tap(tester, 'Registrar / editar foto');
-      expect(find.textContaining('Patrimonio neto: 0,00'), findsOneWidget);
+      expect(wealthSummary('Patrimonio neto', '0,00'), findsOneWidget);
       await tap(tester, 'Gestionar fichas');
-      expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
+      expect(wealthSummary('Patrimonio neto', 'Sin dato'), findsOneWidget);
       expect(find.text('Pendientes: Cartera nueva'), findsOneWidget);
       await tap(tester, 'Gestionar fichas');
-      expect(find.textContaining('Patrimonio neto: 0,00'), findsOneWidget);
+      expect(wealthSummary('Patrimonio neto', '0,00'), findsOneWidget);
+      await tap(tester, 'Ver detalle');
       expect(find.text('Cuentas y carteras · No líquida'), findsOneWidget);
       expect(
         (await tester.runAsync(() => controller.readMonth(january)))!.values
@@ -212,7 +218,7 @@ void main() {
     failed = false;
     await tap(tester, 'Reintentar');
     expect(find.textContaining('No hay fichas vigentes'), findsOneWidget);
-    expect(find.text('Patrimonio neto: Sin dato'), findsOneWidget);
+    expect(wealthSummary('Patrimonio neto', 'Sin dato'), findsOneWidget);
   });
 
   for (final width in [
@@ -239,7 +245,9 @@ void main() {
           ),
         );
         await settle(tester);
-        expect(find.byType(Table), width >= 840 ? findsWidgets : findsNothing);
+        expect(find.byType(Table), findsNothing);
+        await tap(tester, 'Ver detalle');
+        expect(find.byType(AfCard), findsWidgets);
         await tap(tester, 'Gestionar fichas');
         expect(find.text('Estado'), findsOneWidget);
         expect(find.text('Indicadores'), findsOneWidget);
@@ -264,7 +272,7 @@ void main() {
     await tester.enterText(find.byKey(ValueKey('photo-value-${debt.id}')), '0');
     await tap(tester, 'Guardar foto');
     expect(find.textContaining('01/02/2026'), findsOneWidget);
-    expect(find.textContaining('Patrimonio neto: 6.300,00'), findsOneWidget);
+    expect(wealthSummary('Patrimonio neto', '6.300,00'), findsOneWidget);
     await tap(tester, 'Gestionar fichas');
     await tap(tester, 'Crear ficha');
     expect(
@@ -296,10 +304,10 @@ void main() {
     await tester.pumpWidget(screen());
     await settle(tester);
     expect(
-      find.text('Patrimonio neto: −92.233.720.368.547.758,07\u00a0€'),
+      wealthSummary('Patrimonio neto', '−92.233.720.368.547.758,07\u00a0€'),
       findsOneWidget,
     );
-    expect(find.text('Activos totales: 0,00\u00a0€'), findsOneWidget);
+    expect(wealthSummary('Activos totales', '0,00\u00a0€'), findsOneWidget);
   });
 
   testWidgets('Capturas sintéticas de la vista aprobada', (tester) async {

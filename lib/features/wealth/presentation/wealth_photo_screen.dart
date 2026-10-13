@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../../../ui/autofinance_ui.dart';
+
 import '../domain/account_repository.dart';
 import '../domain/wealth_amount.dart';
 import '../domain/wealth_repository.dart';
@@ -213,16 +215,27 @@ class _WealthPhotoScreenState extends State<WealthPhotoScreen> {
       onChanged: (_) => setState(() => _allowPop = false),
       decoration: InputDecoration(
         labelText: 'Valor (EUR)',
-        helperText: _fields[account.id]!.text.trim().isEmpty
-            ? 'Pendiente'
-            : 'Valor manual · EUR',
+        helperText: _draftStatus(account.id),
         hintText: '0,00',
         errorText: _errorId == account.id ? _error : null,
         errorMaxLines: 4,
-        helperMaxLines: 2,
+        helperMaxLines: 6,
       ),
     ),
   );
+
+  String _draftStatus(String id) {
+    try {
+      final amount = parseWealthAmount(_fields[id]!.text);
+      return amount == null
+          ? 'Dato pendiente · Deja vacío si aún no lo conoces'
+          : amount == 0
+          ? 'Cero registrado · 0,00 € es un dato válido'
+          : 'Valor manual · EUR';
+    } on WealthFailure {
+      return 'Revisa el importe · Hasta dos decimales';
+    }
+  }
 
   String _classification(AccountRecord account) => account.liquidity == null
       ? 'Sin liquidez (deuda)'
@@ -234,13 +247,17 @@ class _WealthPhotoScreenState extends State<WealthPhotoScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final account in _accounts)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: AfCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 12,
                   children: [
-                    Text(account.name),
+                    Text(
+                      account.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     Text(accountKindLabel(account.kind)),
                     Text(_classification(account)),
                     _valueField(account),
@@ -308,7 +325,7 @@ class _WealthPhotoScreenState extends State<WealthPhotoScreen> {
                 PopupMenuButton<String>(
                   enabled: !_locked,
                   tooltip: 'Cambiar destino',
-                  icon: const Icon(Icons.menu),
+                  icon: const AfIcon(AfIcons.more),
                   onSelected: (path) => _leave(() => widget.onNavigate!(path)),
                   itemBuilder: (context) => [
                     for (final entry in widget.destinations.entries)
@@ -336,6 +353,7 @@ class _WealthPhotoScreenState extends State<WealthPhotoScreen> {
                           ),
                           Text(
                             'Valores del ${DateFormat("d 'de' MMMM 'de' y", 'es_ES').format(date)}',
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           Text('Referencia fija: ${widget.month.value}'),
                           const Text(
@@ -354,29 +372,43 @@ class _WealthPhotoScreenState extends State<WealthPhotoScreen> {
                               child: const Text('Reintentar'),
                             )
                           else ...[
-                            Text(switch (_photo!.status) {
-                              WealthSnapshotStatus.absent =>
-                                'Sin dato: falta foto patrimonial',
-                              WealthSnapshotStatus.incomplete => 'Foto incompleta · Sin dato: foto patrimonial incompleta',
-                              WealthSnapshotStatus.complete => 'Foto completa',
-                            }),
+                            Text(
+                              'Estado de la foto guardada',
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                            AfStatus(
+                              kind:
+                                  _photo!.status ==
+                                      WealthSnapshotStatus.complete
+                                  ? AfStatusKind.success
+                                  : AfStatusKind.pending,
+                              message: switch (_photo!.status) {
+                                WealthSnapshotStatus.absent =>
+                                  'Sin dato: falta foto patrimonial',
+                                WealthSnapshotStatus.incomplete => 'Foto incompleta · Sin dato: foto patrimonial incompleta',
+                                WealthSnapshotStatus.complete =>
+                                  'Foto completa',
+                              },
+                            ),
                             for (final account in _photo!.pending)
                               Text(
                                 'Pendiente en la foto guardada: ${account.name}',
                               ),
                             if (_accounts.isEmpty)
                               const Text('No hay fichas vigentes en este mes.'),
-                            _entries(constraints.maxWidth >= 840),
+                            const SizedBox(height: 24),
+                            _entries(
+                              constraints.maxWidth >= 840 &&
+                                  !AfTokens.reflow(
+                                    context,
+                                    constraints.maxWidth,
+                                  ),
+                            ),
                           ],
                           if (_error != null)
-                            Semantics(
-                              liveRegion: true,
-                              child: Text(
-                                _error!,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
+                            AfStatus(
+                              kind: AfStatusKind.error,
+                              message: _error!,
                             ),
                           if (_busy)
                             const LinearProgressIndicator(
@@ -388,19 +420,23 @@ class _WealthPhotoScreenState extends State<WealthPhotoScreen> {
                               spacing: 8,
                               runSpacing: 8,
                               children: [
-                                TextButton(
+                                AfAction(
+                                  label: 'Cancelar',
+                                  variant: AfActionVariant.link,
                                   onPressed: _locked
                                       ? null
                                       : () => _leave(widget.onReturn),
-                                  child: const Text('Cancelar'),
                                 ),
-                                FilledButton(
+                                AfAction(
+                                  label: _busy ? 'Guardando…' : 'Guardar foto',
+                                  icon: AfIcons.confirm,
+                                  variant: AfActionVariant.primary,
+                                  unavailableReason: _accounts.isEmpty
+                                      ? 'No hay fichas vigentes que registrar.'
+                                      : null,
                                   onPressed: _locked || _accounts.isEmpty
                                       ? null
                                       : _save,
-                                  child: Text(
-                                    _busy ? 'Guardando…' : 'Guardar foto',
-                                  ),
                                 ),
                               ],
                             ),

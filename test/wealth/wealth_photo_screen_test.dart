@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:myautofinance/app/app.dart';
 import 'package:myautofinance/app/local_backup_session.dart';
@@ -42,14 +43,16 @@ void main() {
     await directory.delete(recursive: true);
   });
   Finder value(String id) => find.byKey(ValueKey('photo-value-$id'));
-  Future<void> settle(WidgetTester tester) async {
-    for (var i = 0; i < 100; i++) {
+  Future<void> settle(WidgetTester tester, {Finder? until}) async {
+    for (var i = 0; i < 300; i++) {
       await tester.runAsync(() async {
         await tester.pump();
         await Future<void>.delayed(const Duration(milliseconds: 10));
       });
       await tester.pump(const Duration(milliseconds: 30));
-      if (i >= 15 && find.byType(LinearProgressIndicator).evaluate().isEmpty) {
+      if (i >= 15 &&
+          find.byType(LinearProgressIndicator).evaluate().isEmpty &&
+          (until == null || until.evaluate().isNotEmpty)) {
         break;
       }
     }
@@ -309,7 +312,8 @@ void main() {
       expect(tester.widget<TextField>(value(debtId)).controller!.text, isEmpty);
       await tester.enterText(value(debtId), '0');
       await tap(tester, 'Guardar foto');
-      await settle(tester);
+      // Esperar también la relectura del resumen después de cerrar el editor.
+      await settle(tester, until: find.text('Foto completa'));
       expect(find.text('Foto completa'), findsOneWidget);
       expect(
         (await tester.runAsync(() => service.photos.read(month)))!.status,
@@ -364,8 +368,8 @@ void main() {
         ),
       );
       await settle(tester);
-      expect(find.byType(Table), width >= 840 ? findsOneWidget : findsNothing);
-      expect(find.byType(Card), width < 840 ? findsNWidgets(2) : findsNothing);
+      expect(find.byType(Table), findsNothing);
+      expect(find.byType(AfCard), findsNWidgets(3));
       await tester.ensureVisible(value(debtId));
       await tester.enterText(value(debtId), '0');
       await tap(tester, 'Guardar foto');
