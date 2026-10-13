@@ -279,13 +279,13 @@ void main() {
       );
       await backToStatus(tester);
       await tap(tester, find.byKey(ValueKey('$root:real')));
-      expect(find.text('Concepto: Movimiento sintético'), findsOneWidget);
+      expect(find.text('Movimiento sintético'), findsOneWidget);
       await backToStatus(tester);
       await tap(tester, find.byKey(ValueKey('$empty:real')));
-      expect(find.text('Concepto: Movimiento sintético'), findsNWidgets(2));
+      expect(find.text('Movimiento sintético'), findsNWidgets(2));
       await backToStatus(tester);
       await tap(tester, find.byKey(const ValueKey('sin-clasificar:real')));
-      expect(find.text('Concepto: Movimiento sintético'), findsOneWidget);
+      expect(find.text('Movimiento sintético'), findsOneWidget);
       await backToStatus(tester);
       await tap(tester, find.byKey(ValueKey('$root:diferencia')));
       expect(find.text('Ver movimientos reales'), findsOneWidget);
@@ -302,7 +302,7 @@ void main() {
       expect(find.textContaining('Compra semanal'), findsNothing);
       await backToStatus(tester);
       await tap(tester, find.byKey(const ValueKey('total:real')));
-      expect(find.text('Concepto: Movimiento sintético'), findsNWidgets(4));
+      expect(find.text('Movimiento sintético'), findsNWidgets(4));
       await tester.pumpWidget(const SizedBox());
     },
   );

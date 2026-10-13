@@ -7,6 +7,7 @@ import 'app_routes.dart';
 import 'wealth_route.dart';
 import 'movement_editor_route.dart';
 import 'movement_links.dart';
+import 'pending_movement_origin.dart';
 import 'navigation_session.dart';
 import 'navigation_context.dart';
 import 'primary_navigation.dart';
@@ -205,6 +206,15 @@ class _MovementListRouteState extends State<MovementListRoute> {
               ),
         onOrigin: capture,
         controller: controller,
+        onPending: () async {
+          await Navigator.of(context).pushNamed(
+            AppRoutes.pendingMovements,
+            arguments: PendingMovementOrigin(
+              route: currentRoute(),
+              label: 'Volver a Movimientos',
+            ),
+          );
+        },
         onFiltersApplied: () {
           _explicitPeriod = true;
           capture(0, null);

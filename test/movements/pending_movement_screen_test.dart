@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myautofinance/features/movements/movement_widgets.dart';
 import 'package:myautofinance/app/app.dart';
 import 'package:myautofinance/app/import_factory.dart';
 import 'package:myautofinance/app/wealth_management_factory.dart';
@@ -393,10 +394,8 @@ void main() {
         ),
       );
       await settle(tester);
-      expect(
-        find.byType(Table),
-        width >= 840 && scale == 1 ? findsOneWidget : findsNothing,
-      );
+      expect(find.byType(Table), findsNothing);
+      expect(find.byType(MovementActivityRow), findsNWidgets(2));
       expect(
         find.text('Total pendiente del ámbito filtrado: 4 movimientos'),
         findsOneWidget,
@@ -777,16 +776,14 @@ void main() {
           .state<NavigatorState>(find.byType(Navigator))
           .pushNamed(AppRoutes.pendingMovements);
       await settle(tester);
-      expect(find.text('Estado'), findsOneWidget);
-      expect(find.text('Indicadores'), findsOneWidget);
+      expect(find.text('Inicio'), findsOneWidget);
+      expect(find.text('Movimientos'), findsOneWidget);
       expect(
         find.text('Total pendiente del ámbito filtrado: 4 movimientos'),
         findsOneWidget,
       );
-      expect(
-        find.byType(Table),
-        width >= 840 && scale == 1 ? findsOneWidget : findsNothing,
-      );
+      expect(find.byType(Table), findsNothing);
+      expect(find.byType(MovementActivityRow), findsNWidgets(4));
       await tester.ensureVisible(find.text('Seleccionar página visible (4)'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);

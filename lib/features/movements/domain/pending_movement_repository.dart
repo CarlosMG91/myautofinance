@@ -38,13 +38,14 @@ final class PendingMovementSelection {
   final String datasetId;
 }
 
-/// Página limitada y número de TODOS los pendientes filtrados, obtenidos
+/// Página limitada, contador y subtotal de TODOS los pendientes filtrados, obtenidos
 /// en el mismo snapshot de lectura. Reiniciar el cursor tras cambiar filtros,
 /// escribir o reemplazar la base, como en EP-010.
 final class PendingMovementPage {
   PendingMovementPage({
     required List<MovementRecord> records,
     required this.totalCount,
+    required this.subtotalCents,
     required this.nextCursor,
     required this.databaseIdentity,
     required this.datasetId,
@@ -52,6 +53,9 @@ final class PendingMovementPage {
 
   final List<MovementRecord> records;
   final int totalCount;
+
+  /// Suma firmada de todo el ámbito; cero no implica una lista vacía.
+  final int subtotalCents;
   final MovementCursor? nextCursor;
   final Object databaseIdentity;
   final String datasetId;

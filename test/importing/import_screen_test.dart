@@ -11,6 +11,7 @@ import 'package:myautofinance/app/category_management_factory.dart';
 import 'package:myautofinance/app/pending_movement_factory.dart';
 import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
+import 'package:myautofinance/app/data/sqlite/schema_policy.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_category_repository.dart';
 import 'package:myautofinance/app/import_factory.dart';
@@ -45,11 +46,7 @@ void main() {
   late String accountId;
   final repaint = GlobalKey();
   setUp(() async {
-    db = LocalDatabase(
-      NativeDatabase.memory(
-        setup: (raw) => raw.execute('PRAGMA foreign_keys=ON'),
-      ),
-    );
+    db = LocalDatabase(NativeDatabase.memory(setup: configureConnection));
     accountId = (await SqliteAccountRepository(db).create(
       name: 'Cuenta',
       kind: AccountKind.account,

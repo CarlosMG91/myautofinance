@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 import '../domain/category_management.dart';
 import '../domain/movement_repository.dart';
@@ -18,6 +19,7 @@ class PendingMovementScreen extends StatefulWidget {
     this.navigation,
     this.bottomNavigation,
     this.returnLabel = 'Volver al origen',
+    this.shell,
   });
   final PendingMovementController controller;
   final Future<CategoryDetails?> Function() selectCategory;
@@ -26,6 +28,12 @@ class PendingMovementScreen extends StatefulWidget {
   final VoidCallback onReturn;
   final Widget? navigation, bottomNavigation;
   final String returnLabel;
+  final Widget Function(
+    Widget body,
+    ScrollController scroll,
+    Future<bool> Function() canLeave,
+  )?
+  shell;
 
   @override
   State<PendingMovementScreen> createState() => _PendingMovementScreenState();
@@ -325,168 +333,190 @@ class _PendingMovementScreenState extends State<PendingMovementScreen> {
       excluding: c.operationActive,
       child: IgnorePointer(ignoring: c.operationActive, child: child),
     );
-    final content = SafeArea(
-      child: SingleChildScrollView(
-        controller: _scroll,
-        padding: EdgeInsets.all(wide ? 24 : 16),
-        child: Focus(
-          focusNode: _contentFocus,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Importados sin categoría · todos los periodos por defecto',
-              ),
-              const Text('Recientes primero · fecha de valor'),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _dropdown('Lote', _batch, c.batches, (v) => _batch = v),
-                  _dropdown(
-                    'Cuenta',
-                    _account,
-                    c.accounts,
-                    (v) => _account = v,
-                  ),
-                  _field(_from, 'Desde · AAAA-MM-DD'),
-                  _field(_through, 'Hasta incluido · AAAA-MM-DD'),
-                  _field(_concept, 'Buscar por concepto'),
-                  FilledButton(
-                    onPressed: c.locked ? null : _apply,
-                    child: const Text('Aplicar filtros'),
-                  ),
-                  TextButton(
-                    onPressed: c.locked ? null : _clearFilters,
-                    child: const Text('Limpiar filtros'),
-                  ),
-                ],
-              ),
-              const Text(
-                'Fechas incluidas. Sin fechas: todos los periodos. Cambiar filtros limpia la selección.',
-              ),
-              if (_validation != null)
-                Semantics(liveRegion: true, child: Text(_validation!)),
-              if (c.notice != null)
-                Semantics(liveRegion: true, child: Text(c.notice!)),
-              if (c.loading)
-                Semantics(
-                  liveRegion: true,
-                  child: Text('Cargando pendientes…'),
-                ),
-              if (c.operationActive)
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    c.sending
-                        ? 'Guardando categoría…'
-                        : 'Revisando asignación…',
-                  ),
-                ),
-              if (c.error != null)
-                Semantics(liveRegion: true, child: Text(c.error!)),
-              if (c.error != null || c.requiresRefresh)
-                FilledButton(
-                  onPressed: c.locked
-                      ? null
-                      : c.requiresRefresh
-                      ? c.update
-                      : () => c.refresh(),
-                  child: Text(
-                    c.requiresRefresh
-                        ? 'Actualizar pendientes'
-                        : 'Reintentar lectura',
-                  ),
-                ),
-              if (page != null) ...[
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    'Total pendiente del ámbito filtrado: ${page.totalCount} movimientos',
-                  ),
-                ),
+    final body = Focus(
+      focusNode: _contentFocus,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 16,
+        children: [
+          const Text(
+            'Importados sin categoría · todos los periodos por defecto',
+          ),
+          const Text('Recientes primero · fecha de valor'),
+          AfCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 16,
+              children: [
                 Text(
-                  'Página ${c.pageIndex + 1} de ${(page.totalCount / c.pageSize).ceil().clamp(1, 999999999)} · ${page.records.length} visibles',
-                ),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    '${c.selected.length} seleccionados · UUID explícitos: ${c.selected.join(', ')}',
-                  ),
+                  'Filtrar pendientes',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Wrap(
                   spacing: 12,
-                  runSpacing: 8,
+                  runSpacing: 12,
                   children: [
-                    OutlinedButton(
-                      onPressed: !c.canAssign || page.records.isEmpty
-                          ? null
-                          : c.selectPage,
-                      child: Text(
-                        'Seleccionar página visible (${page.records.length})',
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: c.locked ? null : c.clearSelection,
-                      child: const Text('Limpiar selección'),
-                    ),
-                    FilledButton(
-                      onPressed: !c.canAssign || c.selected.isEmpty
-                          ? null
-                          : () => _assign(),
-                      child: Text('Asignar categoría (${c.selected.length})'),
-                    ),
-                  ],
-                ),
-                if (page.records.isEmpty)
-                  Text(
-                    filtered
-                        ? 'No hay pendientes con estos filtros. Limpia los filtros para revisar otros periodos o lotes.'
-                        : 'No quedan importados pendientes. Los movimientos manuales se gestionan en Movimientos.',
-                  ),
-                if (page.records.isNotEmpty)
-                  MovementRecordList(
-                    actionLabel: 'Acción',
-                    records: page.records,
-                    wide: wide,
-                    labels: const [
-                      'Fecha de valor',
-                      'Concepto',
+                    _dropdown('Lote', _batch, c.batches, (v) => _batch = v),
+                    _dropdown(
                       'Cuenta',
-                      'Procedencia',
-                      'Importe EUR',
-                    ],
-                    values: (row) => [
-                      row.data.valueDate.value,
-                      '${row.data.concept}\n${row.id}',
-                      c.accounts[row.data.accountId] ?? row.data.accountId,
-                      '${c.batches[row.batchId] ?? row.batchId}\nFila ${row.sourceOrdinal}',
-                      movementEuro(row.data.amountCents),
-                    ],
-                    checkbox: _check,
-                    actions: _actions,
-                  ),
-                Wrap(
-                  spacing: 12,
-                  children: [
-                    TextButton(
-                      onPressed: !c.canAssign || c.pageIndex == 0
-                          ? null
-                          : c.previous,
-                      child: const Text('Página anterior'),
+                      _account,
+                      c.accounts,
+                      (v) => _account = v,
+                    ),
+                    _field(_from, 'Desde · AAAA-MM-DD'),
+                    _field(_through, 'Hasta incluido · AAAA-MM-DD'),
+                    _field(_concept, 'Buscar por concepto'),
+                    FilledButton(
+                      onPressed: c.locked ? null : _apply,
+                      child: const Text('Aplicar filtros'),
                     ),
                     TextButton(
-                      onPressed: !c.canAssign || page.nextCursor == null
-                          ? null
-                          : c.next,
-                      child: const Text('Página siguiente'),
+                      onPressed: c.locked ? null : _clearFilters,
+                      child: const Text('Limpiar filtros'),
                     ),
                   ],
                 ),
               ],
-            ],
+            ),
           ),
-        ),
+          const Text(
+            'Fechas incluidas. Sin fechas: todos los periodos. Cambiar filtros limpia la selección.',
+          ),
+          if (_validation != null)
+            Semantics(liveRegion: true, child: Text(_validation!)),
+          if (c.notice != null)
+            Semantics(liveRegion: true, child: Text(c.notice!)),
+          if (c.loading)
+            const AfStatus(
+              kind: AfStatusKind.loading,
+              message: 'Cargando pendientes…',
+            ),
+          if (c.operationActive)
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                c.sending ? 'Guardando categoría…' : 'Revisando asignación…',
+              ),
+            ),
+          if (c.error != null)
+            AfStatus(kind: AfStatusKind.error, message: c.error!),
+          if (c.error != null || c.requiresRefresh)
+            FilledButton(
+              onPressed: c.locked
+                  ? null
+                  : c.requiresRefresh
+                  ? c.update
+                  : () => c.refresh(),
+              child: Text(
+                c.requiresRefresh
+                    ? 'Actualizar pendientes'
+                    : 'Reintentar lectura',
+              ),
+            ),
+          if (page != null) ...[
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                'Total pendiente del ámbito filtrado: ${page.totalCount} movimientos',
+              ),
+            ),
+            AfNumericText(
+              'Subtotal pendiente del ámbito filtrado: ${movementEuro(page.subtotalCents)}',
+            ),
+            Text(
+              'Página ${c.pageIndex + 1} de ${(page.totalCount / c.pageSize).ceil().clamp(1, 999999999)} · ${page.records.length} visibles',
+            ),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                '${c.selected.length} seleccionados · solo esta página',
+              ),
+            ),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                OutlinedButton(
+                  onPressed: !c.canAssign || page.records.isEmpty
+                      ? null
+                      : c.selectPage,
+                  child: Text(
+                    'Seleccionar página visible (${page.records.length})',
+                  ),
+                ),
+                TextButton(
+                  onPressed: c.locked ? null : c.clearSelection,
+                  child: const Text('Limpiar selección'),
+                ),
+                FilledButton(
+                  onPressed: !c.canAssign || c.selected.isEmpty
+                      ? null
+                      : () => _assign(),
+                  child: Text('Asignar categoría (${c.selected.length})'),
+                ),
+              ],
+            ),
+            if (page.records.isEmpty)
+              AfStatus(
+                kind: AfStatusKind.empty,
+                message: filtered
+                    ? 'No hay pendientes con estos filtros. Limpia los filtros para revisar otros periodos o lotes.'
+                    : 'No quedan importados pendientes. Los movimientos manuales se gestionan en Movimientos.',
+              ),
+            if (page.records.isNotEmpty)
+              MovementRecordList(
+                actionLabel: 'Acción',
+                records: page.records,
+                wide: wide,
+                labels: const [
+                  'Fecha de valor',
+                  'Concepto',
+                  'Cuenta',
+                  'Categoría',
+                  'Importe EUR',
+                ],
+                values: (row) => [
+                  row.data.valueDate.value,
+                  row.data.concept,
+                  c.accounts[row.data.accountId] ?? row.data.accountId,
+                  'Sin clasificar',
+                  movementEuro(row.data.amountCents),
+                ],
+                checkbox: _check,
+                actions: _actions,
+              ),
+            Wrap(
+              spacing: 12,
+              children: [
+                TextButton(
+                  onPressed: !c.canAssign || c.pageIndex == 0
+                      ? null
+                      : c.previous,
+                  child: const Text('Página anterior'),
+                ),
+                TextButton(
+                  onPressed: !c.canAssign || page.nextCursor == null
+                      ? null
+                      : c.next,
+                  child: const Text('Página siguiente'),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+    if (widget.shell != null) {
+      return PopScope(
+        canPop: !c.operationActive,
+        child: widget.shell!(body, _scroll, () async => !c.operationActive),
+      );
+    }
+    final content = SafeArea(
+      child: SingleChildScrollView(
+        controller: _scroll,
+        padding: EdgeInsets.all(wide ? 24 : 16),
+        child: body,
       ),
     );
     return PopScope(

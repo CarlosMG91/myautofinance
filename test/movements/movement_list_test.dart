@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myautofinance/features/movements/movement_widgets.dart';
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
 import 'package:myautofinance/app/data/sqlite/schema_policy.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_account_repository.dart';
@@ -89,6 +90,7 @@ void main() {
     () async {
       await controller.refresh();
       expect(controller.page!.subtotalCents, 600);
+      expect(controller.page!.totalCount, 3);
       expect(controller.page!.records.map((e) => e.id), [ids[2], ids[1]]);
       controller.selectPage();
       expect(controller.selection!.ids.toSet(), {ids[2], ids[1]});
@@ -180,14 +182,9 @@ void main() {
           }
         });
         await tester.pumpAndSettle();
-        expect(
-          find.byType(Table),
-          width >= 840 && scale == 1 ? findsOneWidget : findsNothing,
-        );
-        expect(
-          find.byType(Card),
-          width < 840 || scale == 2 ? findsNWidgets(2) : findsNothing,
-        );
+        expect(find.byType(Table), findsNothing);
+        expect(find.byType(MovementActivityRow), findsNWidgets(2));
+        expect(find.byType(Card), findsNothing);
         await tester.ensureVisible(find.text('Seleccionar página visible (2)'));
         await tester.tap(find.text('Seleccionar página visible (2)'));
         await tester.pump();
@@ -246,8 +243,41 @@ void main() {
     );
   }
   test('EUR exactos con signo', () {
+    expect(movementEuro(0), '0,00 €');
     expect(movementEuro(-9223372036854775808), '−92.233.720.368.547.758,08 €');
   });
+  testWidgets(
+    'Fallo de relectura al volver conserva origen sin anunciar borrado',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MovementListScreen(
+            controller: controller,
+            onReturn: () {},
+            onOpen: (_) async {
+              fail = true;
+            },
+          ),
+        ),
+      );
+      await tester.runAsync(() async {
+        while (controller.loading) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      });
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Abrir CAFÉ 2'));
+      await tester.tap(find.text('Abrir CAFÉ 2'));
+      await tester.pumpAndSettle();
+      expect(controller.page, isNull);
+      expect(controller.error, isNotNull);
+      expect(controller.notice, isNull);
+      expect(controller.from.value, '2026-03-01');
+      expect(controller.focus, ids[2]);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
   testWidgets(
     'Gestión e informes conservan mes y selección al redimensionar y volver del detalle',
     (tester) async {

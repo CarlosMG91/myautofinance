@@ -396,20 +396,23 @@ final class SqliteMovementRepository
     );
     return database.transaction(() async {
       final state = await database.readState();
-      final count =
-          (await database
-                  .customSelect(
-                    'SELECT count(*) AS total FROM movements m WHERE ${filter.where}',
-                    variables: filter.arguments,
-                  )
-                  .getSingle())
-              .read<int>('total');
+      final totals = (await database
+          .customSelect(
+            'SELECT count(*) AS total, movement_subtotal(m.amount_cents) AS subtotal FROM movements m WHERE ${filter.where}',
+            variables: filter.arguments,
+          )
+          .getSingle());
+      final subtotal = totals.readNullable<int>('subtotal');
+      if (subtotal == null) {
+        throw const MovementFailure('El subtotal excede el rango int64.');
+      }
       final rows = await _pageRecords(filter, after, limit + 1);
       final hasMore = rows.length > limit;
       final visible = hasMore ? rows.sublist(0, limit) : rows;
       return PendingMovementPage(
         records: visible,
-        totalCount: count,
+        totalCount: totals.read<int>('total'),
+        subtotalCents: subtotal,
         nextCursor: hasMore
             ? MovementCursor(visible.last.data.valueDate, visible.last.id)
             : null,
@@ -481,15 +484,14 @@ final class SqliteMovementRepository
     return database.transaction(() async {
       // Acumulación exacta: no pierde céntimos ni falla por overflow intermedio
       // cuando importes de signo contrario dejan el resultado dentro de int64.
-      final subtotal =
-          (await database
-                  .customSelect(
-                    'SELECT movement_subtotal(m.amount_cents) AS subtotal '
-                    'FROM movements m WHERE ${filter.where}',
-                    variables: filter.arguments,
-                  )
-                  .getSingle())
-              .readNullable<int>('subtotal');
+      final totals = (await database
+          .customSelect(
+            'SELECT count(*) AS total, movement_subtotal(m.amount_cents) AS subtotal '
+            'FROM movements m WHERE ${filter.where}',
+            variables: filter.arguments,
+          )
+          .getSingle());
+      final subtotal = totals.readNullable<int>('subtotal');
       if (subtotal == null) {
         throw const MovementFailure('El subtotal excede el rango int64.');
       }
@@ -499,6 +501,7 @@ final class SqliteMovementRepository
       return MovementPage(
         records: visible,
         subtotalCents: subtotal,
+        totalCount: totals.read<int>('total'),
         nextCursor: hasMore
             ? MovementCursor(visible.last.data.valueDate, visible.last.id)
             : null,

@@ -338,5 +338,9 @@ String movementEuro(int cents) {
     (_) => '.',
   );
   final decimals = (magnitude % BigInt.from(100)).toString().padLeft(2, '0');
-  return '${cents < 0 ? '−' : '+'}$euros,$decimals €';
+  return '${cents < 0
+      ? '−'
+      : cents > 0
+      ? '+'
+      : ''}$euros,$decimals €';
 }

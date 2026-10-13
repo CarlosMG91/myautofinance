@@ -117,7 +117,12 @@ void main() {
             if (sourceParts[1] != targetParts[1]) {
               expect(
                 target,
-                'features/${targetParts[1]}/${targetParts[1]}.dart',
+                isIn([
+                  'features/${targetParts[1]}/${targetParts[1]}.dart',
+                  if (sourceParts.contains('presentation') &&
+                      targetParts[1] == 'movements')
+                    'features/movements/movement_widgets.dart',
+                ]),
                 reason: 'Consumir solo la entrada pública: $reason',
               );
               final module = AutofinanceApp.modules.singleWhere(

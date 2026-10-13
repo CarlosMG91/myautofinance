@@ -93,17 +93,21 @@ final class MovementSelection {
 
 enum MovementCategoryScope { direct, branch }
 
-/// Una página y el subtotal firmado de todos los resultados filtrados.
+/// Una página, contador y subtotal firmado de todos los resultados filtrados.
 /// Reutilizar el cursor únicamente con los mismos filtros y una base estable.
 final class MovementPage {
   MovementPage({
     required List<MovementRecord> records,
     required this.subtotalCents,
+    required this.totalCount,
     required this.nextCursor,
   }) : records = List.unmodifiable(records);
 
   final List<MovementRecord> records;
   final int subtotalCents;
+
+  /// Todos los registros del ámbito, independientemente de cursor y límite.
+  final int totalCount;
   final MovementCursor? nextCursor;
 }
 
@@ -155,7 +159,7 @@ abstract interface class MovementRepository {
     int limit = 100,
   });
 
-  /// Página y subtotal en una misma transacción de lectura. El subtotal ignora
+  /// Página, contador y subtotal en una misma transacción de lectura. Ambos ignoran
   /// cursor y límite, vale cero sin resultados y falla si desborda int64.
   /// nextCursor es null al terminar. No mantiene un snapshot entre llamadas:
   /// tras escrituras o cambios de filtros se debe reiniciar la lectura.

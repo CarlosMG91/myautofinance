@@ -6,15 +6,11 @@ import '../../features/movements/presentation/pending_movement_controller.dart';
 import '../../features/movements/presentation/pending_movement_screen.dart';
 import '../category_selector_navigation.dart';
 import 'app_routes.dart';
-
-/// Argumento de retorno para Gestión/lotes (sus enlaces pertenecen a T136).
-class PendingMovementOrigin {
-  const PendingMovementOrigin({
-    this.route = AppRoutes.home,
-    this.label = 'Volver al origen',
-  });
-  final String route, label;
-}
+import 'navigation_session_scope.dart';
+import 'navigation_session.dart';
+import 'primary_navigation.dart';
+import 'pending_movement_origin.dart';
+export 'pending_movement_origin.dart';
 
 /// Ruta serializable por UUID de lote, sin imponer el mes del origen.
 class PendingMovementRoute extends StatefulWidget {
@@ -36,9 +32,18 @@ class PendingMovementRoute extends StatefulWidget {
 
 class _PendingMovementRouteState extends State<PendingMovementRoute> {
   PendingMovementController? _controller;
+  NavigationSession? _navigation;
+
+  @override
+  void dispose() {
+    _navigation?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final parent = NavigationSessionScope.maybeOf(context);
+    final session = _navigation ??= parent?.secondarySession(parent.context);
     final origin = widget.settings.arguments is PendingMovementOrigin
         ? widget.settings.arguments as PendingMovementOrigin
         : const PendingMovementOrigin();
@@ -90,6 +95,21 @@ class _PendingMovementRouteState extends State<PendingMovementRoute> {
         ],
       );
       return PendingMovementScreen(
+        shell: session == null
+            ? null
+            : (body, scroll, canLeave) => PrimaryNavigation(
+                session: session,
+                title: 'Bandeja de categorización',
+                scrollController: scroll,
+                beforeNavigate: canLeave,
+                backLabel: origin.label,
+                onBack: () async {
+                  if (!await canLeave() || !context.mounted) return false;
+                  back();
+                  return true;
+                },
+                child: body,
+              ),
         controller: c,
         onReturn: back,
         returnLabel: origin.label,

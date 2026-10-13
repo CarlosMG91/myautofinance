@@ -11,6 +11,7 @@ import 'movement_links.dart';
 import 'navigation_session.dart';
 import 'navigation_context.dart';
 import 'session_location.dart';
+import 'primary_navigation.dart';
 
 class MovementEditorOrigin {
   const MovementEditorOrigin(this.context, {this.listRoute});
@@ -18,7 +19,7 @@ class MovementEditorOrigin {
   final String? listRoute;
 }
 
-class MovementEditorRoute extends StatelessWidget {
+class MovementEditorRoute extends StatefulWidget {
   const MovementEditorRoute({
     super.key,
     required this.settings,
@@ -30,6 +31,23 @@ class MovementEditorRoute extends StatelessWidget {
   final MovementListLoader load;
   final CategoryManagementLoader? categories;
   final NavigationSession? navigationSession;
+
+  @override
+  State<MovementEditorRoute> createState() => _MovementEditorRouteState();
+}
+
+class _MovementEditorRouteState extends State<MovementEditorRoute> {
+  late final NavigationSession? navigationSession = widget.navigationSession
+      ?.secondarySession(widget.navigationSession!.context);
+  RouteSettings get settings => widget.settings;
+  MovementListLoader get load => widget.load;
+  CategoryManagementLoader? get categories => widget.categories;
+
+  @override
+  void dispose() {
+    navigationSession?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +94,19 @@ class MovementEditorRoute extends StatelessWidget {
           : uri.pathSegments.last;
       if (id != null) MovementSelection([id]);
       return MovementFormScreen(
+        shell: navigationSession == null
+            ? null
+            : (body, canLeave, onBack, title) => PrimaryNavigation(
+                session: navigationSession!,
+                title: title,
+                beforeNavigate: canLeave,
+                backLabel: 'Volver a Movimientos',
+                onBack: () async {
+                  onBack();
+                  return false;
+                },
+                child: body,
+              ),
         load: () async {
           final editor = (await load()).editor;
           if (editor == null) {

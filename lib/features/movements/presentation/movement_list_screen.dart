@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 import '../domain/movement_repository.dart';
 import '../domain/category_management.dart';
@@ -14,6 +15,7 @@ class MovementListScreen extends StatefulWidget {
     this.onSelection,
     this.onFiltersApplied,
     this.onCreate,
+    this.onPending,
     this.selectCategory,
     this.navigation,
     this.bottomNavigation,
@@ -25,6 +27,7 @@ class MovementListScreen extends StatefulWidget {
   final Future<void> Function(String id) onOpen;
   final VoidCallback onReturn;
   final Future<void> Function()? onCreate;
+  final Future<void> Function()? onPending;
   final Future<CategoryDetails?> Function()? selectCategory;
 
   /// Entrega UUID y contexto exactos a las acciones de MA-TSK-094.
@@ -49,6 +52,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
   final _from = TextEditingController();
   final _until = TextEditingController();
   final _focus = <String, FocusNode>{};
+  final _contentFocus = FocusNode();
   String? _validation, _accountId, _categoryId;
   late MovementCategoryScope _scope;
   bool _unclassified = false;
@@ -172,6 +176,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
     _search.dispose();
     _from.dispose();
     _until.dispose();
+    _contentFocus.dispose();
     for (final node in _focus.values) {
       node.dispose();
     }
@@ -209,6 +214,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
   }
 
   Future<void> _open(String id) async {
+    if (!await _canLeave() || !mounted) return;
     final revision = c.periodRevision;
     final offset = _scroll.offset;
     c.scrollOffset = offset;
@@ -222,11 +228,22 @@ class _MovementListScreenState extends State<MovementListScreen> {
       if (_scroll.hasClients) {
         _scroll.jumpTo(offset.clamp(0, _scroll.position.maxScrollExtent));
       }
-      _focus[id]?.requestFocus();
+      final node = _focus[id];
+      if (node?.context != null) {
+        node!.requestFocus();
+      } else {
+        _contentFocus.requestFocus();
+        if (c.page != null) {
+          setState(
+            () => c.notice = 'El movimiento ya no aparece con estos filtros. Foco al encabezado de actividad.',
+          );
+        }
+      }
     });
   }
 
   Future<void> _create() async {
+    if (!await _canLeave() || !mounted) return;
     final revision = c.periodRevision;
     final offset = _scroll.hasClients ? _scroll.offset : 0.0;
     final focus = FocusManager.instance.primaryFocus;
@@ -324,119 +341,148 @@ class _MovementListScreenState extends State<MovementListScreen> {
       decoration: InputDecoration(labelText: label),
     ),
   );
-  Widget _filters() => Wrap(
-    spacing: 12,
-    runSpacing: 12,
-    children: [
-      _field(_from, 'Desde · AAAA-MM-DD'),
-      _field(_until, 'Hasta exclusivo · AAAA-MM-DD'),
-      _field(_search, 'Buscar por concepto'),
-      SizedBox(
-        width: _controlWidth,
-        child: DropdownButtonFormField<String>(
-          key: ValueKey('account-$_accountId-${c.accounts}'),
-          initialValue: _accountId ?? '',
-          isExpanded: true,
-          itemHeight: null,
-          isDense: false,
-          decoration: const InputDecoration(labelText: 'Cuenta'),
-          items: [
-            const DropdownMenuItem(value: '', child: Text('Todas las cuentas')),
-            if (_accountId != null && !c.accounts.containsKey(_accountId))
-              DropdownMenuItem(value: _accountId, child: Text(_accountId!)),
-            for (final entry in c.accounts.entries)
-              DropdownMenuItem(
-                value: entry.key,
-                child: Text('${entry.value} · ${entry.key.substring(0, 8)}'),
+  Widget _filters() => AfCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 16,
+      children: [
+        Text(
+          'Filtrar actividad',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _field(_from, 'Desde · AAAA-MM-DD'),
+            _field(_until, 'Hasta exclusivo · AAAA-MM-DD'),
+            _field(_search, 'Buscar por concepto'),
+            SizedBox(
+              width: _controlWidth,
+              child: DropdownButtonFormField<String>(
+                key: ValueKey('account-$_accountId-${c.accounts}'),
+                initialValue: _accountId ?? '',
+                isExpanded: true,
+                itemHeight: null,
+                isDense: false,
+                decoration: const InputDecoration(labelText: 'Cuenta'),
+                items: [
+                  const DropdownMenuItem(
+                    value: '',
+                    child: Text('Todas las cuentas'),
+                  ),
+                  if (_accountId != null && !c.accounts.containsKey(_accountId))
+                    DropdownMenuItem(
+                      value: _accountId,
+                      child: Text(_accountId!),
+                    ),
+                  for (final entry in c.accounts.entries)
+                    DropdownMenuItem(
+                      value: entry.key,
+                      child: Text(
+                        '${entry.value} · ${entry.key.substring(0, 8)}',
+                      ),
+                    ),
+                ],
+                onChanged: c.locked
+                    ? null
+                    : (v) {
+                        _accountId = v == '' ? null : v;
+                        _apply();
+                      },
               ),
-          ],
-          onChanged: c.locked
-              ? null
-              : (v) {
-                  _accountId = v == '' ? null : v;
-                  _apply();
-                },
-        ),
-      ),
-      SizedBox(
-        width: _controlWidth,
-        child: DropdownButtonFormField<String>(
-          key: ValueKey('category-$_categoryId-$_unclassified-${c.paths}'),
-          initialValue: _unclassified ? 'unclassified' : _categoryId ?? '',
-          isExpanded: true,
-          itemHeight: null,
-          isDense: false,
-          decoration: const InputDecoration(labelText: 'Categoría'),
-          items: [
-            const DropdownMenuItem(
-              value: '',
-              child: Text('Todas las categorías'),
             ),
-            const DropdownMenuItem(
-              value: 'unclassified',
-              child: Text('Sin clasificar'),
-            ),
-            if (_categoryId != null && !c.paths.containsKey(_categoryId))
-              DropdownMenuItem(value: _categoryId, child: Text(_categoryId!)),
-            for (final entry in c.paths.entries)
-              DropdownMenuItem(
-                value: entry.key,
-                child: Text('${entry.value} · ${entry.key.substring(0, 8)}'),
+            SizedBox(
+              width: _controlWidth,
+              child: DropdownButtonFormField<String>(
+                key: ValueKey(
+                  'category-$_categoryId-$_unclassified-${c.paths}',
+                ),
+                initialValue: _unclassified
+                    ? 'unclassified'
+                    : _categoryId ?? '',
+                isExpanded: true,
+                itemHeight: null,
+                isDense: false,
+                decoration: const InputDecoration(labelText: 'Categoría'),
+                items: [
+                  const DropdownMenuItem(
+                    value: '',
+                    child: Text('Todas las categorías'),
+                  ),
+                  const DropdownMenuItem(
+                    value: 'unclassified',
+                    child: Text('Sin clasificar'),
+                  ),
+                  if (_categoryId != null && !c.paths.containsKey(_categoryId))
+                    DropdownMenuItem(
+                      value: _categoryId,
+                      child: Text(_categoryId!),
+                    ),
+                  for (final entry in c.paths.entries)
+                    DropdownMenuItem(
+                      value: entry.key,
+                      child: Text(
+                        '${entry.value} · ${entry.key.substring(0, 8)}',
+                      ),
+                    ),
+                ],
+                onChanged: c.locked
+                    ? null
+                    : (v) {
+                        _unclassified = v == 'unclassified';
+                        _categoryId = v == '' || _unclassified ? null : v;
+                        _apply();
+                      },
               ),
-          ],
-          onChanged: c.locked
-              ? null
-              : (v) {
-                  _unclassified = v == 'unclassified';
-                  _categoryId = v == '' || _unclassified ? null : v;
-                  _apply();
-                },
-        ),
-      ),
-      SizedBox(
-        width: _controlWidth,
-        child: DropdownButtonFormField<MovementCategoryScope>(
-          initialValue: _scope,
-          key: ValueKey(_scope),
-          isExpanded: true,
-          itemHeight: null,
-          isDense: false,
-          decoration: const InputDecoration(labelText: 'Alcance'),
-          items: const [
-            DropdownMenuItem(
-              value: MovementCategoryScope.branch,
-              child: Text('Rama completa'),
             ),
-            DropdownMenuItem(
-              value: MovementCategoryScope.direct,
-              child: Text('Solo directos'),
+            SizedBox(
+              width: _controlWidth,
+              child: DropdownButtonFormField<MovementCategoryScope>(
+                initialValue: _scope,
+                key: ValueKey(_scope),
+                isExpanded: true,
+                itemHeight: null,
+                isDense: false,
+                decoration: const InputDecoration(labelText: 'Alcance'),
+                items: const [
+                  DropdownMenuItem(
+                    value: MovementCategoryScope.branch,
+                    child: Text('Rama completa'),
+                  ),
+                  DropdownMenuItem(
+                    value: MovementCategoryScope.direct,
+                    child: Text('Solo directos'),
+                  ),
+                ],
+                onChanged: c.locked
+                    ? null
+                    : (v) {
+                        _scope = v!;
+                        _apply();
+                      },
+              ),
+            ),
+            FilledButton(
+              onPressed: c.locked ? null : _apply,
+              child: const Text('Aplicar filtros'),
+            ),
+            TextButton(
+              onPressed: c.locked
+                  ? null
+                  : () {
+                      _search.clear();
+                      _accountId = null;
+                      _categoryId = null;
+                      _unclassified = false;
+                      _apply();
+                    },
+              child: const Text('Limpiar filtros'),
             ),
           ],
-          onChanged: c.locked
-              ? null
-              : (v) {
-                  _scope = v!;
-                  _apply();
-                },
         ),
-      ),
-      FilledButton(
-        onPressed: c.locked ? null : _apply,
-        child: const Text('Aplicar filtros'),
-      ),
-      TextButton(
-        onPressed: c.locked
-            ? null
-            : () {
-                _search.clear();
-                _accountId = null;
-                _categoryId = null;
-                _unclassified = false;
-                _apply();
-              },
-        child: const Text('Limpiar filtros'),
-      ),
-    ],
+      ],
+    ),
   );
   Widget _check(MovementRecord row) => SizedBox(
     width: 48,
@@ -467,9 +513,16 @@ class _MovementListScreenState extends State<MovementListScreen> {
         MediaQuery.textScalerOf(context).scale(14) < 21;
     final body = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 16,
       children: [
-        Text(
-          'Periodo ${c.from.value} → ${c.until?.value ?? 'fin del calendario'} · Recientes primero',
+        Focus(
+          focusNode: _contentFocus,
+          child: Semantics(
+            header: true,
+            child: Text(
+              'Periodo ${c.from.value} → ${c.until?.value ?? 'fin del calendario'} · Recientes primero',
+            ),
+          ),
         ),
         Text(
           'Resultados: ${c.accountId == null ? 'Todas las cuentas' : c.accounts[c.accountId] ?? c.accountId} · ${c.unclassified
@@ -478,7 +531,54 @@ class _MovementListScreenState extends State<MovementListScreen> {
               ? 'Todas las categorías'
               : c.categoryLabel(c.categoryId)} · ${c.scope == MovementCategoryScope.branch ? 'Rama completa' : 'Solo directos'} · Concepto: ${c.concept.isEmpty ? 'Todos' : c.concept}',
         ),
+        if (c.page != null)
+          AfCard(
+            tone: AfCardTone.real,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 8,
+              children: [
+                Text(
+                  'Resultados del ámbito: ${c.page!.totalCount} movimientos',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                AfNumericText(
+                  'Subtotal filtrado: ${movementEuro(c.page!.subtotalCents)}',
+                ),
+                Text(
+                  '${c.page!.records.length} visibles · el subtotal incluye todas las páginas',
+                ),
+              ],
+            ),
+          ),
         _filters(),
+        if (widget.onPending != null)
+          AfAction(
+            label: 'Categorizar pendientes',
+            icon: AfIcons.category,
+            variant: AfActionVariant.secondary,
+            onPressed: c.locked
+                ? null
+                : () async {
+                    if (!await _canLeave() || !mounted) return;
+                    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+                    final focus = FocusManager.instance.primaryFocus;
+                    final revision = c.periodRevision;
+                    await widget.onPending!();
+                    if (!mounted) return;
+                    await c.refresh();
+                    if (!mounted) return;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted || revision != c.periodRevision) return;
+                      if (_scroll.hasClients) {
+                        _scroll.jumpTo(
+                          offset.clamp(0, _scroll.position.maxScrollExtent),
+                        );
+                      }
+                      if (focus?.context != null) focus!.requestFocus();
+                    });
+                  },
+          ),
         if (widget.onCreate != null)
           FilledButton(
             onPressed: c.locked ? null : _create,
@@ -488,9 +588,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
           Semantics(liveRegion: true, child: Text(_validation!)),
         Semantics(
           liveRegion: true,
-          child: Text(
-            '${c.selected.length} seleccionados · UUID: ${c.selected.join(', ')}',
-          ),
+          child: Text('${c.selected.length} seleccionados · solo esta página'),
         ),
         if (c.notice != null)
           Semantics(liveRegion: true, child: Text(c.notice!)),
@@ -536,24 +634,27 @@ class _MovementListScreenState extends State<MovementListScreen> {
           ],
         ),
         if (c.loading)
-          Semantics(liveRegion: true, child: Text('Cargando movimientos…')),
+          const AfStatus(
+            kind: AfStatusKind.loading,
+            message: 'Cargando movimientos…',
+          ),
         if (c.batchActive)
           Semantics(
             liveRegion: true,
             child: const Text('Operación sobre la selección en curso…'),
           ),
         if (c.error != null) ...[
-          Semantics(liveRegion: true, child: Text(c.error!)),
+          AfStatus(kind: AfStatusKind.error, message: c.error!),
           FilledButton(
             onPressed: c.locked ? null : () => c.refresh(),
             child: const Text('Reintentar'),
           ),
         ],
         if (c.page != null) ...[
-          Text('Subtotal filtrado: ${movementEuro(c.page!.subtotalCents)}'),
           if (c.page!.records.isEmpty)
-            const Text(
-              'No hay movimientos que coincidan con este periodo y filtros.',
+            const AfStatus(
+              kind: AfStatusKind.empty,
+              message: 'No hay movimientos que coincidan con este periodo y filtros.',
             ),
           if (c.page!.records.isNotEmpty)
             MovementRecordList(

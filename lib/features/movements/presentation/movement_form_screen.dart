@@ -1,6 +1,7 @@
 import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/material.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../domain/movement_repository.dart';
@@ -23,6 +24,7 @@ class MovementFormScreen extends StatefulWidget {
     this.onManageCategories,
     this.destinations = const {},
     this.returnLabel = 'Volver a Movimientos',
+    this.shell,
   });
   final MovementEditorLoader load;
   final ValueDate initialDate;
@@ -34,6 +36,13 @@ class MovementFormScreen extends StatefulWidget {
   final VoidCallback? onManageCategories;
   final Map<String, VoidCallback> destinations;
   final String returnLabel;
+  final Widget Function(
+    Widget body,
+    Future<bool> Function() canLeave,
+    VoidCallback onBack,
+    String title,
+  )?
+  shell;
   @override
   State<MovementFormScreen> createState() => _MovementFormScreenState();
 }
@@ -199,7 +208,11 @@ class _MovementFormScreenState extends State<MovementFormScreen> {
   }
 
   Future<void> _leave(VoidCallback action) async {
-    if (_locked) return;
+    if (await _canLeave() && mounted) action();
+  }
+
+  Future<bool> _canLeave() async {
+    if (_locked) return false;
     if (_dirty &&
         !await _ask(
           'Hay cambios sin guardar',
@@ -207,9 +220,11 @@ class _MovementFormScreenState extends State<MovementFormScreen> {
           'Descartar cambios',
           cancel: 'Seguir editando',
         )) {
-      return;
+      return false;
     }
-    if (mounted) action();
+    if (!mounted) return false;
+    if (_dirty) setState(_reset);
+    return true;
   }
 
   void _exit(VoidCallback action) {
@@ -386,6 +401,197 @@ class _MovementFormScreenState extends State<MovementFormScreen> {
     final width = MediaQuery.sizeOf(context).width;
     final eligible = _eligible;
     final selected = _accounts.where((a) => a.id == _account).firstOrNull;
+    final content = AfCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 16,
+        children: [
+          Text(
+            _editing
+                ? 'Datos del movimiento'
+                : (_old?.data.concept ?? 'Movimiento'),
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          if (_loading)
+            const AfStatus(
+              kind: AfStatusKind.loading,
+              message: 'Cargando detalle…',
+            )
+          else if (_readError != null) ...[
+            Semantics(liveRegion: true, child: Text(_readError!)),
+            TextButton(onPressed: _load, child: const Text('Reintentar')),
+          ] else ...[
+            Text('UUID: ${_old?.id ?? 'Nuevo movimiento manual'}'),
+            Text(
+              'Procedencia: ${_old?.importRowId ?? 'Manual'} · Lote: ${_old?.batchId ?? 'Sin lote'} · Fila: ${_old?.sourceOrdinal ?? 'Sin fila'}',
+            ),
+            if (_editing)
+              Form(
+                key: _form,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _field(
+                      _date,
+                      'Fecha de valor · AAAA-MM-DD',
+                      focus: _dateFocus,
+                      validator: (v) => _validation(v, (s) {
+                        ValueDate.parse(s.trim());
+                      }),
+                    ),
+                    _field(
+                      _concept,
+                      'Concepto',
+                      focus: _conceptFocus,
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'El concepto es obligatorio.'
+                          : null,
+                    ),
+                    _field(
+                      _amount,
+                      'Importe firmado (EUR)',
+                      focus: _amountFocus,
+                      validator: (v) => _validation(v, parseMovementAmount),
+                    ),
+                    const Text(
+                      'Usa + para entrada y - para salida. Coma o punto, hasta dos decimales, sin miles. Cero no es válido.',
+                    ),
+                    DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        '$_account-${_date.text}-${eligible.map((a) => a.id).join()}',
+                      ),
+                      initialValue: _account ?? '',
+                      focusNode: _accountFocus,
+                      isExpanded: true,
+                      itemHeight: null,
+                      isDense: false,
+                      decoration: const InputDecoration(
+                        labelText: 'Cuenta vigente en el mes',
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: '',
+                          child: Text('Elegir cuenta'),
+                        ),
+                        if (_account != null &&
+                            !eligible.any((a) => a.id == _account))
+                          DropdownMenuItem(
+                            value: _account,
+                            enabled: false,
+                            child: Text(
+                              '${selected?.name ?? _account} · Referencia histórica no elegible',
+                            ),
+                          ),
+                        for (final a in eligible)
+                          DropdownMenuItem(
+                            value: a.id,
+                            child: Text('${a.name} · ${a.id.substring(0, 8)}'),
+                          ),
+                      ],
+                      onChanged: _locked
+                          ? null
+                          : (v) =>
+                                setState(() => _account = v == '' ? null : v),
+                      validator: (_) => eligible.any((a) => a.id == _account)
+                          ? null
+                          : 'Elige una cuenta vigente para esta fecha.',
+                    ),
+                    if (eligible.isEmpty)
+                      const Text(
+                        'No hay cuentas corrientes vigentes para esta fecha. Gestiona sus altas y vigencia en Gestión → Fichas o cambia la fecha.',
+                      ),
+                    Text('Categoría opcional: $_categoryLabel'),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        OutlinedButton(
+                          onPressed: _locked ? null : _pick,
+                          child: const Text('Seleccionar categoría'),
+                        ),
+                        TextButton(
+                          onPressed: _locked || _category == null
+                              ? null
+                              : () => setState(() => _category = null),
+                          child: const Text('Quitar categoría'),
+                        ),
+                      ],
+                    ),
+                    _field(_discretion, 'Discrecionalidad opcional', lines: 3),
+                    const Text('Texto libre. Vacío significa sin indicar.'),
+                    Wrap(
+                      spacing: 12,
+                      children: [
+                        TextButton(
+                          onPressed: _locked
+                              ? null
+                              : () => _leave(() {
+                                  if (_old == null) {
+                                    _exit(widget.onReturn);
+                                  } else {
+                                    setState(() {
+                                      _editing = false;
+                                      _reset();
+                                    });
+                                  }
+                                }),
+                          child: const Text('Cancelar'),
+                        ),
+                        FilledButton(
+                          onPressed: _locked ? null : _save,
+                          child: Text(
+                            _busy ? 'Guardando…' : 'Guardar movimiento',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              Text('Fecha de valor: ${_old!.data.valueDate.value}'),
+              Text('Concepto: ${_old!.data.concept}'),
+              Text('Cuenta: ${selected?.name ?? _old!.data.accountId}'),
+              Text('Categoría: $_categoryLabel'),
+              AfNumericText(
+                'Importe EUR: ${movementEuro(_old!.data.amountCents)}',
+              ),
+              Text('Discrecionalidad: ${_old!.data.discretion ?? 'Sin dato'}'),
+              Wrap(
+                spacing: 12,
+                children: [
+                  FilledButton(
+                    onPressed: _locked
+                        ? null
+                        : () => setState(() => _editing = true),
+                    child: const Text('Editar'),
+                  ),
+                  TextButton(
+                    onPressed: _locked ? null : _delete,
+                    child: const Text('Borrar movimiento'),
+                  ),
+                ],
+              ),
+            ],
+            if (_error != null)
+              Semantics(liveRegion: true, child: Text(_error!)),
+          ],
+          if (widget.shell == null)
+            TextButton(
+              onPressed: _locked
+                  ? null
+                  : () => _leave(() => _exit(widget.onReturn)),
+              child: Text(widget.returnLabel),
+            ),
+          if (widget.onManageAccounts != null)
+            TextButton(
+              onPressed: _locked
+                  ? null
+                  : () => _leave(() => _exit(widget.onManageAccounts!)),
+              child: const Text('Gestión → Fichas'),
+            ),
+        ],
+      ),
+    );
     return PopScope(
       canPop: _allowPop || (!_dirty && !_locked),
       onPopInvokedWithResult: (didPop, _) {
@@ -398,336 +604,129 @@ class _MovementFormScreenState extends State<MovementFormScreen> {
         },
         child: Focus(
           autofocus: true,
-          child: Scaffold(
-            appBar: AppBar(
-              actions: [
-                if (widget.onManageAccounts != null ||
-                    widget.onManageCategories != null)
-                  PopupMenuButton<VoidCallback>(
-                    tooltip: 'Gestión',
-                    enabled: !_locked,
-                    onSelected: (action) => _leave(() => _exit(action)),
-                    itemBuilder: (_) => [
-                      if (widget.onManageCategories != null)
-                        PopupMenuItem(
-                          value: widget.onManageCategories!,
-                          child: const Text('Categorías'),
-                        ),
-                      if (widget.onManageAccounts != null)
-                        PopupMenuItem(
-                          value: widget.onManageAccounts!,
-                          child: const Text('Fichas'),
+          child: widget.shell != null
+              ? widget.shell!(
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 720),
+                      child: content,
+                    ),
+                  ),
+                  _canLeave,
+                  () => _leave(() => _exit(widget.onReturn)),
+                  _editing
+                      ? (_old == null
+                            ? 'Añadir movimiento'
+                            : 'Editar movimiento')
+                      : 'Detalle de movimiento',
+                )
+              : Scaffold(
+                  appBar: AppBar(
+                    actions: [
+                      if (widget.onManageAccounts != null ||
+                          widget.onManageCategories != null)
+                        PopupMenuButton<VoidCallback>(
+                          tooltip: 'Gestión',
+                          enabled: !_locked,
+                          onSelected: (action) => _leave(() => _exit(action)),
+                          itemBuilder: (_) => [
+                            if (widget.onManageCategories != null)
+                              PopupMenuItem(
+                                value: widget.onManageCategories!,
+                                child: const Text('Categorías'),
+                              ),
+                            if (widget.onManageAccounts != null)
+                              PopupMenuItem(
+                                value: widget.onManageAccounts!,
+                                child: const Text('Fichas'),
+                              ),
+                          ],
+                          child: const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Text('Gestión'),
+                          ),
                         ),
                     ],
-                    child: const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Text('Gestión'),
+                    title: Text(
+                      _editing
+                          ? (_old == null
+                                ? 'Añadir movimiento'
+                                : 'Editar movimiento')
+                          : 'Detalle de movimiento',
+                    ),
+                    leading: IconButton(
+                      tooltip: widget.returnLabel,
+                      onPressed: _locked
+                          ? null
+                          : () => _leave(() => _exit(widget.onReturn)),
+                      icon: const Icon(Icons.arrow_back),
                     ),
                   ),
-              ],
-              title: Text(
-                _editing
-                    ? (_old == null ? 'Añadir movimiento' : 'Editar movimiento')
-                    : 'Detalle de movimiento',
-              ),
-              leading: IconButton(
-                tooltip: widget.returnLabel,
-                onPressed: _locked
-                    ? null
-                    : () => _leave(() => _exit(widget.onReturn)),
-                icon: const Icon(Icons.arrow_back),
-              ),
-            ),
-            bottomNavigationBar: widget.destinations.isEmpty || width >= 840
-                ? null
-                : SafeArea(
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      children: [
-                        for (final entry in widget.destinations.entries)
-                          TextButton(
-                            onPressed: _locked
-                                ? null
-                                : () => _leave(() => _exit(entry.value)),
-                            child: Text(entry.key),
-                          ),
-                      ],
-                    ),
-                  ),
-            body: SafeArea(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (width >= 840 && widget.destinations.isNotEmpty)
-                    Container(
-                      width: width >= 1200 ? 216 : 200,
-                      color: Colors.white,
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          const Text('Autofinance'),
-                          for (final entry in widget.destinations.entries)
-                            TextButton(
-                              onPressed: _locked
-                                  ? null
-                                  : () => _leave(() => _exit(entry.value)),
-                              child: Text(entry.key),
-                            ),
-                        ],
-                      ),
-                    ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(
-                        width >= 1200
-                            ? 32
-                            : width >= 600
-                            ? 24
-                            : 16,
-                      ),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 640),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  bottomNavigationBar:
+                      widget.destinations.isEmpty || width >= 840
+                      ? null
+                      : SafeArea(
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
                             children: [
-                              if (_loading)
-                                const Text('Cargando detalle…')
-                              else if (_readError != null) ...[
-                                Semantics(
-                                  liveRegion: true,
-                                  child: Text(_readError!),
-                                ),
-                                TextButton(
-                                  onPressed: _load,
-                                  child: const Text('Reintentar'),
-                                ),
-                              ] else ...[
-                                Text(
-                                  'UUID: ${_old?.id ?? 'Nuevo movimiento manual'}',
-                                ),
-                                Text(
-                                  'Procedencia: ${_old?.importRowId ?? 'Manual'} · Lote: ${_old?.batchId ?? 'Sin lote'} · Fila: ${_old?.sourceOrdinal ?? 'Sin fila'}',
-                                ),
-                                if (_editing)
-                                  Form(
-                                    key: _form,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _field(
-                                          _date,
-                                          'Fecha de valor · AAAA-MM-DD',
-                                          focus: _dateFocus,
-                                          validator: (v) => _validation(v, (s) {
-                                            ValueDate.parse(s.trim());
-                                          }),
-                                        ),
-                                        _field(
-                                          _concept,
-                                          'Concepto',
-                                          focus: _conceptFocus,
-                                          validator: (v) =>
-                                              v == null || v.trim().isEmpty
-                                              ? 'El concepto es obligatorio.'
-                                              : null,
-                                        ),
-                                        _field(
-                                          _amount,
-                                          'Importe firmado (EUR)',
-                                          focus: _amountFocus,
-                                          validator: (v) => _validation(
-                                            v,
-                                            parseMovementAmount,
-                                          ),
-                                        ),
-                                        const Text(
-                                          'Usa + para entrada y - para salida. Coma o punto, hasta dos decimales, sin miles. Cero no es válido.',
-                                        ),
-                                        DropdownButtonFormField<String>(
-                                          key: ValueKey(
-                                            '$_account-${_date.text}-${eligible.map((a) => a.id).join()}',
-                                          ),
-                                          initialValue: _account ?? '',
-                                          focusNode: _accountFocus,
-                                          isExpanded: true,
-                                          itemHeight: null,
-                                          isDense: false,
-                                          decoration: const InputDecoration(
-                                            labelText:
-                                                'Cuenta vigente en el mes',
-                                          ),
-                                          items: [
-                                            const DropdownMenuItem(
-                                              value: '',
-                                              child: Text('Elegir cuenta'),
-                                            ),
-                                            if (_account != null &&
-                                                !eligible.any(
-                                                  (a) => a.id == _account,
-                                                ))
-                                              DropdownMenuItem(
-                                                value: _account,
-                                                enabled: false,
-                                                child: Text(
-                                                  '${selected?.name ?? _account} · Referencia histórica no elegible',
-                                                ),
-                                              ),
-                                            for (final a in eligible)
-                                              DropdownMenuItem(
-                                                value: a.id,
-                                                child: Text(
-                                                  '${a.name} · ${a.id.substring(0, 8)}',
-                                                ),
-                                              ),
-                                          ],
-                                          onChanged: _locked
-                                              ? null
-                                              : (v) => setState(
-                                                  () => _account = v == ''
-                                                      ? null
-                                                      : v,
-                                                ),
-                                          validator: (_) =>
-                                              eligible.any(
-                                                (a) => a.id == _account,
-                                              )
-                                              ? null
-                                              : 'Elige una cuenta vigente para esta fecha.',
-                                        ),
-                                        if (eligible.isEmpty)
-                                          const Text(
-                                            'No hay cuentas corrientes vigentes para esta fecha. Gestiona sus altas y vigencia en Gestión → Fichas o cambia la fecha.',
-                                          ),
-                                        Text(
-                                          'Categoría opcional: $_categoryLabel',
-                                        ),
-                                        Wrap(
-                                          spacing: 8,
-                                          children: [
-                                            OutlinedButton(
-                                              onPressed: _locked ? null : _pick,
-                                              child: const Text(
-                                                'Seleccionar categoría',
-                                              ),
-                                            ),
-                                            TextButton(
-                                              onPressed:
-                                                  _locked || _category == null
-                                                  ? null
-                                                  : () => setState(
-                                                      () => _category = null,
-                                                    ),
-                                              child: const Text(
-                                                'Quitar categoría',
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        _field(
-                                          _discretion,
-                                          'Discrecionalidad opcional',
-                                          lines: 3,
-                                        ),
-                                        const Text(
-                                          'Texto libre. Vacío significa sin indicar.',
-                                        ),
-                                        Wrap(
-                                          spacing: 12,
-                                          children: [
-                                            TextButton(
-                                              onPressed: _locked
-                                                  ? null
-                                                  : () => _leave(() {
-                                                      if (_old == null) {
-                                                        _exit(widget.onReturn);
-                                                      } else {
-                                                        setState(() {
-                                                          _editing = false;
-                                                          _reset();
-                                                        });
-                                                      }
-                                                    }),
-                                              child: const Text('Cancelar'),
-                                            ),
-                                            FilledButton(
-                                              onPressed: _locked ? null : _save,
-                                              child: Text(
-                                                _busy
-                                                    ? 'Guardando…'
-                                                    : 'Guardar movimiento',
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                else ...[
-                                  Text('Fecha: ${_old!.data.valueDate.value}'),
-                                  Text('Concepto: ${_old!.data.concept}'),
-                                  Text(
-                                    'Cuenta: ${selected?.name ?? _old!.data.accountId}',
-                                  ),
-                                  Text('Categoría: $_categoryLabel'),
-                                  Text(
-                                    'Importe EUR: ${movementEuro(_old!.data.amountCents)}',
-                                  ),
-                                  Text(
-                                    'Discrecionalidad: ${_old!.data.discretion ?? 'Sin dato'}',
-                                  ),
-                                  Wrap(
-                                    spacing: 12,
-                                    children: [
-                                      FilledButton(
-                                        onPressed: _locked
-                                            ? null
-                                            : () => setState(
-                                                () => _editing = true,
-                                              ),
-                                        child: const Text('Editar'),
-                                      ),
-                                      TextButton(
-                                        onPressed: _locked ? null : _delete,
-                                        child: const Text('Borrar movimiento'),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                                if (_error != null)
-                                  Semantics(
-                                    liveRegion: true,
-                                    child: Text(_error!),
-                                  ),
-                              ],
-                              TextButton(
-                                onPressed: _locked
-                                    ? null
-                                    : () =>
-                                          _leave(() => _exit(widget.onReturn)),
-                                child: Text(widget.returnLabel),
-                              ),
-                              if (widget.onManageAccounts != null)
+                              for (final entry in widget.destinations.entries)
                                 TextButton(
                                   onPressed: _locked
                                       ? null
-                                      : () => _leave(
-                                          () => _exit(widget.onManageAccounts!),
-                                        ),
-                                  child: const Text('Gestión → Fichas'),
+                                      : () => _leave(() => _exit(entry.value)),
+                                  child: Text(entry.key),
                                 ),
                             ],
                           ),
                         ),
-                      ),
+                  body: SafeArea(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (width >= 840 && widget.destinations.isNotEmpty)
+                          Container(
+                            width: width >= 1200 ? 216 : 200,
+                            color: Colors.white,
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                const Text('Autofinance'),
+                                for (final entry in widget.destinations.entries)
+                                  TextButton(
+                                    onPressed: _locked
+                                        ? null
+                                        : () =>
+                                              _leave(() => _exit(entry.value)),
+                                    child: Text(entry.key),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.all(
+                              width >= 1200
+                                  ? 32
+                                  : width >= 600
+                                  ? 24
+                                  : 16,
+                            ),
+                            child: Align(
+                              alignment: Alignment.topLeft,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 720,
+                                ),
+                                child: content,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                ),
         ),
       ),
     );
