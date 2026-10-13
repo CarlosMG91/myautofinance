@@ -173,14 +173,7 @@ Future<void> budgetLifecycleJourney(
 
   Future<void> pick(String path) async {
     await press('Seleccionar categoría');
-    await tester.scrollUntilVisible(
-      find.text(path),
-      250,
-      scrollable: find.descendant(
-        of: find.byType(ListView),
-        matching: find.byType(Scrollable),
-      ),
-    );
+    await tester.ensureVisible(find.text(path));
     await press(path);
     await tap(find.widgetWithText(FilledButton, 'Seleccionar'));
   }

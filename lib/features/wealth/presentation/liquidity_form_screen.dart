@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../domain/account_repository.dart';
@@ -230,6 +231,7 @@ class _LiquidityFormScreenState extends State<LiquidityFormScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
+        _errorField = e is AccountFailure ? 'from' : null;
         _error = e is AccountFailure ? e.message : 'No se pudo guardar. El borrador se conserva; inténtalo de nuevo.';
       });
       _fromFocus.requestFocus();
@@ -244,109 +246,92 @@ class _LiquidityFormScreenState extends State<LiquidityFormScreen> {
     },
     child: CallbackShortcuts(
       bindings: {const SingleActivator(LogicalKeyboardKey.escape): _leave},
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text(
-            widget.historical
-                ? 'Corregir liquidez histórica'
-                : 'Cambiar liquidez',
-          ),
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
-                child: FocusTraversalGroup(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextButton(
-                        onPressed: _locked ? null : _leave,
-                        child: const Text('Volver a la ficha'),
-                      ),
-                      Text(widget.details.account.name),
-                      Text(
-                        widget.historical
-                            ? 'Corrige solo el intervalo elegido. El fin es exclusivo; vacío alcanza el fin de vigencia y sustituye también los cambios posteriores dentro del intervalo.'
-                            : 'Elige el mes de aplicación. El cambio termina en el siguiente periodo existente o al fin de vigencia.',
-                      ),
-                      const Text('Las fotos conservan sus valores manuales.'),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _from,
-                        focusNode: _fromFocus,
-                        autofocus: true,
-                        enabled: !_locked,
-                        onChanged: (_) => setState(() {}),
-                        decoration: InputDecoration(
-                          labelText: 'Mes de aplicación',
-                          helperText: 'AAAA-MM · inicio incluido',
-                          errorText: _errorField == 'from' ? _error : null,
-                        ),
-                      ),
-                      if (widget.historical)
-                        TextField(
-                          controller: _until,
-                          focusNode: _untilFocus,
-                          enabled: !_locked,
-                          onChanged: (_) => setState(() {}),
-                          decoration: InputDecoration(
-                            labelText: 'Mes de fin (excluido, opcional)',
-                            helperText: 'AAAA-MM · vacío: fin de vigencia',
-                            errorText: _errorField == 'until' ? _error : null,
-                          ),
-                        ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<Liquidity>(
-                        initialValue: _liquidity,
-                        focusNode: _liquidityFocus,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Liquidez',
-                        ),
-                        items: [
-                          for (final value in Liquidity.values)
-                            DropdownMenuItem(
-                              value: value,
-                              child: Text(liquidityLabel(value)),
-                            ),
-                        ],
-                        onChanged: _locked
-                            ? null
-                            : (value) => setState(() => _liquidity = value!),
-                      ),
-                      if (_error != null)
-                        Semantics(liveRegion: true, child: Text(_error!)),
-                      if (_busy)
-                        const LinearProgressIndicator(
-                          semanticsLabel: 'Guardando liquidez',
-                        ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          TextButton(
-                            onPressed: _locked ? null : _leave,
-                            child: const Text('Cancelar'),
-                          ),
-                          FilledButton(
-                            onPressed: _locked ? null : _save,
-                            child: Text(
-                              _busy ? 'Guardando…' : 'Guardar liquidez',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+      child: AfCatalogPage(
+        title: widget.historical
+            ? 'Corregir liquidez histórica'
+            : 'Cambiar liquidez',
+        contextTrail: Text(widget.details.account.name),
+        form: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextButton(
+              onPressed: _locked ? null : _leave,
+              child: const Text('Volver a la ficha'),
+            ),
+            Text(widget.details.account.name),
+            Text(
+              widget.historical
+                  ? 'Corrige solo el intervalo elegido. El fin es exclusivo; vacío alcanza el fin de vigencia y sustituye también los cambios posteriores dentro del intervalo.'
+                  : 'Elige el mes de aplicación. El cambio termina en el siguiente periodo existente o al fin de vigencia.',
+            ),
+            const Text('Las fotos conservan sus valores manuales.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _from,
+              focusNode: _fromFocus,
+              autofocus: true,
+              enabled: !_locked,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                labelText: 'Mes de aplicación',
+                helperText: 'AAAA-MM · inicio incluido',
+                errorText: _errorField == 'from' ? _error : null,
               ),
             ),
-          ),
+            if (widget.historical)
+              TextField(
+                controller: _until,
+                focusNode: _untilFocus,
+                enabled: !_locked,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  labelText: 'Mes de fin (excluido, opcional)',
+                  helperText: 'AAAA-MM · vacío: fin de vigencia',
+                  errorText: _errorField == 'until' ? _error : null,
+                ),
+              ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<Liquidity>(
+              itemHeight: null,
+              isDense: false,
+              initialValue: _liquidity,
+              focusNode: _liquidityFocus,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Liquidez'),
+              items: [
+                for (final value in Liquidity.values)
+                  DropdownMenuItem(
+                    value: value,
+                    child: Text(liquidityLabel(value)),
+                  ),
+              ],
+              onChanged: _locked
+                  ? null
+                  : (value) => setState(() => _liquidity = value!),
+            ),
+            if (_error != null && _errorField == null)
+              Semantics(liveRegion: true, child: Text(_error!)),
+            if (_busy)
+              const LinearProgressIndicator(
+                semanticsLabel: 'Guardando liquidez',
+              ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                TextButton(
+                  onPressed: _locked ? null : _leave,
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: _locked ? null : _save,
+                  child: Text(_busy ? 'Guardando…' : 'Guardar liquidez'),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     ),

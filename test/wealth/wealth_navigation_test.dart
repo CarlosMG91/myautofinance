@@ -70,9 +70,11 @@ void main() {
         ModalRoute.of(context)!.settings.name,
         '${AppRoutes.accounts}/$accountId',
       );
+      await tester.ensureVisible(find.text('Volver al origen'));
       await tester.tap(find.text('Volver al origen'));
       await settle(tester);
       expect(find.text('Cuenta cerrada sintética'), findsOneWidget);
+      await tester.ensureVisible(find.text('Volver al origen'));
       await tester.tap(find.text('Volver al origen'));
       await settle(tester);
       expect(find.text('Gestión'), findsOneWidget);
@@ -93,6 +95,7 @@ void main() {
         navigator.pushNamed('$path?a=2026&m=01');
         await settle(tester);
         expect(find.text('Foto completa'), findsOneWidget);
+        await tester.ensureVisible(find.text('Volver al origen'));
         await tester.tap(find.text('Volver al origen'));
         await settle(tester);
       }
@@ -104,6 +107,7 @@ void main() {
         await settle(tester);
         expect(find.text('No se pudo abrir este detalle'), findsOneWidget);
         expect(find.text('Foto completa'), findsNothing);
+        await tester.ensureVisible(find.text('Volver al origen'));
         await tester.tap(find.text('Volver al origen'));
         await settle(tester);
       }

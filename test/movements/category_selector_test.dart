@@ -43,6 +43,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> press(WidgetTester tester, Finder target) async {
+    await tester.ensureVisible(target);
+    await tester.tap(target);
+  }
+
   testWidgets('UUID y ruta; duplicados; cancelar no aplica el borrador', (
     tester,
   ) async {
@@ -68,12 +73,12 @@ void main() {
       ),
     );
     await settle(tester);
-    await tester.tap(find.text('Ingreso · ${second.node.id}'));
+    await press(tester, find.text('Ingreso · ${second.node.id}'));
     await tester.pump();
-    await tester.tap(find.text('Cancelar'));
+    await press(tester, find.text('Cancelar'));
     expect(returned, isTrue);
     expect(result, isNull);
-    await tester.tap(find.text('Seleccionar'));
+    await press(tester, find.text('Seleccionar'));
     expect(result!.node.id, second.node.id);
     expect(result!.path, 'Duplicada');
     expect(result!.node.isIncome, isTrue);
@@ -124,7 +129,7 @@ void main() {
         find.text('Selección: Salidas / Ingreso / Hoja · Archivada · Salida'),
         findsOneWidget,
       );
-      await tester.tap(find.text('Seleccionar'));
+      await press(tester, find.text('Seleccionar'));
       expect(result!.path, 'Salidas / Ingreso / Hoja');
       expect(result!.node.archived, isTrue);
       expect(result!.node.isIncome, isFalse);
@@ -166,27 +171,27 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('Abrir'));
+      await press(tester, find.text('Abrir'));
       await settle(tester);
-      await tester.tap(find.text('Crear categoría'));
+      await press(tester, find.text('Crear categoría'));
       await settle(tester);
-      await tester.tap(find.text('Cancelar').last);
+      await press(tester, find.text('Cancelar').last);
       await settle(tester);
       expect(find.text('Selección: Anterior · Salida'), findsOneWidget);
-      await tester.tap(find.text('Crear categoría'));
+      await press(tester, find.text('Crear categoría'));
       await settle(tester);
       await tester.enterText(find.byType(TextField).first, 'Nueva sintética');
-      await tester.tap(find.widgetWithText(FilledButton, 'Crear categoría'));
+      await press(tester, find.widgetWithText(FilledButton, 'Crear categoría'));
       await settle(tester);
       expect(find.text('Selección: Nueva sintética · Salida'), findsOneWidget);
-      await tester.tap(find.text('Seleccionar'));
+      await press(tester, find.text('Seleccionar'));
       await settle(tester);
       expect(applied!.path, 'Nueva sintética');
       expect(applied!.node.id, isNot(original.node.id));
       final stored = await tester.runAsync(() => service.get(applied!.node.id));
       expect(stored!.path, applied!.path);
       expect(find.text('Abrir'), findsOneWidget);
-      await tester.tap(find.text('Abrir'));
+      await press(tester, find.text('Abrir'));
       await settle(tester);
       await tester.binding.handlePopRoute();
       await settle(tester);
@@ -224,7 +229,7 @@ void main() {
       isNull,
     );
     failing = false;
-    await tester.tap(find.text('Reintentar'));
+    await press(tester, find.text('Reintentar'));
     await settle(tester);
     expect(find.text('Selección: Primera · Salida'), findsOneWidget);
   });

@@ -87,14 +87,7 @@ void main() {
 
   Future<void> pick(WidgetTester tester, CategoryDetails category) async {
     await tap(tester, find.text('Seleccionar categoría'));
-    await tester.scrollUntilVisible(
-      find.text(category.path),
-      120,
-      scrollable: find.descendant(
-        of: find.byType(ListView),
-        matching: find.byType(Scrollable),
-      ),
-    );
+    await tester.ensureVisible(find.text(category.path));
     await tap(tester, find.text(category.path));
     await tap(tester, find.widgetWithText(FilledButton, 'Seleccionar'));
   }

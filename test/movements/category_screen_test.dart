@@ -228,7 +228,7 @@ void main() {
         expect(find.text('INGRESOS / SALARIO / IMPUESTOS'), findsOneWidget);
         expect(
           find.byType(Table),
-          width >= 840 ? findsOneWidget : findsNothing,
+          width >= 960 && scale == 1 ? findsOneWidget : findsNothing,
         );
         expect(tester.takeException(), isNull);
         await capture('arbol');

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 import '../domain/category_management.dart';
 import '../domain/category_repository.dart';
@@ -247,10 +248,12 @@ class _CategoryTreeScreenState extends State<CategoryTreeScreen> {
       3: FlexColumnWidth(1.5),
     },
     defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-    border: TableBorder.all(color: const Color(0xffd5dde5)),
+    border: const TableBorder(
+      horizontalInside: BorderSide(color: AfTokens.border),
+    ),
     children: [
       TableRow(
-        decoration: const BoxDecoration(color: Color(0xffeef3f8)),
+        decoration: const BoxDecoration(color: AfTokens.surfaceSubtle),
         children: [
           for (final label in [
             'Categoría / ruta',
@@ -292,121 +295,95 @@ class _CategoryTreeScreenState extends State<CategoryTreeScreen> {
   );
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Categorías'),
-      automaticallyImplyLeading: false,
-    ),
-    body: SafeArea(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final padding = width < 600
-              ? 16.0
-              : width < 1200
-              ? 24.0
-              : 32.0;
-          final visible = _items == null ? <CategoryDetails>[] : _visible;
-          return SingleChildScrollView(
-            controller: _scroll,
-            padding: EdgeInsets.all(padding),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1440),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        TextButton(
-                          onPressed: widget.onReturn,
-                          child: Text(widget.returnLabel),
-                        ),
-                        FilledButton(
-                          focusNode: _createFocus,
-                          onPressed: _loading || _error != null
-                              ? null
-                              : () => _edit(null),
-                          child: const Text('Crear categoría'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Hasta tres niveles. El tipo se hereda de la raíz; los signos son independientes.',
-                    ),
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      title: const Text('Mostrar también archivadas'),
-                      value: _showArchived,
-                      onChanged: (value) =>
-                          setState(() => _showArchived = value!),
-                    ),
-                    if (_notice != null)
-                      Semantics(
-                        liveRegion: true,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Text(_notice!),
-                        ),
-                      ),
-                    if (_loading)
-                      Semantics(
-                        liveRegion: true,
-                        child: Text('Leyendo categorías…'),
-                      ),
-                    if (_error != null) ...[
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _refresh,
-                        child: const Text('Reintentar'),
-                      ),
-                    ] else if (_items != null && !_loading) ...[
-                      if (visible.isEmpty)
-                        const Text(
-                          'No hay categorías para mostrar. Puedes crear una o mostrar las archivadas.',
-                        )
-                      else if (width >= 840)
-                        _table(visible)
-                      else
-                        for (final item in visible)
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  _identity(item),
-                                  const SizedBox(height: 12),
-                                  Text(_type(item.node)),
-                                  Text(
-                                    item.node.archived ? 'Archivada' : 'Activa',
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _editButton(item),
-                                ],
-                              ),
-                            ),
-                          ),
-                    ],
-                  ],
-                ),
-              ),
+  Widget build(BuildContext context) {
+    final visible = _items == null ? <CategoryDetails>[] : _visible;
+    return AfCatalogPage(
+      title: 'Categorías',
+      contextTrail: const Text('Gestión · Organización de ingresos y salidas'),
+      scrollController: _scroll,
+      actions: [
+        AfAction(
+          label: widget.returnLabel,
+          onPressed: widget.onReturn,
+          variant: AfActionVariant.link,
+          icon: AfIcons.back,
+        ),
+        FilledButton(
+          focusNode: _createFocus,
+          onPressed: _loading || _error != null ? null : () => _edit(null),
+          child: const Text('Crear categoría'),
+        ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 16,
+        children: [
+          const Text(
+            'Hasta tres niveles. El tipo se hereda de la raíz; los signos son independientes.',
+          ),
+          Material(
+            color: Colors.transparent,
+            child: CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text('Mostrar también archivadas'),
+              value: _showArchived,
+              onChanged: (value) => setState(() => _showArchived = value!),
             ),
-          );
-        },
+          ),
+          if (_notice != null)
+            AfStatus(kind: AfStatusKind.success, message: _notice!),
+          if (_loading)
+            const AfStatus(
+              kind: AfStatusKind.loading,
+              message: 'Leyendo categorías…',
+            ),
+          if (_error != null)
+            AfStatus(
+              kind: AfStatusKind.error,
+              message: _error!,
+              action: AfAction(label: 'Reintentar', onPressed: _refresh),
+            )
+          else if (_items != null && !_loading)
+            if (visible.isEmpty)
+              const AfStatus(
+                kind: AfStatusKind.empty,
+                message: 'No hay categorías para mostrar. Puedes crear una o mostrar las archivadas.',
+              )
+            else
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth >= 840 &&
+                      !AfTokens.reflow(context, constraints.maxWidth)) {
+                    return _table(visible);
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: 12,
+                    children: [
+                      for (final item in visible)
+                        AfCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            spacing: 12,
+                            children: [
+                              _identity(item),
+                              AfValueRow(
+                                label: _type(item.node),
+                                value: Text(
+                                  item.node.archived ? 'Archivada' : 'Activa',
+                                ),
+                              ),
+                              _editButton(item),
+                            ],
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+        ],
       ),
-    ),
-  );
+    );
+  }
 }

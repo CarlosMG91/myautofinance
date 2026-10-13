@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
@@ -322,7 +323,7 @@ void main() {
           return service;
         },
       );
-      expect(find.byType(Card), findsOneWidget);
+      expect(find.byType(AfCard), findsNWidgets(2));
       await tap(tester, 'Corregir liquidez histórica');
       await settle(tester);
       await tester.enterText(field('Mes de aplicación'), '2026-13');

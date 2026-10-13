@@ -324,7 +324,8 @@ void main() {
       expect(find.text('Fecha de valor · AAAA-MM-DD'), findsOneWidget);
       expect(find.text('Guardar movimiento'), findsOneWidget);
       await real(root, 500);
-      await tap(tester, find.text('Volver al origen'));
+      await tester.binding.handlePopRoute();
+      await settle(tester);
       expect(find.text('−346,25 €'), findsNWidgets(3));
       expect(find.text('Supermercado'), findsOneWidget);
       final before = loads;
@@ -414,7 +415,8 @@ void main() {
     await boot(tester);
     await tap(tester, find.byKey(const ValueKey('sin-clasificar:real')));
     expect(find.text('Movimiento sintético'), findsOneWidget);
-    expect(find.text('−1,00 €'), findsOneWidget);
+    // AfMoneyText permite que la unidad refluya sin partir signo e importe.
+    expect(find.text('−1,00'), findsOneWidget);
     await backToStatus(tester);
     await tap(tester, find.byKey(const ValueKey('total:real')));
     expect(find.text('Movimiento sintético'), findsNWidgets(4));

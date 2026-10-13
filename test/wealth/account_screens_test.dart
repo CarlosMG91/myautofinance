@@ -16,6 +16,7 @@ import 'package:myautofinance/app/wealth_management_factory.dart';
 import 'package:myautofinance/features/wealth/wealth.dart';
 import 'package:myautofinance/features/wealth/presentation/account_catalog_screen.dart';
 import 'package:myautofinance/features/wealth/presentation/account_form_screen.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 void main() {
   late LocalDatabase db;
@@ -228,11 +229,9 @@ void main() {
           ),
         );
         await settle(tester);
-        expect(
-          find.byType(Table),
-          width >= 840 ? findsOneWidget : findsNothing,
-        );
-        expect(find.byType(Card), width < 840 ? findsOneWidget : findsNothing);
+        expect(find.byType(Table), findsNothing);
+        // Texto ampliado usa tarjetas incluso en PC; conserva toda la ficha.
+        expect(find.byType(AfCard), findsNWidgets(2));
         await tester.pumpWidget(
           MaterialApp(
             builder: (context, child) => MediaQuery(
@@ -256,4 +255,51 @@ void main() {
       tester.view.resetDevicePixelRatio();
     },
   );
+
+  testWidgets('Catálogo devuelve foco a la ficha tras editar y releer SQLite', (
+    tester,
+  ) async {
+    final item = (await tester.runAsync(
+      () => service.create(
+        name: 'Ficha de retorno',
+        kind: AccountKind.account,
+        activeFrom: Month(2026, 1),
+        liquidity: Liquidity.liquid,
+      ),
+    ))!;
+    final pending = Completer<void>();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AfTheme.light(),
+        home: AccountCatalogScreen(
+          controller: WealthController(loadManagement: () async => service),
+          onOpen: (_) => pending.future,
+          onReturn: () {},
+        ),
+      ),
+    );
+    await settle(tester);
+    await tap(tester, 'Ficha de retorno');
+    final button = find.widgetWithText(TextButton, 'Ficha de retorno');
+    expect(tester.widget<TextButton>(button).onPressed, isNull);
+    await tester.runAsync(() async {
+      await service.edit(
+        item.account.id,
+        name: 'Ficha renombrada',
+        activeThrough: null,
+      );
+      pending.complete();
+    });
+    await settle(tester);
+    final updated = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Ficha renombrada'),
+    );
+    expect(updated.focusNode!.hasFocus, isTrue);
+    expect(
+      (await tester.runAsync(() => service.details(item.account.id)))!
+          .account
+          .id,
+      item.account.id,
+    );
+  });
 }

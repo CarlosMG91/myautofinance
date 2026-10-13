@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../domain/account_repository.dart';
@@ -262,6 +263,7 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
+        _errorField = e is AccountFailure ? 'end' : null;
         _error = e is AccountFailure ? e.message : 'No se pudo guardar. El borrador se conserva; inténtalo de nuevo.';
       });
       _endFocus.requestFocus();
@@ -295,7 +297,8 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
         p.until == null ? 'Fin de vigencia' : month(p.until!);
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 600) {
+        if (constraints.maxWidth >= 600 &&
+            !AfTokens.reflow(context, constraints.maxWidth)) {
           return Table(
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
@@ -324,12 +327,9 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final p in periods)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    '${liquidityLabel(p.liquidity)} · desde ${month(p.from)} (incluido) hasta ${end(p)} (excluido)',
-                  ),
+              AfCard(
+                child: Text(
+                  '${liquidityLabel(p.liquidity)} · desde ${month(p.from)} (incluido) hasta ${end(p)} (excluido)',
                 ),
               ),
           ],
@@ -366,186 +366,160 @@ class _AccountFormScreenState extends State<AccountFormScreen> {
     },
     child: CallbackShortcuts(
       bindings: {const SingleActivator(LogicalKeyboardKey.escape): _leave},
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_creating ? 'Crear ficha' : 'Ficha'),
-          automaticallyImplyLeading: false,
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(
-              MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+      child: AfCatalogPage(
+        title: _creating ? 'Crear ficha' : 'Ficha',
+        contextTrail: Text('Gestión · Cuentas, carteras y deudas'),
+        form: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextButton(
+              onPressed: _locked ? null : _leave,
+              child: Text(widget.returnLabel),
             ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
-                child: FocusTraversalGroup(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+            if (_busy)
+              const LinearProgressIndicator(semanticsLabel: 'Procesando ficha'),
+            if (_readError != null) ...[
+              const Text('No se pudo abrir este detalle'),
+              Text(_readError!),
+              TextButton(
+                onPressed: _locked ? null : _load,
+                child: const Text('Reintentar'),
+              ),
+            ],
+            if (_loaded) ...[
+              if (_old != null) ...[
+                Text(
+                  _old!.account.name,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                Text('Alta: ${_old!.account.activeFrom.value}'),
+                if (_old!.account.activeThrough != null)
+                  Text('Baja: ${_old!.account.activeThrough!.value}'),
+                if (!_editing)
+                  TextButton(
+                    onPressed: _locked
+                        ? null
+                        : () {
+                            setState(() => _editing = true);
+                            _nameFocus.requestFocus();
+                          },
+                    child: const Text('Editar ficha'),
+                  ),
+              ],
+              if (_editing) _field(_name, _nameFocus, 'Nombre', 'name', true),
+              if (_creating)
+                DropdownButtonFormField<AccountKind>(
+                  itemHeight: null,
+                  isDense: false,
+                  initialValue: _kind,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Tipo'),
+                  items: [
+                    for (final kind in AccountKind.values)
+                      DropdownMenuItem(
+                        value: kind,
+                        child: Text(accountKindLabel(kind)),
+                      ),
+                  ],
+                  onChanged: _locked
+                      ? null
+                      : (value) => setState(() {
+                          _kind = value!;
+                          _liquidity = null;
+                        }),
+                )
+              else
+                Text('Tipo: ${accountKindLabel(_kind)} · solo lectura'),
+              const SizedBox(height: 16),
+              if (_creating && _kind != AccountKind.debt) ...[
+                DropdownButtonFormField<Liquidity>(
+                  itemHeight: null,
+                  isDense: false,
+                  key: ValueKey(_kind),
+                  focusNode: _liquidityFocus,
+                  initialValue: _liquidity,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Liquidez (obligatoria)',
+                    errorText: _errorField == 'liquidity' ? _error : null,
+                  ),
+                  items: [
+                    for (final value in Liquidity.values)
+                      DropdownMenuItem(
+                        value: value,
+                        child: Text(liquidityLabel(value)),
+                      ),
+                  ],
+                  onChanged: _locked
+                      ? null
+                      : (value) => setState(() => _liquidity = value),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (_kind == AccountKind.debt)
+                const Text('Las deudas no tienen liquidez.'),
+              if (_editing)
+                _field(_start, _startFocus, 'Mes de alta', 'start', _creating),
+              if (_editing)
+                _field(
+                  _end,
+                  _endFocus,
+                  'Mes de baja (opcional)',
+                  'end',
+                  _editing && _old?.account.activeThrough == null,
+                ),
+              const Text(
+                'La baja conserva el histórico. Las fichas cerradas siguen consultables y no se reabren.',
+              ),
+              if (_old != null && _kind != AccountKind.debt) ...[
+                const SizedBox(height: 16),
+                const Text('Historial de liquidez'),
+                _history(),
+                if (!_editing)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       TextButton(
-                        onPressed: _locked ? null : _leave,
-                        child: Text(widget.returnLabel),
+                        onPressed: _locked ? null : () => _editLiquidity(false),
+                        child: const Text('Cambiar liquidez'),
                       ),
-                      if (_busy)
-                        const LinearProgressIndicator(
-                          semanticsLabel: 'Procesando ficha',
-                        ),
-                      if (_readError != null) ...[
-                        const Text('No se pudo abrir este detalle'),
-                        Text(_readError!),
-                        TextButton(
-                          onPressed: _locked ? null : _load,
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                      if (_loaded) ...[
-                        if (_old != null) ...[
-                          Text(_old!.account.name),
-                          Text('Alta: ${_old!.account.activeFrom.value}'),
-                          if (_old!.account.activeThrough != null)
-                            Text('Baja: ${_old!.account.activeThrough!.value}'),
-                          if (!_editing)
-                            TextButton(
-                              onPressed: _locked
-                                  ? null
-                                  : () {
-                                      setState(() => _editing = true);
-                                      _nameFocus.requestFocus();
-                                    },
-                              child: const Text('Editar ficha'),
-                            ),
-                        ],
-                        _field(_name, _nameFocus, 'Nombre', 'name', _editing),
-                        if (_creating)
-                          DropdownButtonFormField<AccountKind>(
-                            initialValue: _kind,
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Tipo',
-                            ),
-                            items: [
-                              for (final kind in AccountKind.values)
-                                DropdownMenuItem(
-                                  value: kind,
-                                  child: Text(accountKindLabel(kind)),
-                                ),
-                            ],
-                            onChanged: _locked
-                                ? null
-                                : (value) => setState(() {
-                                    _kind = value!;
-                                    _liquidity = null;
-                                  }),
-                          )
-                        else
-                          Text(
-                            'Tipo: ${accountKindLabel(_kind)} · solo lectura',
-                          ),
-                        const SizedBox(height: 16),
-                        if (_creating && _kind != AccountKind.debt) ...[
-                          DropdownButtonFormField<Liquidity>(
-                            key: ValueKey(_kind),
-                            focusNode: _liquidityFocus,
-                            initialValue: _liquidity,
-                            isExpanded: true,
-                            decoration: InputDecoration(
-                              labelText: 'Liquidez (obligatoria)',
-                              errorText: _errorField == 'liquidity'
-                                  ? _error
-                                  : null,
-                            ),
-                            items: [
-                              for (final value in Liquidity.values)
-                                DropdownMenuItem(
-                                  value: value,
-                                  child: Text(liquidityLabel(value)),
-                                ),
-                            ],
-                            onChanged: _locked
-                                ? null
-                                : (value) => setState(() => _liquidity = value),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (_kind == AccountKind.debt)
-                          const Text('Las deudas no tienen liquidez.'),
-                        _field(
-                          _start,
-                          _startFocus,
-                          'Mes de alta',
-                          'start',
-                          _creating,
-                        ),
-                        _field(
-                          _end,
-                          _endFocus,
-                          'Mes de baja (opcional)',
-                          'end',
-                          _editing && _old?.account.activeThrough == null,
-                        ),
-                        const Text(
-                          'La baja conserva el histórico. Las fichas cerradas siguen consultables y no se reabren.',
-                        ),
-                        if (_old != null && _kind != AccountKind.debt) ...[
-                          const SizedBox(height: 16),
-                          const Text('Historial de liquidez'),
-                          _history(),
-                          if (!_editing)
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                TextButton(
-                                  onPressed: _locked
-                                      ? null
-                                      : () => _editLiquidity(false),
-                                  child: const Text('Cambiar liquidez'),
-                                ),
-                                TextButton(
-                                  onPressed: _locked
-                                      ? null
-                                      : () => _editLiquidity(true),
-                                  child: const Text(
-                                    'Corregir liquidez histórica',
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                        if (_error != null)
-                          Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              _error!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        if (_editing)
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              TextButton(
-                                onPressed: _locked ? null : _leave,
-                                child: const Text('Cancelar'),
-                              ),
-                              FilledButton(
-                                onPressed: _locked ? null : _save,
-                                child: Text(_busy ? 'Guardando…' : 'Guardar'),
-                              ),
-                            ],
-                          ),
-                      ],
+                      TextButton(
+                        onPressed: _locked ? null : () => _editLiquidity(true),
+                        child: const Text('Corregir liquidez histórica'),
+                      ),
                     ],
                   ),
+              ],
+              if (_error != null && _errorField == null)
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
+              const SizedBox(height: 16),
+              if (_editing)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    TextButton(
+                      onPressed: _locked ? null : _leave,
+                      child: const Text('Cancelar'),
+                    ),
+                    FilledButton(
+                      onPressed: _locked ? null : _save,
+                      child: Text(_busy ? 'Guardando…' : 'Guardar'),
+                    ),
+                  ],
+                ),
+            ],
+          ],
         ),
       ),
     ),

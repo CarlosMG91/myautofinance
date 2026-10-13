@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 import '../domain/category_management.dart';
 import '../domain/category_repository.dart';
@@ -113,88 +114,85 @@ class _CategorySelectorState extends State<CategorySelector> {
         },
         child: Focus(
           autofocus: true,
-          child: Scaffold(
-            appBar: AppBar(title: const Text('Seleccionar categoría')),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  if (selected != null)
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          'Selección: ${selected.path}${selected.node.archived ? ' · Archivada' : ''} · ${selected.node.isIncome ? 'Ingreso' : 'Salida'}',
+          child: AfCatalogPage(
+            title: 'Seleccionar categoría',
+            contextTrail: const Text(
+              'Hasta tres niveles · Tipo heredado de la raíz',
+            ),
+            actions: [
+              OutlinedButton(
+                onPressed: busy ? null : _create,
+                child: const Text('Crear categoría'),
+              ),
+              TextButton(
+                onPressed: _creating ? null : () => widget.onReturn(null),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: canConfirm ? () => widget.onReturn(selected) : null,
+                child: const Text('Seleccionar'),
+              ),
+            ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 16,
+              children: [
+                if (selected != null)
+                  AfCard(
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        'Selección: ${selected.path}${selected.node.archived ? ' · Archivada' : ''} · ${selected.node.isIncome ? 'Ingreso' : 'Salida'}',
+                      ),
+                    ),
+                  ),
+                if (_loading)
+                  const AfStatus(
+                    kind: AfStatusKind.loading,
+                    message: 'Leyendo categorías…',
+                  ),
+                if (_error != null)
+                  AfStatus(
+                    kind: AfStatusKind.error,
+                    message: _error!,
+                    action: AfAction(label: 'Reintentar', onPressed: _refresh),
+                  ),
+                if (options.isEmpty && !busy && _error == null)
+                  const AfStatus(
+                    kind: AfStatusKind.empty,
+                    message: 'No hay categorías activas.',
+                  ),
+                for (final item in options)
+                  Padding(
+                    padding: EdgeInsets.only(left: (item.node.depth - 1) * 12),
+                    child: Semantics(
+                      selected: item.node.id == _selectedId,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: item.node.id == _selectedId
+                              ? AfTokens.accentTint
+                              : null,
+                          alignment: Alignment.centerLeft,
+                        ),
+                        onPressed: busy || _error != null
+                            ? null
+                            : () => setState(() => _selectedId = item.node.id),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.path),
+                            Text(
+                              '${item.node.isIncome ? 'Ingreso' : 'Salida'} · ${item.node.id}',
+                            ),
+                            Text(
+                              'Nivel ${item.node.depth}${item.node.id == _selectedId ? ' · Seleccionada' : ''}',
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  if (_loading) const LinearProgressIndicator(),
-                  if (_error != null)
-                    Column(
-                      children: [
-                        Semantics(liveRegion: true, child: Text(_error!)),
-                        TextButton(
-                          onPressed: _refresh,
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  Expanded(
-                    child: options.isEmpty && !busy && _error == null
-                        ? const Center(
-                            child: Text('No hay categorías activas.'),
-                          )
-                        : ListView.builder(
-                            itemCount: options.length,
-                            itemBuilder: (context, index) {
-                              final item = options[index];
-                              return ListTile(
-                                selected: item.node.id == _selectedId,
-                                leading: Icon(
-                                  item.node.id == _selectedId
-                                      ? Icons.radio_button_checked
-                                      : Icons.radio_button_unchecked,
-                                ),
-                                title: Text(item.path),
-                                subtitle: Text(
-                                  '${item.node.isIncome ? 'Ingreso' : 'Salida'} · ${item.node.id}',
-                                ),
-                                onTap: busy || _error != null
-                                    ? null
-                                    : () => setState(
-                                        () => _selectedId = item.node.id,
-                                      ),
-                              );
-                            },
-                          ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton(
-                          onPressed: busy ? null : _create,
-                          child: const Text('Crear categoría'),
-                        ),
-                        TextButton(
-                          onPressed: _creating
-                              ? null
-                              : () => widget.onReturn(null),
-                          child: const Text('Cancelar'),
-                        ),
-                        FilledButton(
-                          onPressed: canConfirm
-                              ? () => widget.onReturn(selected)
-                              : null,
-                          child: const Text('Seleccionar'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -444,187 +445,156 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     },
     child: CallbackShortcuts(
       bindings: {const SingleActivator(LogicalKeyboardKey.escape): _leave},
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            widget.categoryId == null ? 'Crear categoría' : 'Editar categoría',
-          ),
-          automaticallyImplyLeading: false,
-        ),
-        body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              padding: EdgeInsets.all(constraints.maxWidth < 600 ? 16 : 24),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: FocusTraversalGroup(
-                    policy: OrderedTraversalPolicy(),
+      child: AfCatalogPage(
+        title: widget.categoryId == null
+            ? 'Crear categoría'
+            : 'Editar categoría',
+        contextTrail: Text('Gestión · Categorías · Hasta tres niveles'),
+        form: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextButton(
+              onPressed: _locked ? null : _leave,
+              child: Text(widget.returnLabel),
+            ),
+            if (_items == null && _readError == null)
+              Semantics(liveRegion: true, child: Text('Leyendo categoría…')),
+            if (_readError != null) ...[
+              Semantics(liveRegion: true, child: Text(_readError!)),
+              TextButton(
+                onPressed: _busy ? null : _load,
+                child: const Text('Reintentar'),
+              ),
+            ],
+            if (_items != null) ...[
+              Text(
+                _old == null
+                    ? 'Nueva identidad; los nombres duplicados están permitidos.'
+                    : '${_old!.path} · UUID ${_old!.node.id} · ${_old!.node.archived ? 'Archivada' : 'Activa'}',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _name,
+                focusNode: _nameFocus,
+                enabled: !_locked,
+                decoration: InputDecoration(
+                  labelText: 'Nombre',
+                  errorText: _fieldErrors['name'],
+                ),
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (_) => _save(),
+              ),
+              const SizedBox(height: 16),
+              _parentPicker(),
+              const SizedBox(height: 16),
+              if (_readOnlyType)
+                InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo · solo lectura',
+                  ),
+                  child: Text(_type(_effectiveIncome)),
+                )
+              else
+                DropdownButtonFormField<bool>(
+                  isExpanded: true,
+                  itemHeight: null,
+                  isDense: false,
+                  initialValue: _income,
+                  focusNode: _typeFocus,
+                  decoration: InputDecoration(
+                    labelText: 'Tipo',
+                    errorText: _fieldErrors['isIncome'],
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: true, child: Text('Ingreso')),
+                    DropdownMenuItem(value: false, child: Text('Salida')),
+                  ],
+                  onChanged: _locked
+                      ? null
+                      : (value) => setState(() => _income = value!),
+                ),
+              const SizedBox(height: 8),
+              Text(
+                _parentId != null
+                    ? 'Hereda ${_type(_effectiveIncome)} de la raíz destino. Todo el histórico adopta esta clasificación sin invertir signos.'
+                    : _promoting
+                    ? 'Promoción: conserva el tipo efectivo anterior. No se elige otro tipo.'
+                    : _old != null && !_canChangeType
+                    ? 'Tipo bloqueado: existen movimientos o partidas en esta raíz o sus descendientes, incluidos históricos y archivados.'
+                    : 'Marca exclusiva de raíz sin registros. No se deduce del signo.',
+                style: const TextStyle(fontSize: 14),
+              ),
+              if (_error != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextButton(
-                          onPressed: _locked ? null : _leave,
-                          child: Text(widget.returnLabel),
+                        Text(
+                          _error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                         ),
-                        if (_items == null && _readError == null)
-                          Semantics(
-                            liveRegion: true,
-                            child: Text('Leyendo categoría…'),
-                          ),
-                        if (_readError != null) ...[
-                          Semantics(liveRegion: true, child: Text(_readError!)),
-                          TextButton(
-                            onPressed: _busy ? null : _load,
-                            child: const Text('Reintentar'),
-                          ),
-                        ],
-                        if (_items != null) ...[
+                        for (final conflict in _conflicts)
                           Text(
-                            _old == null
-                                ? 'Nueva identidad; los nombres duplicados están permitidos.'
-                                : '${_old!.path} · UUID ${_old!.node.id} · ${_old!.node.archived ? 'Archivada' : 'Activa'}',
+                            '${DateFormat("MMMM 'de' yyyy", 'es_ES').format(DateTime.parse(conflict.month))}: ${conflict.ancestorPath} [${conflict.ancestorId}] ↔ ${conflict.descendantPath} [${conflict.descendantId}]',
                           ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _name,
-                            focusNode: _nameFocus,
-                            enabled: !_locked,
-                            decoration: InputDecoration(
-                              labelText: 'Nombre',
-                              errorText: _fieldErrors['name'],
-                            ),
-                            onChanged: (_) => setState(() {}),
-                            onSubmitted: (_) => _save(),
-                          ),
-                          const SizedBox(height: 16),
-                          _parentPicker(),
-                          const SizedBox(height: 16),
-                          if (_readOnlyType)
-                            InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Tipo · solo lectura',
-                              ),
-                              child: Text(_type(_effectiveIncome)),
-                            )
-                          else
-                            DropdownButtonFormField<bool>(
-                              initialValue: _income,
-                              focusNode: _typeFocus,
-                              decoration: InputDecoration(
-                                labelText: 'Tipo',
-                                errorText: _fieldErrors['isIncome'],
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: true,
-                                  child: Text('Ingreso'),
-                                ),
-                                DropdownMenuItem(
-                                  value: false,
-                                  child: Text('Salida'),
-                                ),
-                              ],
-                              onChanged: _locked
-                                  ? null
-                                  : (value) => setState(() => _income = value!),
-                            ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _parentId != null
-                                ? 'Hereda ${_type(_effectiveIncome)} de la raíz destino. Todo el histórico adopta esta clasificación sin invertir signos.'
-                                : _promoting
-                                ? 'Promoción: conserva el tipo efectivo anterior. No se elige otro tipo.'
-                                : _old != null && !_canChangeType
-                                ? 'Tipo bloqueado: existen movimientos o partidas en esta raíz o sus descendientes, incluidos históricos y archivados.'
-                                : 'Marca exclusiva de raíz sin registros. No se deduce del signo.',
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          if (_error != null)
-                            Semantics(
-                              liveRegion: true,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _error!,
-                                      style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .error,
-                                      ),
-                                    ),
-                                    for (final conflict in _conflicts)
-                                      Text(
-                                        '${DateFormat("MMMM 'de' yyyy", 'es_ES').format(DateTime.parse(conflict.month))}: ${conflict.ancestorPath} [${conflict.ancestorId}] ↔ ${conflict.descendantPath} [${conflict.descendantId}]',
-                                      ),
-                                    const Text(
-                                      'El borrador se conserva. Revisa las partidas en conflicto antes de reintentar.',
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          if (_busy)
-                            Semantics(
-                              liveRegion: true,
-                              child: Text('Guardando categoría…'),
-                            ),
-                          const SizedBox(height: 16),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              TextButton(
-                                onPressed: _locked ? null : _leave,
-                                child: const Text('Cancelar'),
-                              ),
-                              FilledButton(
-                                focusNode: _saveFocus,
-                                onPressed: _locked ? null : _save,
-                                child: Text(
-                                  _old == null
-                                      ? 'Crear categoría'
-                                      : 'Revisar y guardar',
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (_old != null) ...[
-                            const SizedBox(height: 24),
-                            const Text(
-                              'Estado de la rama',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              '${_branch.length} categorías. Archivar conserva el histórico y retira la rama de nuevas asignaciones. Reactivar incluye todos los descendientes.',
-                            ),
-                            const SizedBox(height: 12),
-                            OutlinedButton(
-                              focusNode: _archiveFocus,
-                              onPressed: _locked ? null : _archive,
-                              child: Text(
-                                _old!.node.archived
-                                    ? 'Reactivar rama completa'
-                                    : 'Archivar rama completa',
-                              ),
-                            ),
-                          ],
-                        ],
+                        const Text(
+                          'El borrador se conserva. Revisa las partidas en conflicto antes de reintentar.',
+                        ),
                       ],
                     ),
                   ),
                 ),
+              if (_busy)
+                Semantics(
+                  liveRegion: true,
+                  child: Text('Guardando categoría…'),
+                ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  TextButton(
+                    onPressed: _locked ? null : _leave,
+                    child: const Text('Cancelar'),
+                  ),
+                  FilledButton(
+                    focusNode: _saveFocus,
+                    onPressed: _locked ? null : _save,
+                    child: Text(
+                      _old == null ? 'Crear categoría' : 'Revisar y guardar',
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
+              if (_old != null) ...[
+                const SizedBox(height: 24),
+                const Text(
+                  'Estado de la rama',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  '${_branch.length} categorías. Archivar conserva el histórico y retira la rama de nuevas asignaciones. Reactivar incluye todos los descendientes.',
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  focusNode: _archiveFocus,
+                  onPressed: _locked ? null : _archive,
+                  child: Text(
+                    _old!.node.archived
+                        ? 'Reactivar rama completa'
+                        : 'Archivar rama completa',
+                  ),
+                ),
+              ],
+            ],
+          ],
         ),
       ),
     ),

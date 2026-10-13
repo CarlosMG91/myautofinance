@@ -8,3 +8,5 @@ export 'src/icons.dart';
 export 'src/components.dart';
 export 'src/layout.dart';
 export 'src/charts.dart';
+
+export 'src/catalog.dart';
