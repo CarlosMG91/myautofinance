@@ -7,7 +7,10 @@ import 'app_routes.dart';
 /// Las ramas abiertas se transportan como UUID separados por coma en abiertas.
 final class MonthlyStatusOrigin {
   MonthlyStatusOrigin(this.context) {
-    if (context.destination != SessionDestination.status ||
+    if (!const {
+          SessionDestination.status,
+          SessionDestination.home,
+        }.contains(context.destination) ||
         context.view != PeriodView.monthly ||
         context.filters.keys.any(
           (key) => !const {'abiertas', 'concepto'}.contains(key),
@@ -26,7 +29,9 @@ final class MonthlyStatusOrigin {
   }
   final NavigationContext context;
   String get route => Uri(
-    path: AppRoutes.monthlyStatus,
+    path: context.destination == SessionDestination.home
+        ? AppRoutes.start
+        : AppRoutes.monthlyStatus,
     queryParameters: {
       'a': context.period.year.toString().padLeft(4, '0'),
       'm': context.period.month.toString().padLeft(2, '0'),
@@ -43,7 +48,7 @@ final class MonthlyStatusOrigin {
   static MonthlyStatusOrigin parse(String route) {
     final uri = Uri.parse(route);
     final p = uri.queryParameters;
-    if (uri.path != AppRoutes.monthlyStatus ||
+    if (!const {AppRoutes.monthlyStatus, AppRoutes.start}.contains(uri.path) ||
         uri.hasScheme ||
         uri.hasAuthority ||
         uri.hasFragment ||
@@ -77,7 +82,9 @@ final class MonthlyStatusOrigin {
     }
     return MonthlyStatusOrigin(
       NavigationContext(
-        destination: SessionDestination.status,
+        destination: uri.path == AppRoutes.start
+            ? SessionDestination.home
+            : SessionDestination.status,
         period: NavigationPeriod(int.parse(p['a']!), int.parse(p['m']!)),
         branchId: p['rama'],
         scope: scope,

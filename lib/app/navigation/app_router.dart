@@ -103,6 +103,34 @@ abstract final class AppRouter {
       );
     } else if (invalidOrigin != null) {
       page = SessionNavigationError(origin: invalidOrigin);
+    } else if (uri.path == AppRoutes.start && monthlyStatus != null) {
+      page = MonthlyStatusRoute(
+        settings: settings,
+        load: monthlyStatus,
+        session: navigationSession,
+        home: true,
+        wealth: wealth,
+        onImport: imports == null
+            ? null
+            : (context, origin) async {
+                await Navigator.of(context).pushNamed(
+                  AppRoutes.importCsv,
+                  arguments: CsvImportOrigin(origin, 'Volver a Inicio'),
+                );
+              },
+        onCategorize: pendingMovements == null || categories == null
+            ? null
+            : (context, origin) async {
+                await Navigator.of(context).pushNamed(
+                  AppRoutes.pendingMovements,
+                  arguments: PendingMovementOrigin(
+                    route: origin,
+                    label: 'Volver a Inicio',
+                  ),
+                );
+              },
+        management: (origin, refresh) => const SizedBox.shrink(),
+      );
     } else if (const {
       AppRoutes.start,
       AppRoutes.analysis,

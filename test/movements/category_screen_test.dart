@@ -52,11 +52,32 @@ void main() {
         await tester.pump();
         await Future<void>.delayed(const Duration(milliseconds: 10));
       });
-      await tester.pumpAndSettle();
+      // Inicio ahora consulta datos al regresar. No esperar animaciones de
+      // progreso antes de dar tiempo real a esas lecturas SQLite.
+      if (find.byType(LinearProgressIndicator).evaluate().isNotEmpty) {
+        await tester.pump(const Duration(milliseconds: 50));
+      } else {
+        try {
+          await tester.pumpAndSettle(
+            const Duration(milliseconds: 100),
+            EnginePhase.sendSemanticsUpdate,
+            const Duration(seconds: 2),
+          );
+        } on FlutterError catch (error) {
+          // Un retorno puede montar Inicio y su progreso durante la animación.
+          // Dar otro turno de E/S; cualquier otro error sigue fallando la prueba.
+          if (error.message != 'pumpAndSettle timed out' ||
+              find.byType(LinearProgressIndicator).evaluate().isEmpty) {
+            rethrow;
+          }
+        }
+      }
       final loading =
+          find.byType(LinearProgressIndicator).evaluate().isNotEmpty ||
           find.text('Leyendo categorías…').evaluate().isNotEmpty ||
           find.text('Leyendo categoría…').evaluate().isNotEmpty ||
           find.text('Consultando el estado del mes…').evaluate().isNotEmpty ||
+          find.text('Consultando la foto patrimonial…').evaluate().isNotEmpty ||
           find.text('Guardando categoría…').evaluate().isNotEmpty;
       if (turn >= 3 &&
           (!waitForStorage || !loading) &&

@@ -125,7 +125,8 @@ abstract final class MovementLinks {
         ].contains(uri.path)) {
       throw const MovementFailure('Origen de navegación inválido.');
     }
-    if (uri.path == AppRoutes.monthlyStatus && uri.hasQuery) {
+    if (const {AppRoutes.monthlyStatus, AppRoutes.start}.contains(uri.path) &&
+        uri.hasQuery) {
       MonthlyStatusOrigin.parse(route);
     }
     if (uri.path == AppRoutes.monthlyBudget) BudgetOrigin.parse(route);

@@ -8,7 +8,10 @@ import 'navigation_period.dart';
 /// Orígenes locales permitidos para partidas. No acepta destinos arbitrarios.
 final class BudgetOrigin {
   BudgetOrigin(this.context) {
-    if (context.destination == SessionDestination.status) {
+    if (const {
+      SessionDestination.status,
+      SessionDestination.home,
+    }.contains(context.destination)) {
       MonthlyStatusOrigin(context);
       return;
     }
@@ -32,7 +35,11 @@ final class BudgetOrigin {
   }
 
   final NavigationContext context;
-  String get route => context.destination == SessionDestination.status
+  String get route =>
+      const {
+        SessionDestination.status,
+        SessionDestination.home,
+      }.contains(context.destination)
       ? MonthlyStatusOrigin(context).route
       : Uri(
           path: context.view == PeriodView.annual
@@ -53,7 +60,7 @@ final class BudgetOrigin {
 
   static BudgetOrigin parse(String route) {
     final uri = Uri.parse(route);
-    if (uri.path == AppRoutes.monthlyStatus) {
+    if (const {AppRoutes.monthlyStatus, AppRoutes.start}.contains(uri.path)) {
       return BudgetOrigin(MonthlyStatusOrigin.parse(route).context);
     }
     final p = uri.queryParameters;

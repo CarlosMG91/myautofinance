@@ -5,6 +5,7 @@ import '../../features/movements/movements.dart' show MovementCategoryScope;
 import 'budget_origin.dart';
 import 'app_routes.dart';
 import 'movement_links.dart';
+import 'monthly_status_origin.dart';
 
 /// Resolución sin efectos: un error nunca cambia la sesión ni consulta datos.
 sealed class SessionLocationResult {
@@ -125,6 +126,21 @@ abstract final class SessionLocation {
                     'alcance': scope == MovementCategoryScope.direct
                         ? 'directo'
                         : 'rama',
+                    'a': period.year.toString().padLeft(4, '0'),
+                    'm': period.month.toString().padLeft(2, '0'),
+                  },
+                )
+                .toString(),
+          ).context,
+        );
+      }
+      if (destination == SessionDestination.home) {
+        return ValidSessionLocation(
+          MonthlyStatusOrigin.parse(
+            uri
+                .replace(
+                  queryParameters: {
+                    ...p,
                     'a': period.year.toString().padLeft(4, '0'),
                     'm': period.month.toString().padLeft(2, '0'),
                   },

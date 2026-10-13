@@ -5,6 +5,8 @@ import '../../features/monthly_status/presentation/monthly_status_screen.dart';
 import 'monthly_status_detail_navigation.dart';
 import 'monthly_status_origin.dart';
 import 'movement_links.dart';
+import '../../features/wealth/presentation/wealth_controller.dart';
+import 'home_wealth_summary.dart';
 import 'navigation_context.dart';
 import 'navigation_session.dart';
 import 'period_controls.dart';
@@ -20,10 +22,18 @@ class MonthlyStatusRoute extends StatefulWidget {
     required this.load,
     required this.management,
     this.session,
+    this.home = false,
+    this.wealth,
+    this.onImport,
+    this.onCategorize,
   });
   final RouteSettings settings;
   final MonthlyStatusLoader load;
   final NavigationSession? session;
+  final bool home;
+  final WealthManagementLoader? wealth;
+  final Future<void> Function(BuildContext context, String origin)? onImport,
+      onCategorize;
   final Widget Function(
     String Function() origin,
     Future<void> Function() refresh,
@@ -78,7 +88,9 @@ class _MonthlyStatusRouteState extends State<MonthlyStatusRoute> {
     final current = _session.context;
     _session.setContext(
       NavigationContext(
-        destination: SessionDestination.status,
+        destination: widget.home
+            ? SessionDestination.home
+            : SessionDestination.status,
         period: current.period,
         branchId: position.categoryId,
         scope: position.scope,
@@ -110,6 +122,47 @@ class _MonthlyStatusRouteState extends State<MonthlyStatusRoute> {
         String origin() => MonthlyStatusOrigin(_session.context).route;
         return MonthlyStatusScreen(
           load: widget.load,
+          home: widget.home,
+          onImport: widget.onImport == null
+              ? null
+              : () => widget.onImport!(context, origin()),
+          onCategorize: widget.onCategorize == null
+              ? null
+              : () => widget.onCategorize!(context, origin()),
+          onDetail: () async {
+            final saved = _session.context;
+            final detail = NavigationContext(
+              destination: SessionDestination.status,
+              period: saved.period,
+              branchId: saved.branchId,
+              scope: saved.scope,
+              filters: saved.filters,
+            );
+            await Navigator.of(
+              context,
+            ).pushNamed(MonthlyStatusOrigin(detail).route, arguments: detail);
+            if (context.mounted) {
+              await _session.returnToOrigin(SecondaryNavigationContext(saved));
+            }
+          },
+          supporting: widget.home
+              ? (data, open) => HomeWealthSummary(
+                  load: widget.wealth,
+                  month: month,
+                  refreshToken: data,
+                  onOpen: (photo) => open(() async {
+                    final saved = _session.context;
+                    await Navigator.of(context).pushNamed(
+                      '${photo ? '/patrimonio/foto' : '/patrimonio'}?a=${saved.period.year}&m=${saved.period.month.toString().padLeft(2, '0')}',
+                    );
+                    if (context.mounted) {
+                      await _session.returnToOrigin(
+                        SecondaryNavigationContext(saved),
+                      );
+                    }
+                  }),
+                )
+              : null,
           month: month,
           initialPosition: MonthlyStatusPosition(
             expanded: (saved.filters['abiertas'] ?? '')
@@ -144,7 +197,12 @@ class _MonthlyStatusRouteState extends State<MonthlyStatusRoute> {
           periodControls: const SizedBox.shrink(),
           shell: (body, scroll, refresh) => PrimaryNavigation(
             session: _session,
-            title: 'Estado del mes',
+            title: widget.home ? 'Tu mes, en perspectiva' : 'Estado del mes',
+            contextTrail: widget.home
+                ? Text(
+                    'Inicio · Flujos de ${month.value.substring(0, 7)} · foto patrimonial del día 1',
+                  )
+                : null,
             wrapHeader: true,
             scrollController: scroll,
             periodControl: PeriodControls(session: _session),

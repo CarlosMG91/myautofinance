@@ -28,6 +28,9 @@ class MovementListOrigin {
         return '${destination.label}${a == null ? '' : ', ${m == null ? a : '$m/$a'}'}';
       }
     }
+    if (uri?.path == AppRoutes.start) {
+      return 'Inicio, ${uri?.queryParameters['m']}/${uri?.queryParameters['a']}';
+    }
     return 'Autofinance';
   }
 }
@@ -217,7 +220,10 @@ class _MovementListRouteState extends State<MovementListRoute> {
                 : null;
             final restored =
                 saved ??
-                (Uri.parse(origin).path == AppRoutes.monthlyStatus &&
+                (const {
+                          AppRoutes.monthlyStatus,
+                          AppRoutes.start,
+                        }.contains(Uri.parse(origin).path) &&
                         Uri.parse(origin).hasQuery
                     ? MonthlyStatusOrigin.parse(origin).context
                     : null);

@@ -7,6 +7,7 @@ import '../../movements/movements.dart';
 import '../domain/monthly_figure_detail.dart';
 import '../domain/monthly_status_query.dart';
 import 'monthly_status_cards.dart';
+import 'home_summary.dart';
 
 typedef MonthlyStatusLoader = Future<MonthlyStatusQuery> Function();
 
@@ -36,6 +37,11 @@ class MonthlyStatusScreen extends StatefulWidget {
     required this.shell,
     required this.onPosition,
     this.initialPosition = const MonthlyStatusPosition(),
+    this.home = false,
+    this.onDetail,
+    this.onImport,
+    this.onCategorize,
+    this.supporting,
   });
   final MonthlyStatusLoader load;
   final BudgetMonth month;
@@ -50,6 +56,13 @@ class MonthlyStatusScreen extends StatefulWidget {
   shell;
   final void Function(MonthlyStatusPosition position) onPosition;
   final MonthlyStatusPosition initialPosition;
+  final bool home;
+  final Future<void> Function()? onDetail, onImport, onCategorize;
+  final Widget Function(
+    MonthlyStatus data,
+    Future<void> Function(Future<void> Function()) open,
+  )?
+  supporting;
   @override
   State<MonthlyStatusScreen> createState() => _MonthlyStatusScreenState();
 }
@@ -145,7 +158,9 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
     setState(() {
       _loading = true;
       _error = null;
-      _data = null;
+      // Inicio mantiene sus controles montados para restaurar el foco tras
+      // abrir una fuente. Offstage oculta las cifras durante carga o error.
+      if (!widget.home) _data = null;
     });
     try {
       // Resolver siempre la conexión activa, también después de restaurar.
@@ -172,6 +187,10 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
       }
       final data = await query.read(month);
       if (!mounted || request != _request) return;
+      if (ModalRoute.of(context)?.isCurrent == false) {
+        _refreshNeeded = true;
+        return;
+      }
       setState(() => _data = data);
     } catch (error) {
       if (!mounted || request != _request) return;
@@ -206,6 +225,7 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
     MovementCategoryScope scope,
     Future<void> Function() action,
   ) async {
+    final returnFocus = FocusManager.instance.primaryFocus;
     _focus = token;
     _category = category;
     _scope = scope;
@@ -219,6 +239,12 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
     _category = category;
     _scope = scope;
     await _read();
+    if (widget.home &&
+        mounted &&
+        ModalRoute.of(context)?.isCurrent != false &&
+        returnFocus?.context != null) {
+      returnFocus!.requestFocus();
+    }
   }
 
   FocusNode _node(String token) =>
@@ -608,35 +634,40 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
         children: [
           widget.periodControls,
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              FilledButton(
-                key: const ValueKey('status-add'),
-                style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
-                focusNode: _node('status-add'),
-                onPressed: () => _open(
-                  'status-add',
-                  null,
-                  MovementCategoryScope.branch,
-                  widget.onAdd,
+          if (!widget.home)
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                FilledButton(
+                  key: const ValueKey('status-add'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                  ),
+                  focusNode: _node('status-add'),
+                  onPressed: () => _open(
+                    'status-add',
+                    null,
+                    MovementCategoryScope.branch,
+                    widget.onAdd,
+                  ),
+                  child: const Text('Añadir movimiento'),
                 ),
-                child: const Text('Añadir movimiento'),
-              ),
-              OutlinedButton(
-                key: const ValueKey('status-refresh'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(48, 48),
+                OutlinedButton(
+                  key: const ValueKey('status-refresh'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                  ),
+                  focusNode: _node('status-refresh'),
+                  onPressed: () =>
+                      _open('status-refresh', _category, _scope, () async {}),
+                  child: const Text('Actualizar'),
                 ),
-                focusNode: _node('status-refresh'),
-                onPressed: () =>
-                    _open('status-refresh', _category, _scope, () async {}),
-                child: const Text('Actualizar'),
-              ),
-            ],
-          ),
+              ],
+            ),
           const SizedBox(height: 16),
+          if (widget.home && (_loading || refreshDue))
+            const LinearProgressIndicator(semanticsLabel: 'Consultando Inicio'),
           if (_loading || refreshDue)
             Semantics(
               liveRegion: true,
@@ -659,8 +690,67 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
                 ],
               ),
             )
-          else if (_data != null)
+          else if (_data != null && !widget.home)
             _content(_data!),
+          if (_data != null && widget.home)
+            Offstage(
+              offstage: _loading || refreshDue || _error != null,
+              child: HomeSummary(
+                data: _data!,
+                expanded: _expanded,
+                categoryLabel: (row, parents) =>
+                    _categoryWidget(row, parents, compact: false),
+                details: MonthlyStatusDetailCallbacks(
+                  onMovements: (detail) => _open(
+                    'home:${detail.categoryId ?? 'total'}:real',
+                    detail.unclassified ? 'sin-clasificar' : detail.categoryId,
+                    detail.scope,
+                    () => widget.details.onMovements(detail),
+                  ),
+                  onBudgets: (detail) => _open(
+                    'home:${detail.categoryId ?? 'total'}:previsto',
+                    detail.categoryId,
+                    detail.scope,
+                    () => widget.details.onBudgets(detail),
+                  ),
+                  onDifference: (detail) => _open(
+                    'home:${detail.categoryId ?? 'total'}:diferencia',
+                    detail.categoryId,
+                    detail.scope,
+                    () => widget.details.onDifference(detail),
+                  ),
+                ),
+                onDetail: widget.onDetail == null
+                    ? null
+                    : () => _open(
+                        'home:detalle',
+                        _category,
+                        _scope,
+                        widget.onDetail!,
+                      ),
+                onImport: widget.onImport == null
+                    ? null
+                    : () => _open(
+                        'home:importar',
+                        null,
+                        _scope,
+                        widget.onImport!,
+                      ),
+                onCategorize: widget.onCategorize == null
+                    ? null
+                    : () => _open(
+                        'home:categorizar',
+                        'sin-clasificar',
+                        _scope,
+                        widget.onCategorize!,
+                      ),
+                onRefresh: _read,
+                supporting: widget.supporting?.call(
+                  _data!,
+                  (action) => _open('home:foto', _category, _scope, action),
+                ),
+              ),
+            ),
         ],
       ),
       _scroll,
