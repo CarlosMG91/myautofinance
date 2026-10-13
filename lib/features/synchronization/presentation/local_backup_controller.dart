@@ -29,6 +29,7 @@ class LocalBackupController extends ChangeNotifier {
   String? message;
   String? error;
   String? progress;
+  bool completed = false;
   bool get busy => progress != null;
 
   static const storageMessage =
@@ -41,6 +42,7 @@ class LocalBackupController extends ChangeNotifier {
     progress = phase;
     error = null;
     message = null;
+    completed = false;
     notifyListeners();
     try {
       await action();
@@ -102,6 +104,7 @@ class LocalBackupController extends ChangeNotifier {
     if (!activeAvailable || recoveryBlocked) return;
     await _run('Creando, comprobando y registrando copia local…', () async {
       final copy = await creator.createManual();
+      completed = true;
       message = 'Copia manual creada, comprobada y registrada.';
       if (copy.cleanupPending) {
         message = '$message Quedan archivos temporales pendientes de limpieza.';
@@ -117,6 +120,7 @@ class LocalBackupController extends ChangeNotifier {
       restoreResult = result;
       switch (result.status) {
         case LocalRestoreStatus.restored:
+          completed = true;
           activeAvailable = true;
           startupMessage = null;
           message = 'Restauración completada. La base restaurada se ha abierto y comprobado.';
@@ -145,6 +149,7 @@ class LocalBackupController extends ChangeNotifier {
       _run('Comprobando y eliminando copia…', () async {
         final result = await catalog.deleteExplicitly(id);
         if (result.deletedBackupIds.contains(id)) {
+          completed = true;
           message = 'Copia eliminada. La base activa no ha cambiado.';
         } else {
           error =
@@ -159,6 +164,7 @@ class LocalBackupController extends ChangeNotifier {
       _run('Resolviendo recuperación y abriendo base local…', () async {
         activeAvailable = await retryStartup!();
         if (activeAvailable) {
+          completed = true;
           startupMessage = null;
           recoveryBlocked = false;
           message = 'Base local abierta y comprobada.';

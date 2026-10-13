@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../ui/autofinance_ui.dart';
+
 import '../domain/local_backup_catalog.dart';
 import '../domain/local_backup_creation.dart';
 import '../domain/local_restore.dart';
@@ -216,40 +218,22 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
     if (confirmed && mounted) await controller.delete(entry.backupId);
   }
 
-  Widget _notice(String text, {bool error = false}) => Semantics(
-    liveRegion: true,
-    child: Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: error ? const Color(0xfffcedef) : const Color(0xffeaf3fb),
-        border: Border.all(
-          color: error ? const Color(0xff9f2733) : const Color(0xffc0cad5),
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: error ? const Color(0xff9f2733) : const Color(0xff17212b),
-        ),
-      ),
-    ),
-  );
+  Widget _notice(String text, {bool error = false, AfStatusKind? kind}) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: kind != null || error
+            ? AfStatus(kind: kind ?? AfStatusKind.error, message: text)
+            : AfCard(child: Text(text)),
+      );
 
-  Widget _panel(List<Widget> children) => Container(
-    width: double.infinity,
-    margin: const EdgeInsets.symmetric(vertical: 8),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: const Color(0xffc0cad5)),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: children,
+  Widget _panel(List<Widget> children) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: AfCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 8,
+        children: children,
+      ),
     ),
   );
 
@@ -285,7 +269,7 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
       ]),
       _notice(
         _usable(entry)
-            ? 'Restaurar sustituye todos los datos actuales. La versión anterior se protege antes del intercambio. Una copia antigua compatible se adapta y comprueba en una copia de trabajo; el original se conserva.'
+            ? 'Restaurar sustituye todos los datos actuales. ${controller.activeAvailable ? 'La versión anterior se protege antes del intercambio.' : 'Los archivos dañados se conservan aislados; no se garantiza que sean restaurables.'} Una copia antigua compatible se adapta y comprueba en una copia de trabajo; el original se conserva.'
             : 'Esta copia no se puede restaurar. Se conserva su ficha y la base activa no se ha modificado. Seleccione otra copia.',
       ),
       Wrap(
@@ -481,7 +465,9 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
     ),
   );
   Widget _shellContent(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 840;
+    final wide =
+        MediaQuery.sizeOf(context).width >= 840 &&
+        MediaQuery.textScalerOf(context).scale(16) < 24;
     final entries = controller.listing?.entries ?? [];
     LocalBackupCatalogEntry? selected;
     for (final entry in entries) {
@@ -492,7 +478,10 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
       children: [
         if (controller.busy ||
             controller.listing == null && controller.error == null) ...[
-          _heading(controller.progress ?? 'Leyendo catálogo local…'),
+          _notice(
+            controller.progress ?? 'Leyendo catálogo local…',
+            kind: AfStatusKind.loading,
+          ),
           const LinearProgressIndicator(),
           _notice(
             'No cierre la app. Espere el resultado seguro antes de iniciar otra operación.',
@@ -527,7 +516,13 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
               ),
           ],
           if (controller.error != null) _notice(controller.error!, error: true),
-          if (controller.message != null) _notice(controller.message!),
+          if (controller.message != null)
+            _notice(
+              controller.message!,
+              kind: controller.completed && controller.error == null
+                  ? AfStatusKind.success
+                  : AfStatusKind.pending,
+            ),
           if (controller.restoreResult?.status ==
               LocalRestoreStatus.restored) ...[
             _notice(
@@ -549,6 +544,22 @@ class _LocalBackupScreenState extends State<LocalBackupScreen> {
               ),
           ],
           if (widget.backupId == null) ...[
+            _panel([
+              _heading('Recuperación en este dispositivo'),
+              Text(
+                controller.activeAvailable
+                    ? 'La base local está disponible. Crea una copia manual para conservar el estado actual.'
+                    : 'La base local no está disponible. Revisa una copia antes de restaurar.',
+              ),
+              Text(
+                controller.listing?.status == LocalBackupCatalogStatus.ready
+                    ? 'Copias registradas: ${controller.listing!.entries.length}'
+                    : 'Copias registradas: desconocidas',
+              ),
+              const Text(
+                'Solo se usa almacenamiento local. Abrir el catálogo no consulta Drive.',
+              ),
+            ]),
             Wrap(
               spacing: 8,
               runSpacing: 8,

@@ -148,6 +148,25 @@ void main() {
   }
 
   testWidgets(
+    'cancelación del coordinador no presenta restauración completada',
+    (tester) async {
+      restorer.result = const LocalRestoreResult(LocalRestoreStatus.cancelled);
+      await open(tester);
+      await detail(tester);
+      await tester.tap(
+        find.text('Entiendo que la base activa volverá a esta fecha.'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Restaurar copia'));
+      await tester.pumpAndSettle();
+      expect(restorer.calls, 1);
+      expect(controller.completed, false);
+      expect(find.text('Completado'), findsNothing);
+      expect(find.textContaining(restorer.result.message), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'Cancelar y Esc conservan datos, no llaman al servicio y devuelven foco',
     (tester) async {
       await open(tester);
@@ -350,10 +369,7 @@ void main() {
       tester,
     ) async {
       await open(tester, size: size, scale: 2);
-      expect(
-        find.byType(Table),
-        size.width >= 840 ? findsOneWidget : findsNothing,
-      );
+      expect(find.byType(Table), findsNothing);
       await tester.ensureVisible(find.text('Ver detalle').first);
       await tester.tap(find.text('Ver detalle').first);
       await tester.pumpAndSettle();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../../../ui/autofinance_ui.dart';
 import '../domain/drive_download.dart';
 import '../domain/drive_upload.dart';
 import '../domain/installation_sync_state.dart';
@@ -61,7 +62,7 @@ class _DriveScreenState extends State<DriveScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           width: 2,
-          color: focus.hasFocus ? const Color(0xff005fcc) : Colors.transparent,
+          color: focus.hasFocus ? AfTokens.focus : Colors.transparent,
         ),
       ),
       child: child,
@@ -142,14 +143,18 @@ class _DriveScreenState extends State<DriveScreen> {
     return accepted == true;
   }
 
+  Widget _heading(String text) =>
+      Text(text, style: Theme.of(context).textTheme.titleLarge);
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: controller,
     builder: (context, _) {
-      final width = MediaQuery.sizeOf(context).width;
-      final version =
-          controller.observed?.version ?? controller.snapshot.version;
-      final date = controller.remoteKnowledge == DriveRemoteKnowledge.noCopy
+      final noCopy = controller.remoteKnowledge == DriveRemoteKnowledge.noCopy;
+      final version = noCopy
+          ? null
+          : controller.observed?.version ?? controller.snapshot.version;
+      final date = noCopy
           ? null
           : controller.observed?.modifiedTime ?? controller.snapshot.date;
       final remote = switch (controller.remoteKnowledge) {
@@ -168,152 +173,215 @@ class _DriveScreenState extends State<DriveScreen> {
         SyncLocalStatus.unknown => 'Desconocidos',
       };
       final enabled = controller.available && !controller.busy;
+      final versionsDiffer =
+          version != null &&
+          controller.snapshot.referenceVersion != null &&
+          version != controller.snapshot.referenceVersion;
       final body = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 16,
         children: [
           if (widget.shell == null) ...[
             TextButton(
               onPressed: controller.busy ? null : widget.onReturn,
               child: Text(widget.returnLabel),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Copia en Drive',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
+            _heading('Copia en Drive'),
           ],
-          Card(
-            color: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: const BorderSide(color: Color(0xffd6dee6)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
+          const Text(
+            'Tu base está en este dispositivo. Subir copia y Descargar última copia '
+            'son las únicas acciones que consultan o transfieren a Drive.',
+          ),
+          AfResponsiveGrid(
+            columns: 2,
+            minimumWidth: 320,
+            children: [
+              AfCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 12,
                   children: [
+                    _heading('Tu base local'),
                     Text(
-                      'Cuenta: ${controller.snapshot.account ?? "Sin cuenta conectada"}',
+                      'Cambios locales: $local',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    const SizedBox(height: 12),
-                    Text(remote),
-                    Text('Fecha de la última copia conocida: ${_date(date)}'),
-                    if (controller.conflict ||
-                        (version != null &&
-                            controller.snapshot.referenceVersion != version))
-                      Text(
-                        'Versión de referencia local: ${controller.snapshot.referenceVersion ?? "Desconocida"}',
+                    AfValueRow(
+                      label: 'Cuenta',
+                      value: Text(
+                        controller.snapshot.account ?? 'Sin cuenta conectada',
                       ),
-                    const SizedBox(height: 12),
-                    Text('Cambios locales: $local'),
+                    ),
+                    AfValueRow(
+                      label: 'Versión de referencia local',
+                      value: AfNumericText(
+                        controller.snapshot.referenceVersion ?? 'Desconocida',
+                      ),
+                    ),
+                    const Text(
+                      'La referencia identifica la copia de origen; '
+                      'los cambios locales se comprueban por separado.',
+                    ),
                   ],
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Solo se consulta o transfiere al pulsar un botón. No hay fusión automática.',
-          ),
-          const SizedBox(height: 12),
-          const Text(driveUploadRaceNotice, style: TextStyle(fontSize: 14)),
-          const SizedBox(height: 16),
-          if (controller.unavailableReason != null)
-            Text(controller.unavailableReason!),
-          if (controller.recoveryBlocked)
-            const Text(
-              'Acceso bloqueado. Abre Copias locales para recuperar la base.',
-            ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _focusFrame(
-                _uploadFocus,
-                FilledButton(
-                  onPressed: enabled ? () => _run(true) : null,
-                  focusNode: _uploadFocus,
-                  child: const Text('Subir copia'),
-                ),
-              ),
-              if (controller.recoveryBlocked && widget.onOpenBackups != null)
-                OutlinedButton(
-                  onPressed: controller.busy ? null : widget.onOpenBackups,
-                  child: const Text('Abrir Copias locales'),
-                ),
-              _focusFrame(
-                _downloadFocus,
-                OutlinedButton(
-                  focusNode: _downloadFocus,
-                  onPressed: enabled ? () => _run(false) : null,
-                  child: const Text('Descargar última copia'),
+              AfCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 12,
+                  children: [
+                    _heading('Copia en Google Drive'),
+                    Text(
+                      remote,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    AfValueRow(
+                      label: 'Fecha de la última copia conocida',
+                      value: Text(noCopy ? 'Sin copia' : _date(date)),
+                    ),
+                    const Text(
+                      'Información de la última acción manual. '
+                      'Abrir esta pantalla no comprueba si Drive ha cambiado.',
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          if (controller.busy) ...[
-            const SizedBox(height: 16),
-            if (!_reviewing) const LinearProgressIndicator(),
-            Semantics(liveRegion: true, child: Text(controller.phase)),
-            TextButton(
-              onPressed: controller.cancellationAllowed && !_reviewing
-                  ? controller.cancel
+          if (controller.unavailableReason != null)
+            AfStatus(
+              kind: AfStatusKind.pending,
+              message: controller.unavailableReason!,
+            ),
+          if (controller.recoveryBlocked)
+            const AfStatus(
+              kind: AfStatusKind.error,
+              message: 'Acceso bloqueado. Abre Copias locales para recuperar la base.',
+            ),
+          if (controller.conflict || versionsDiffer)
+            AfStatus(
+              kind: controller.comparisonRequired && !versionsDiffer
+                  ? AfStatusKind.pending
+                  : AfStatusKind.divergence,
+              message: controller.comparisonRequired && !versionsDiffer
+                  ? 'La relación con la copia remota está pendiente de contrastar. '
+                        'No se sobrescriben ni se mezclan automáticamente.'
+                  : 'La copia local y la remota necesitan revisión. '
+                        'No se sobrescriben ni se mezclan automáticamente.',
+              action: controller.conflict
+                  ? TextButton(
+                      onPressed: controller.busy ? null : controller.keepLocal,
+                      child: const Text('Conservar datos locales'),
+                    )
                   : null,
-              child: const Text('Cancelar operación'),
             ),
-            if (!controller.cancellationAllowed)
-              const Text(
-                'La publicación está en curso; espera el resultado antes de salir.',
-              ),
-          ],
-          if (controller.message != null) ...[
-            const SizedBox(height: 16),
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                'Última operación: ${controller.message}',
-                style: TextStyle(
-                  color: controller.error
-                      ? Theme.of(context).colorScheme.error
-                      : null,
+          AfCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 12,
+              children: [
+                _heading('Copia manual'),
+                const Text(
+                  'Subir guarda una copia de tu base local. '
+                  'Descargar valida la copia remota y protege la base anterior antes de sustituirla.',
                 ),
-              ),
-            ),
-            if (controller.backupId != null)
-              Text(
-                'Respaldo recuperable en Copias locales: ${controller.backupId}',
-              ),
-            if (controller.conflict)
-              TextButton(
-                onPressed: controller.busy ? null : controller.keepLocal,
-                child: const Text('Conservar datos locales'),
-              ),
-            if (controller.error)
-              const Text(
-                'Reintenta manualmente con Subir copia o Descargar última copia.',
-              ),
-          ],
-        ],
-      );
-      final content = SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(width < 600 ? 16 : 24),
-              child: FocusTraversalGroup(child: body),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _focusFrame(
+                      _uploadFocus,
+                      FilledButton(
+                        focusNode: _uploadFocus,
+                        onPressed: enabled ? () => _run(true) : null,
+                        child: const Text('Subir copia'),
+                      ),
+                    ),
+                    _focusFrame(
+                      _downloadFocus,
+                      OutlinedButton(
+                        focusNode: _downloadFocus,
+                        onPressed: enabled ? () => _run(false) : null,
+                        child: const Text('Descargar última copia'),
+                      ),
+                    ),
+                  ],
+                ),
+                const Text('No hay sincronización ni fusión automática.'),
+              ],
             ),
           ),
-        ),
+          if (controller.busy)
+            AfStatus(
+              kind: AfStatusKind.loading,
+              message: controller.phase,
+              action: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!_reviewing) const LinearProgressIndicator(),
+                  TextButton(
+                    onPressed: controller.cancellationAllowed && !_reviewing
+                        ? controller.cancel
+                        : null,
+                    child: const Text('Cancelar operación'),
+                  ),
+                  if (!controller.cancellationAllowed)
+                    const Text(
+                      'La publicación está en curso; espera el resultado antes de salir.',
+                    ),
+                ],
+              ),
+            ),
+          if (controller.message != null)
+            AfStatus(
+              kind: controller.conflict && !controller.comparisonRequired
+                  ? AfStatusKind.divergence
+                  : controller.error
+                  ? AfStatusKind.error
+                  : controller.completed
+                  ? AfStatusKind.success
+                  : AfStatusKind.pending,
+              message: 'Última operación: ${controller.message}',
+              action: controller.error
+                  ? const Text(
+                      'Reintenta manualmente con Subir copia o Descargar última copia.',
+                    )
+                  : null,
+            ),
+          if (controller.backupId != null)
+            Text(
+              'Respaldo recuperable en Copias locales: ${controller.backupId}',
+            ),
+          if (widget.onOpenBackups != null)
+            AfCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 12,
+                children: [
+                  _heading('Recuperación en este dispositivo'),
+                  const Text(
+                    'Consulta y restaura copias locales, incluso si la base no puede abrirse. '
+                    'Estas copias no se envían a Drive.',
+                  ),
+                  AfAction(
+                    label: 'Abrir Copias locales',
+                    onPressed: controller.busy ? null : widget.onOpenBackups,
+                  ),
+                ],
+              ),
+            ),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: const Text('Cómo se protegen las copias'),
+            children: const [Text(driveUploadRaceNotice)],
+          ),
+        ],
       );
       if (widget.shell != null) {
-        return PopScope(canPop: !controller.busy, child: widget.shell!(body));
+        return PopScope(
+          canPop: !controller.busy,
+          child: widget.shell!(FocusTraversalGroup(child: body)),
+        );
       }
       return PopScope(
         canPop: !controller.busy,
@@ -321,7 +389,14 @@ class _DriveScreenState extends State<DriveScreen> {
           body: Row(
             children: [
               if (widget.navigation != null) widget.navigation!,
-              Expanded(child: content),
+              Expanded(
+                child: SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: FocusTraversalGroup(child: body),
+                  ),
+                ),
+              ),
             ],
           ),
           bottomNavigationBar: widget.bottomNavigation,

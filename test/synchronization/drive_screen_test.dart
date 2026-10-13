@@ -18,7 +18,9 @@ import 'package:myautofinance/features/synchronization/domain/drive_transfer.dar
 import 'package:myautofinance/features/synchronization/domain/drive_upload.dart';
 import 'package:myautofinance/features/synchronization/domain/installation_sync_state.dart';
 import 'package:myautofinance/features/synchronization/domain/local_restore.dart';
+import 'package:myautofinance/features/synchronization/domain/local_restore_candidate.dart';
 import 'package:myautofinance/features/synchronization/presentation/drive_controller.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 DriveFileMetadata remote() => DriveFileMetadata(
   id: 'synthetic-copy',
@@ -33,6 +35,7 @@ DriveFileMetadata remote() => DriveFileMetadata(
 class Uploader implements DriveUploader {
   int calls = 0;
   DriveUploadStatus status = DriveUploadStatus.uploaded;
+  DriveTransferFailure? failure;
   Completer<void>? wait;
   @override
   Future<DriveUploadResult> upload({
@@ -48,6 +51,7 @@ class Uploader implements DriveUploader {
     }
     return DriveUploadResult(
       cancellation.isCancelled ? DriveUploadStatus.cancelled : status,
+      transferFailure: failure,
       remote: status == DriveUploadStatus.uploaded && !cancellation.isCancelled
           ? remote()
           : null,
@@ -62,6 +66,7 @@ class Downloader implements DriveDownloadApplication {
       DriveDownloadApplicationStatus.downloaded;
   DriveDownloadStatus? rejection;
   SyncLocalStatus localStatus = SyncLocalStatus.changed;
+  LocalRestoreResult? restoreFailure;
   Completer<void>? wait;
   @override
   Future<DriveDownloadApplicationResult> downloadAndApply({
@@ -104,12 +109,14 @@ class Downloader implements DriveDownloadApplication {
       remote: status == DriveDownloadApplicationStatus.downloaded
           ? remote()
           : null,
-      restore: status == DriveDownloadApplicationStatus.downloaded
-          ? const LocalRestoreResult(
-              LocalRestoreStatus.restored,
-              previousBackupId: 'respaldo-sintetico',
-            )
-          : null,
+      restore:
+          restoreFailure ??
+          (status == DriveDownloadApplicationStatus.downloaded
+              ? const LocalRestoreResult(
+                  LocalRestoreStatus.restored,
+                  previousBackupId: 'respaldo-sintetico',
+                )
+              : null),
     );
   }
 }
@@ -145,6 +152,187 @@ Future<void> tapVisible(WidgetTester tester, Finder target) async {
 }
 
 void main() {
+  testWidgets(
+    'cambiar de cuenta descarta versión y fecha observadas anteriores',
+    (tester) async {
+      var account = 'primera@example.invalid';
+      var preparations = 0;
+      final drive = DriveController(
+        uploader: Uploader(),
+        downloader: Downloader(),
+        prepare: (_) async {
+          preparations++;
+          return null;
+        },
+        readLocal: () async => DriveViewSnapshot(account: account),
+      );
+      await open(tester, drive);
+      await tapVisible(tester, find.text('Subir copia'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Versión 7'), findsOneWidget);
+      account = 'segunda@example.invalid';
+      await drive.refreshLocal();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Remoto desconocido'), findsOneWidget);
+      expect(find.textContaining('Versión 7'), findsNothing);
+      expect(find.textContaining('02/10/2026'), findsNothing);
+      expect(preparations, 1);
+    },
+  );
+
+  for (final issue in [
+    DriveMetadataIssue.credentialExpired,
+    DriveMetadataIssue.networkFailure,
+  ]) {
+    testWidgets('subida fallida identifica $issue sin anunciar éxito', (
+      tester,
+    ) async {
+      final upload = Uploader()
+        ..status = DriveUploadStatus.failed
+        ..failure = DriveTransferFailure(
+          DriveTransferIssue.remoteFailure,
+          remoteFailure: DriveMetadataFailure(issue),
+        );
+      final drive = controller(upload, Downloader());
+      await open(tester, drive);
+      await tapVisible(tester, find.text('Subir copia'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining(
+          issue == DriveMetadataIssue.credentialExpired
+              ? 'Revisa la autorización de la cuenta.'
+              : 'Comprueba la conexión.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Completado'), findsNothing);
+      expect(drive.completed, false);
+    });
+  }
+
+  testWidgets('versiones conocidas divergentes y acceso local sin red', (
+    tester,
+  ) async {
+    final upload = Uploader();
+    final download = Downloader();
+    var preparations = 0;
+    final drive = DriveController(
+      uploader: upload,
+      downloader: download,
+      prepare: (_) async {
+        preparations++;
+        return null;
+      },
+      readLocal: () async => DriveViewSnapshot(
+        account: 'prueba@example.invalid',
+        version: '7',
+        referenceVersion: '5',
+        date: DateTime.utc(2026, 10, 2, 12),
+        localStatus: SyncLocalStatus.changed,
+      ),
+    );
+    await open(tester, drive);
+    expect(find.text('Copias divergentes'), findsOneWidget);
+    expect(find.text('5'), findsOneWidget);
+    expect(find.textContaining('Versión 7'), findsOneWidget);
+    expect(find.textContaining('02/10/2026'), findsOneWidget);
+    await tapVisible(tester, find.text('Abrir Copias locales'));
+    await tester.pumpAndSettle();
+    expect(preparations, 0);
+    expect(upload.calls, 0);
+    expect(download.calls, 0);
+    expect(find.text('Tu base local'), findsNothing);
+  });
+
+  testWidgets('sin copia no reutiliza fecha ni versión de una copia anterior', (
+    tester,
+  ) async {
+    final download = Downloader()..rejection = DriveDownloadStatus.noCopy;
+    final drive = DriveController(
+      uploader: Uploader(),
+      downloader: download,
+      prepare: (_) async => null,
+      readLocal: () async => DriveViewSnapshot(
+        version: '7',
+        referenceVersion: '7',
+        date: DateTime.utc(2026, 10, 2),
+      ),
+    );
+    await open(tester, drive);
+    await tapVisible(tester, find.text('Descargar última copia'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sin copia en Drive'), findsOneWidget);
+    expect(find.textContaining('02/10/2026'), findsNothing);
+    expect(find.textContaining('Versión 7'), findsNothing);
+    expect(find.text('Completado'), findsNothing);
+  });
+
+  for (final status in SyncLocalStatus.values) {
+    testWidgets('estado local $status visible sin consulta remota', (
+      tester,
+    ) async {
+      var preparations = 0;
+      final drive = DriveController(
+        uploader: Uploader(),
+        downloader: Downloader(),
+        prepare: (_) async {
+          preparations++;
+          return null;
+        },
+        readLocal: () async => DriveViewSnapshot(localStatus: status),
+      );
+      await open(tester, drive);
+      expect(find.textContaining('Cambios locales:'), findsOneWidget);
+      expect(preparations, 0);
+      expect(find.byType(AfCard), findsWidgets);
+    });
+  }
+
+  testWidgets('fallo de respaldo conserva la causa y no anuncia éxito', (
+    tester,
+  ) async {
+    final download = Downloader()
+      ..status = DriveDownloadApplicationStatus.failed
+      ..restoreFailure = const LocalRestoreResult(
+        LocalRestoreStatus.rejected,
+        candidateIssue: LocalRestoreCandidateIssue.storageFailure,
+      );
+    final drive = controller(Uploader(), download);
+    await open(tester, drive);
+    await tapVisible(tester, find.text('Descargar última copia'));
+    await tester.pumpAndSettle();
+    await tapVisible(tester, find.text('Descargar y sustituir'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining(LocalRestoreCandidateIssue.storageFailure.message),
+      findsOneWidget,
+    );
+    expect(find.text('Completado'), findsNothing);
+    expect(drive.completed, false);
+    expect(download.applied, 0);
+  });
+
+  testWidgets('progreso real por fase sin porcentaje y cancelación sin éxito', (
+    tester,
+  ) async {
+    final upload = Uploader()..wait = Completer<void>();
+    final drive = controller(upload, Downloader());
+    await open(tester, drive);
+    await tapVisible(tester, find.text('Subir copia'));
+    await tester.pump();
+    expect(find.text('Subiendo copia'), findsOneWidget);
+    expect(
+      tester
+          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
+          .value,
+      isNull,
+    );
+    await tapVisible(tester, find.text('Cancelar operación'));
+    await tester.pumpAndSettle();
+    expect(find.text('Completado'), findsNothing);
+    expect(drive.completed, false);
+  });
+
   if (const bool.fromEnvironment('CAPTURE_DRIVE_UI')) {
     for (final size in [
       const Size(1440, 900),
@@ -337,6 +525,7 @@ void main() {
 
   for (final status in [
     DriveUploadStatus.divergence,
+    DriveUploadStatus.comparisonRequired,
     DriveUploadStatus.reconciliationRequired,
     DriveUploadStatus.failed,
   ]) {
@@ -350,6 +539,10 @@ void main() {
       expect(find.textContaining('Copia subida'), findsNothing);
       if (status == DriveUploadStatus.divergence) {
         expect(find.text('Conservar datos locales'), findsOneWidget);
+      }
+      if (status == DriveUploadStatus.comparisonRequired) {
+        expect(find.text('Copias divergentes'), findsNothing);
+        expect(find.textContaining('pendiente de contrastar'), findsOneWidget);
       }
       if (status == DriveUploadStatus.reconciliationRequired) {
         expect(

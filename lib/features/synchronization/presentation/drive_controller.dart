@@ -51,7 +51,9 @@ class DriveController extends ChangeNotifier {
   String phase = '';
   bool busy = false;
   bool conflict = false;
+  bool comparisonRequired = false;
   bool error = false;
+  bool completed = false;
   bool cancellationAllowed = true;
   bool recoveryBlocked = false;
   DriveTransferCancellation? _cancellation;
@@ -63,7 +65,15 @@ class DriveController extends ChangeNotifier {
 
   Future<void> refreshLocal() async {
     try {
-      snapshot = await readLocal();
+      final next = await readLocal();
+      if (next.account != snapshot.account) {
+        // A previous account's observations are not evidence for this one.
+        observed = null;
+        remoteKnowledge = DriveRemoteKnowledge.unknown;
+        conflict = false;
+        comparisonRequired = false;
+      }
+      snapshot = next;
       if (snapshot.version != null &&
           remoteKnowledge == DriveRemoteKnowledge.unknown) {
         remoteKnowledge = DriveRemoteKnowledge.known;
@@ -86,6 +96,8 @@ class DriveController extends ChangeNotifier {
 
   void keepLocal() {
     conflict = false;
+    comparisonRequired = false;
+    completed = false;
     message = 'Se conservan tus datos locales.';
     _notify();
   }
@@ -97,7 +109,9 @@ class DriveController extends ChangeNotifier {
     if (busy || !available) return;
     busy = true;
     error = false;
+    completed = false;
     conflict = false;
+    comparisonRequired = false;
     message = null;
     backupId = null;
     cancellationAllowed = true;
@@ -120,12 +134,15 @@ class DriveController extends ChangeNotifier {
           cancellation: cancellation,
           onProgress: (p) => _progress(p, true),
         );
+        completed = result.status == DriveUploadStatus.uploaded;
         observed = result.remote ?? observed;
         message = result.status == DriveUploadStatus.reconciliationRequired
             ? 'No se pudo confirmar la subida. Reintenta manualmente para comprobar Drive.'
             : result.message;
         conflict =
             result.status == DriveUploadStatus.divergence ||
+            result.status == DriveUploadStatus.comparisonRequired;
+        comparisonRequired =
             result.status == DriveUploadStatus.comparisonRequired;
         error =
             result.status != DriveUploadStatus.uploaded &&
@@ -157,11 +174,14 @@ class DriveController extends ChangeNotifier {
             _notify();
           },
         );
+        completed = result.status == DriveDownloadApplicationStatus.downloaded;
         message = result.message;
         observed = result.remote ?? observed;
         backupId = result.restore?.previousBackupId;
-        if (result.restore?.candidateIssue != null) {
-          message = '$message ${result.restore!.candidateIssue!.message}';
+        if (result.restore != null && !completed) {
+          // Preserve the existing coordinator's cause (backup, opening,
+          // rollback or recovery), without interpreting it as a success.
+          message = '$message ${result.restore!.message}';
         }
         error =
             result.status != DriveDownloadApplicationStatus.downloaded &&
@@ -194,6 +214,7 @@ class DriveController extends ChangeNotifier {
         }
       }
     } catch (_) {
+      completed = false;
       error = true;
       message = 'No se pudo completar la operación. Reintenta manualmente desde el botón correspondiente.';
     } finally {
