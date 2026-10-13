@@ -146,9 +146,11 @@ void main() {
       fixture.budget(ordinal: 4),
     ]);
     await boot(tester);
+    expect(find.byType(DataTable), findsNothing);
+    await tap(tester, find.text('Ver detalle de filas'));
     expect(find.byType(DataTable), findsOneWidget);
     expect(find.text('Sin clasificar'), findsNWidgets(2));
-    expect(find.text('−10,00 €'), findsOneWidget);
+    expect(find.text('−10,00 €'), findsNWidgets(2));
     await screenshot(tester, 'windows-revision');
     await tap(tester, find.text('Originales 2'));
     expect(find.text('Campos originales · fila 2'), findsOneWidget);
@@ -174,6 +176,7 @@ void main() {
       await start([fixture.real(), fixture.budget()]);
       await boot(tester, width: width, scale: 2);
       expect(find.byType(DataTable), findsNothing);
+      await tap(tester, find.text('Ver detalle de filas'));
       expect(find.text('Categoría: Sin clasificar'), findsOneWidget);
       final semantics = tester.ensureSemantics();
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
@@ -254,7 +257,7 @@ void main() {
     await db.blockWritesForRestore();
     delayed.gate.complete();
     await settle(tester);
-    expect(find.text('Error'), findsOneWidget);
+    expect(find.text('Error de importación'), findsOneWidget);
     expect(c.session, isNotNull);
     expect(delayed.calls, 1);
   });

@@ -10,6 +10,8 @@ import '../importing.dart';
 import 'import_controller.dart';
 import 'import_reference_dialog.dart';
 import 'import_widgets.dart';
+import 'import_layout.dart';
+import '../../../ui/autofinance_ui.dart';
 
 class ImportReviewScreen extends StatefulWidget {
   const ImportReviewScreen({
@@ -37,6 +39,7 @@ class ImportReviewScreen extends StatefulWidget {
 class _ImportReviewScreenState extends State<ImportReviewScreen>
     with WidgetsBindingObserver {
   int _page = 0;
+  bool _details = false;
   bool _dialog = false;
   ImportSession? _displayedSession;
   final _headingFocus = FocusNode();
@@ -227,7 +230,7 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
     ImportPhase.confirming => 'Confirmando',
     ImportPhase.imported => 'Importado',
     ImportPhase.alreadyImported => 'Ya importado',
-    ImportPhase.error => 'Error',
+    ImportPhase.error => 'Error de importación',
   };
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -244,6 +247,7 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
       if (_displayedSession != c.session) {
         _displayedSession = c.session;
         _page = 0;
+        _details = false;
       }
       final review = c.review;
       final rows = c.session?.interpretation.rows ?? <InterpretedImportRow>[];
@@ -276,6 +280,33 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
               .toSet()
               .toList()
             ..sort();
+      final issues = [...?review?.issues, ...c.failures];
+      final invalidFile = c.session?.interpretation.issues.isNotEmpty ?? false;
+      final unreviewed =
+          review?.overlaps
+              .where((o) => !c.reviewedOverlaps.contains(o.key))
+              .length ??
+          0;
+      final step = batch != null
+          ? 4
+          : c.phase == ImportPhase.confirming
+          ? 3
+          : review == null
+          ? 0
+          : review.pendingReferences.isNotEmpty
+          ? 2
+          : c.canConfirm
+          ? 3
+          : 1;
+      final blockedReason = c.busy
+          ? 'Espera a que termine la selección, lectura o confirmación del lote.'
+          : issues.isNotEmpty
+          ? 'Corrige todos los errores antes de confirmar. No se importará ninguna fila.'
+          : review?.pendingReferences.isNotEmpty == true
+          ? 'Resuelve las cuentas y categorías pendientes antes de confirmar.'
+          : unreviewed > 0
+          ? 'Compara y marca todos los posibles duplicados antes de confirmar.'
+          : 'Selecciona y revisa un archivo completo antes de confirmar.';
       return PopScope(
         canPop:
             !c.selecting && !c.hasSession && c.phase != ImportPhase.confirming,
@@ -285,275 +316,460 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
         child: CallbackShortcuts(
           bindings: {const SingleActivator(LogicalKeyboardKey.escape): _leave},
           child: Scaffold(
-            appBar: AppBar(
-              automaticallyImplyLeading: false,
-              title: const Text('Revisión de importación'),
-            ),
             body: SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Wrap(
-                      spacing: 12,
-                      children: [
-                        TextButton(
-                          onPressed: c.phase == ImportPhase.confirming
-                              ? null
-                              : _leave,
-                          child: Text(widget.returnLabel),
-                        ),
-                        TextButton(
-                          onPressed: c.busy ? null : widget.onHistory,
-                          child: const Text('Historial de lotes'),
-                        ),
-                      ],
+                child: AfPageLayout(
+                  page: AfPageSlots(
+                    title: 'Revisión de importación',
+                    contextTrail: const Text(
+                      'Gestión / Importaciones · la revisión no escribe datos',
                     ),
-                    Semantics(
-                      liveRegion: true,
-                      header: true,
-                      child: Focus(
-                        focusNode: _headingFocus,
-                        child: Text(
-                          _phase,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                    ),
-                    if (c.supportsCsv) ...[
-                      const Text(
-                        'CSV histórico · UTF-8 · separador ; · cabeceras exactas. Un archivo por carga.',
-                      ),
-                      const Text(
-                        'Fila indica el ordinal del registro CSV. En textos multilínea puede diferir de la línea física.',
-                      ),
-                      OutlinedButton(
-                        onPressed:
-                            c.selecting ||
-                                c.phase == ImportPhase.confirming ||
-                                _dialog
-                            ? null
-                            : () => c.selectCsv(
-                                approveReplacement: _approveReplacement,
-                              ),
-                        child: Text(
-                          c.session == null
-                              ? 'Seleccionar CSV'
-                              : 'Volver a cargar CSV',
-                        ),
-                      ),
-                      if (c.selecting)
-                        const Text('Seleccionando y leyendo el archivo…'),
-                      if (c.selectionMessage != null)
-                        Semantics(
-                          liveRegion: true,
-                          child: Text(c.selectionMessage!),
-                        ),
-                      const Text(
-                        'Los errores se corrigen en el archivo original y se vuelve a cargar. No se editan filas aquí.',
-                      ),
-                    ],
-                    if (c.busy) ...[
-                      const LinearProgressIndicator(),
-                      Text(
-                        c.phase == ImportPhase.confirming
-                            ? 'Esperando el resultado de SQLite. No se puede cancelar la confirmación.'
-                            : 'Leyendo y validando el lote completo…',
-                      ),
-                    ],
-                    if (c.message != null)
-                      Semantics(liveRegion: true, child: Text(c.message!)),
-                    if (c.session != null) ...[
-                      Text(c.session!.file.originalName),
-                      Text(
-                        'Origen: ${importSourceLabel(c.session!.file.source)}',
-                      ),
-                    ],
-                    if (batch != null) ...[
-                      if (widget.onPending != null &&
-                          widget.pendingCount != null)
-                        ImportPendingLink(
-                          key: ValueKey((batch.id, _pendingRevision)),
-                          batchId: batch.id,
-                          open: widget.onPending!,
-                          count: widget.pendingCount!,
-                        ),
-                      Text(
-                        c.result is ImportConfirmed
-                            ? 'Lote guardado en la base local: ${batch.movementCount} reales y ${batch.budgetCount} presupuestos.'
-                            : 'Estos bytes ya se importaron. Cero altas; los registros corregidos o borrados se conservan.',
-                      ),
+                    actions: [
                       TextButton(
-                        focusNode: _batchFocus,
-                        onPressed: () async {
-                          await widget.onBatch(batch.id);
-                          if (!mounted) return;
-                          setState(() {
-                            _pendingRevision++;
-                          });
-                          _batchFocus.requestFocus();
-                        },
-                        child: const Text('Consultar lote y origen'),
+                        onPressed: c.phase == ImportPhase.confirming
+                            ? null
+                            : _leave,
+                        child: Text(widget.returnLabel),
                       ),
-                      for (final period in periods)
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            for (final destination in [
-                              'Estado',
-                              'Presupuesto',
-                              'Real',
-                            ])
-                              TextButton(
-                                onPressed: () =>
-                                    widget.onPeriod(destination, period),
-                                child: Text('$destination · $period'),
-                              ),
-                          ],
-                        ),
-                    ] else ...[
-                      for (final issue in [...?review?.issues, ...c.failures])
+                      AfAction(
+                        label: 'Historial de lotes',
+                        variant: AfActionVariant.link,
+                        onPressed: c.busy ? null : widget.onHistory,
+                      ),
+                    ],
+                    body: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 24,
+                      children: [
+                        ImportSteps(current: step),
                         Semantics(
                           liveRegion: true,
-                          child: Text(
-                            '${issue.sourceOrdinal == null
-                                ? 'Lote'
-                                : issue.sourceOrdinal == 1
-                                ? 'Cabecera · registro 1'
-                                : 'Fila ${issue.sourceOrdinal}'}${issue.field == null ? '' : ' · ${issue.field}'}: ${issue.reason}',
+                          header: true,
+                          child: Focus(
+                            focusNode: _headingFocus,
+                            child: Text(
+                              _phase,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                           ),
                         ),
-                      if (review != null) ...[
-                        if (c.session!.interpretation.issues.isNotEmpty) ...[
-                          const Text(
-                            'REAL: conteo y totales CSV/interno no disponibles.',
-                          ),
-                          const Text(
-                            'PRESUPUESTO: conteo y totales CSV/interno no disponibles.',
-                          ),
-                          const Text(
-                            'El archivo contiene errores. Cero cambios en la base local.',
-                          ),
-                        ] else ...[
-                          Text(
-                            'REAL: ${review.movementCount} · original ${importMoney(review.totalCents(budgets: false, original: true))} · interno ${importMoney(review.totalCents(budgets: false, original: false))}',
+                        if (c.busy) ...[
+                          const LinearProgressIndicator(
+                            semanticsLabel: 'Procesando importación',
                           ),
                           Text(
-                            'PRESUPUESTO: ${review.budgetCount} · original ${importMoney(review.totalCents(budgets: true, original: true))} · interno ${importMoney(review.totalCents(budgets: true, original: false))}',
+                            c.phase == ImportPhase.confirming
+                                ? 'Esperando el resultado de SQLite. No se puede cancelar la confirmación.'
+                                : 'Leyendo y validando el lote completo…',
                           ),
                         ],
-                        for (final pending in review.pendingReferences)
-                          Text(
-                            'Pendiente · filas ${pending.sourceOrdinals.join(', ')}: ${pending.reason}',
+                        if (c.message != null)
+                          AfStatus(
+                            kind: AfStatusKind.error,
+                            message: c.message!,
                           ),
-                        for (final ref in accountRefs)
-                          OutlinedButton(
-                            onPressed: c.busy
-                                ? null
-                                : () => _resolve(PendingImportAccount(ref)),
-                            child: Text(
-                              'Resolver cuenta: ${ref.name ?? 'selección global'}',
-                            ),
-                          ),
-                        for (final ref in categoryRefs)
-                          OutlinedButton(
-                            onPressed: c.busy
-                                ? null
-                                : () => _resolve(PendingImportCategory(ref)),
-                            child: Text(
-                              'Resolver categoría: ${ref.path.join(' / ')}',
-                            ),
-                          ),
-                        for (final overlap in review.overlaps)
-                          Card(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                  'Posible duplicado · fila ${overlap.sourceOrdinal}. Se conservarán ambos registros.',
+                        // Ningún diagnóstico bloqueante se oculta en el detalle.
+                        if (batch == null && issues.isNotEmpty)
+                          ImportSection(
+                            title: 'El lote contiene errores. No se puede confirmar.',
+                            children: [
+                              const Text(
+                                'Cero cambios. Corrige el archivo o las asignaciones y vuelve a revisar.',
+                              ),
+                              for (final issue in issues)
+                                Semantics(
+                                  liveRegion: true,
+                                  child: Text(
+                                    '${issue.sourceOrdinal == null
+                                        ? 'Lote'
+                                        : issue.sourceOrdinal == 1
+                                        ? 'Cabecera · registro 1'
+                                        : 'Fila ${issue.sourceOrdinal}'}'
+                                    '${issue.field == null ? '' : ' · ${issue.field}'}: ${issue.reason}',
+                                    style: const TextStyle(
+                                      color: AfTokens.error,
+                                    ),
+                                  ),
                                 ),
-                                for (final existing
-                                    in c.snapshot!.movements.where(
-                                      (m) => m.id == overlap.existingMovementId,
-                                    ))
-                                  Text(
-                                    'Registro actual ${existing.id}: ${existing.data.valueDate.value} · ${existing.data.concept} · ${importMoney(existing.data.amountCents)} · cuenta ${existing.data.accountId}',
-                                  ),
-                                CheckboxListTile(
-                                  title: Text(
-                                    'He comparado la fila ${overlap.sourceOrdinal} con ${overlap.existingMovementId}',
-                                  ),
-                                  value: c.reviewedOverlaps.contains(
-                                    overlap.key,
-                                  ),
-                                  onChanged: c.busy
-                                      ? null
-                                      : (v) => c.markOverlap(
-                                          overlap.key,
-                                          v ?? false,
-                                        ),
+                            ],
+                          ),
+                        if (c.supportsCsv)
+                          ImportSection(
+                            title: c.session == null
+                                ? 'Selecciona tu archivo'
+                                : 'Archivo seleccionado',
+                            children: [
+                              if (c.session != null) ...[
+                                Text(c.session!.file.originalName),
+                                Text(
+                                  'Origen: ${importSourceLabel(c.session!.file.source)}',
                                 ),
                               ],
-                            ),
-                          ),
-                        ImportRowsView(
-                          originalLabel: c.supportsCsv
-                              ? 'Importe CSV'
-                              : 'Original',
-                          rows: rows.skip(_page * 50).take(50).toList(),
-                          accountLabel: _account,
-                          categoryLabel: _category,
-                          statusLabel: _rowStatus,
-                          onOriginal: c.busy
-                              ? null
-                              : (r) => showImportOriginal(context, r),
-                        ),
-                        if (rows.length > 50)
-                          Wrap(
-                            spacing: 8,
+                              if (c.session == null)
+                                const Text(
+                                  'CSV histórico · UTF-8 · separador ; · cabeceras exactas. Un archivo por carga.',
+                                ),
+                              if (c.session == null)
+                                const Text(
+                                  'El presupuesto CSV tiene signo contrario al interno. La normalización la realiza el importador una sola vez.',
+                                ),
+                              AfAction(
+                                label: c.session == null
+                                    ? 'Seleccionar CSV'
+                                    : 'Volver a cargar CSV',
+                                icon: AfIcons.importFile,
+                                variant: c.session == null
+                                    ? AfActionVariant.primary
+                                    : AfActionVariant.secondary,
+                                onPressed: c.busy || _dialog
+                                    ? null
+                                    : () => c.selectCsv(
+                                        approveReplacement: _approveReplacement,
+                                      ),
+                              ),
+                              if (c.selecting)
+                                const Text(
+                                  'Seleccionando y leyendo el archivo…',
+                                ),
+                              if (c.selectionMessage != null)
+                                Semantics(
+                                  liveRegion: true,
+                                  child: Text(c.selectionMessage!),
+                                ),
+                              if (c.session == null)
+                                const Text(
+                                  'Los errores se corrigen en el archivo original y se vuelve a cargar. No se editan filas aquí.',
+                                ),
+                            ],
+                          )
+                        else if (c.session != null)
+                          ImportSection(
+                            title: 'Archivo seleccionado',
                             children: [
-                              TextButton(
-                                onPressed: c.busy || _page == 0
-                                    ? null
-                                    : () => setState(() => _page--),
-                                child: const Text('Página anterior'),
-                              ),
+                              Text(c.session!.file.originalName),
                               Text(
-                                'Página ${_page + 1} de ${(rows.length / 50).ceil()}',
-                              ),
-                              TextButton(
-                                onPressed:
-                                    c.busy || (_page + 1) * 50 >= rows.length
-                                    ? null
-                                    : () => setState(() => _page++),
-                                child: const Text('Página siguiente'),
+                                'Origen: ${importSourceLabel(c.session!.file.source)}',
                               ),
                             ],
                           ),
-                      ],
-                      Wrap(
-                        spacing: 12,
-                        children: [
-                          FilledButton(
-                            onPressed: c.canConfirm ? _confirm : null,
-                            child: const Text('Confirmar lote completo'),
-                          ),
-                          OutlinedButton(
-                            onPressed: c.busy
-                                ? null
-                                : c.session == null
-                                ? c.retryRead
-                                : c.refresh,
-                            child: const Text('Revalidar / reintentar'),
+                        if (batch != null)
+                          ImportSection(
+                            title: c.result is ImportConfirmed
+                                ? 'Importación completada'
+                                : 'Mismo contenido ya confirmado',
+                            tone: AfCardTone.real,
+                            children: [
+                              Text(
+                                c.result is ImportConfirmed
+                                    ? 'Lote guardado en la base local: ${batch.movementCount} reales y ${batch.budgetCount} presupuestos.'
+                                    : 'Estos bytes ya se importaron. Cero altas; los registros corregidos o borrados se conservan.',
+                              ),
+                              const Text(
+                                'Las fotos patrimoniales se conservan. El resultado corresponde al lote completo.',
+                              ),
+                              if (widget.onPending != null &&
+                                  widget.pendingCount != null)
+                                ImportPendingLink(
+                                  key: ValueKey((batch.id, _pendingRevision)),
+                                  batchId: batch.id,
+                                  open: widget.onPending!,
+                                  count: widget.pendingCount!,
+                                ),
+                              TextButton(
+                                focusNode: _batchFocus,
+                                onPressed: () async {
+                                  await widget.onBatch(batch.id);
+                                  if (!mounted) return;
+                                  setState(() {
+                                    _pendingRevision++;
+                                  });
+                                  _batchFocus.requestFocus();
+                                },
+                                child: const Text('Consultar lote y origen'),
+                              ),
+                              for (final period in periods)
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    for (final destination in [
+                                      'Estado',
+                                      'Presupuesto',
+                                      'Real',
+                                    ])
+                                      AfAction(
+                                        label: '$destination · $period',
+                                        variant: AfActionVariant.link,
+                                        onPressed: () => widget.onPeriod(
+                                          destination,
+                                          period,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                            ],
+                          )
+                        else ...[
+                          if (review != null) ...[
+                            AfResponsiveGrid(
+                              columns: 2,
+                              children: [
+                                for (final budgets in [false, true])
+                                  ImportSection(
+                                    title: budgets ? 'PRESUPUESTO' : 'REAL',
+                                    tone: budgets
+                                        ? AfCardTone.budget
+                                        : AfCardTone.real,
+                                    children: [
+                                      if (invalidFile)
+                                        Text(
+                                          '${budgets ? 'PRESUPUESTO' : 'REAL'}: conteo y totales CSV/interno no disponibles.',
+                                        )
+                                      else ...[
+                                        Text(
+                                          'Registros del archivo: ${budgets ? review.budgetCount : review.movementCount}',
+                                        ),
+                                        AfValueRow(
+                                          label: 'Total original',
+                                          value: AfNumericText(
+                                            importMoney(
+                                              review.totalCents(
+                                                budgets: budgets,
+                                                original: true,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const Text(
+                                          'Total normalizado · importe interno',
+                                        ),
+                                        Text(
+                                          importMoney(
+                                            review.totalCents(
+                                              budgets: budgets,
+                                              original: false,
+                                            ),
+                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium
+                                              ?.copyWith(
+                                                fontFeatures: const [
+                                                  FontFeature.tabularFigures(),
+                                                ],
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                        Text(
+                                          budgets
+                                              ? 'Sin cuenta. Categorías obligatorias resueltas antes de confirmar.'
+                                              : 'Cuenta obligatoria. Los reales sin categoría quedan pendientes de categorizar.',
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                              ],
+                            ),
+                            if (invalidFile)
+                              const Text(
+                                'El archivo contiene errores. Cero cambios en la base local.',
+                              ),
+                            if (accountRefs.isNotEmpty ||
+                                categoryRefs.isNotEmpty)
+                              ImportSection(
+                                title: 'Asignación de referencias',
+                                children: [
+                                  const Text(
+                                    'Cada decisión se aplica a todas las filas de la misma referencia. Las altas preparadas solo se guardan al confirmar.',
+                                  ),
+                                  for (final pending
+                                      in review.pendingReferences)
+                                    Text(
+                                      'Pendiente · filas ${pending.sourceOrdinals.join(', ')}: ${pending.reason}',
+                                    ),
+                                  for (final ref in accountRefs) ...[
+                                    Text(
+                                      'Cuenta original: ${ref.name ?? 'selección global'} · destino: ${_account(rows.whereType<InterpretedMovement>().firstWhere((r) => r.account == ref))}',
+                                    ),
+                                    AfAction(
+                                      label:
+                                          'Resolver cuenta: ${ref.name ?? 'selección global'}',
+                                      onPressed: c.busy
+                                          ? null
+                                          : () => _resolve(
+                                              PendingImportAccount(ref),
+                                            ),
+                                    ),
+                                  ],
+                                  for (final ref in categoryRefs) ...[
+                                    Text(
+                                      'Categoría original: ${ref.path.join(' / ')} · destino: ${_category(ref)}',
+                                    ),
+                                    AfAction(
+                                      label:
+                                          'Resolver categoría: ${ref.path.join(' / ')}',
+                                      onPressed: c.busy
+                                          ? null
+                                          : () => _resolve(
+                                              PendingImportCategory(ref),
+                                            ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            if (review.overlaps.isNotEmpty)
+                              ImportSection(
+                                title: 'Revisa los posibles duplicados',
+                                children: [
+                                  const Text(
+                                    'No se eliminan filas por parecido. Los movimientos idénticos del mismo archivo se conservan.',
+                                  ),
+                                  for (final overlap in review.overlaps) ...[
+                                    Text(
+                                      'Posible duplicado · fila ${overlap.sourceOrdinal}. Se conservarán ambos registros.',
+                                    ),
+                                    for (final incoming in rows.where(
+                                      (r) =>
+                                          r.sourceOrdinal ==
+                                          overlap.sourceOrdinal,
+                                    ))
+                                      Text(
+                                        'Fila nueva: ${incoming.concept} · ${importMoney(incoming.amount.internalCents)}',
+                                      ),
+                                    for (final existing
+                                        in c.snapshot!.movements.where(
+                                          (m) =>
+                                              m.id ==
+                                              overlap.existingMovementId,
+                                        ))
+                                      Text(
+                                        'Registro actual ${existing.id}: ${existing.data.valueDate.value} · ${existing.data.concept} · ${importMoney(existing.data.amountCents)} · cuenta ${existing.data.accountId}',
+                                      ),
+                                    CheckboxListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: Text(
+                                        'He comparado la fila ${overlap.sourceOrdinal} con ${overlap.existingMovementId}',
+                                      ),
+                                      value: c.reviewedOverlaps.contains(
+                                        overlap.key,
+                                      ),
+                                      onChanged: c.busy
+                                          ? null
+                                          : (v) => c.markOverlap(
+                                              overlap.key,
+                                              v ?? false,
+                                            ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            AfCard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                spacing: 12,
+                                children: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        setState(() => _details = !_details),
+                                    child: Text(
+                                      _details
+                                          ? 'Ocultar detalle de filas'
+                                          : 'Ver detalle de filas',
+                                    ),
+                                  ),
+                                  Text(
+                                    '${rows.length} filas interpretadas · originales, importes normalizados, cuentas y categorías.',
+                                  ),
+                                  if (_details) ...[
+                                    const Text(
+                                      'Fila indica el ordinal del registro CSV. En textos multilínea puede diferir de la línea física.',
+                                    ),
+                                    ImportRowsView(
+                                      originalLabel: c.supportsCsv
+                                          ? 'Importe CSV'
+                                          : 'Original',
+                                      rows: rows
+                                          .skip(_page * 50)
+                                          .take(50)
+                                          .toList(),
+                                      accountLabel: _account,
+                                      categoryLabel: _category,
+                                      statusLabel: _rowStatus,
+                                      onOriginal: c.busy
+                                          ? null
+                                          : (r) =>
+                                                showImportOriginal(context, r),
+                                    ),
+                                    if (rows.length > 50)
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: [
+                                          TextButton(
+                                            onPressed: c.busy || _page == 0
+                                                ? null
+                                                : () => setState(() => _page--),
+                                            child: const Text(
+                                              'Página anterior',
+                                            ),
+                                          ),
+                                          Text(
+                                            'Página ${_page + 1} de ${(rows.length / 50).ceil()}',
+                                          ),
+                                          TextButton(
+                                            onPressed:
+                                                c.busy ||
+                                                    (_page + 1) * 50 >=
+                                                        rows.length
+                                                ? null
+                                                : () => setState(() => _page++),
+                                            child: const Text(
+                                              'Página siguiente',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                          ImportSection(
+                            title: 'Confirmar el lote completo',
+                            children: [
+                              if (!c.canConfirm) Text(blockedReason),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 8,
+                                children: [
+                                  FilledButton(
+                                    onPressed: c.canConfirm ? _confirm : null,
+                                    child: const Text(
+                                      'Confirmar lote completo',
+                                    ),
+                                  ),
+                                  AfAction(
+                                    label: 'Revalidar / reintentar',
+                                    onPressed: c.busy || !c.hasSession
+                                        ? null
+                                        : c.session == null
+                                        ? c.retryRead
+                                        : c.refresh,
+                                  ),
+                                ],
+                              ),
+                              const Text(
+                                'Solo se confirma el lote válido completo. Revisar y cancelar no guarda datos.',
+                              ),
+                              const Text(
+                                'La confirmación vuelve a comprobar referencias, conflictos y huella. Un fallo revierte el lote completo.',
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                      const Text(
-                        'Solo se confirma el lote válido completo. Revisar y cancelar no guarda datos.',
-                      ),
-                    ],
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

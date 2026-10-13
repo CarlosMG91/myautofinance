@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../importing.dart';
 import '../../movements/movements.dart';
+import '../../../ui/autofinance_ui.dart';
 
 /// Relee los pendientes actuales sin alterar los conteos originales del lote.
 class ImportPendingLink extends StatefulWidget {
@@ -199,7 +200,7 @@ class ImportRowsView extends StatelessWidget {
           child: DataTable(
             columnSpacing: 20,
             dataRowMinHeight: 56,
-            dataRowMaxHeight: 80,
+            dataRowMaxHeight: double.infinity,
             columns: [
               for (final label in labels) DataColumn(label: Text(label)),
               const DataColumn(label: Text('Origen')),
@@ -208,15 +209,17 @@ class ImportRowsView extends StatelessWidget {
               for (final row in rows)
                 DataRow(
                   cells: [
-                    for (final value in values(row))
+                    for (final entry in values(row).asMap().entries)
                       DataCell(
                         ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 220),
-                          child: Text(
-                            value,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
+                          constraints: BoxConstraints(
+                            maxWidth: entry.key == 4 || entry.key == 5
+                                ? double.infinity
+                                : 260,
                           ),
+                          child: entry.key == 4 || entry.key == 5
+                              ? AfNumericText(entry.value)
+                              : Text(entry.value),
                         ),
                       ),
                     DataCell(
@@ -236,9 +239,9 @@ class ImportRowsView extends StatelessWidget {
       return Column(
         children: [
           for (final row in rows)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: AfCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

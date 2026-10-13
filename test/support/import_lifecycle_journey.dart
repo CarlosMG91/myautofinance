@@ -214,6 +214,8 @@ Future<void> importLifecycleJourney(
         .widget<ImportReviewScreen>(find.byType(ImportReviewScreen))
         .controller;
     expect(controller.canConfirm, isFalse);
+    expect(find.byType(DataTable), findsNothing);
+    await press('Ver detalle de filas');
     expect(find.byType(DataTable), desktop ? findsOneWidget : findsNothing);
     expect(find.textContaining('Sin clasificar'), findsWidgets);
 

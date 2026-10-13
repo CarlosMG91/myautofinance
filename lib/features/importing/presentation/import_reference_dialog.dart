@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../importing.dart';
 import '../../wealth/wealth.dart';
 import 'import_widgets.dart';
+import '../../../ui/autofinance_ui.dart';
 
 /// Devuelve una decisión en memoria. Cerrar el diálogo nunca crea referencias.
 Future<Object?> chooseImportReference(
@@ -90,7 +91,14 @@ class _ReferenceDialogState extends State<_ReferenceDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 16,
               children: [
+                Text(switch (widget.reference) {
+                  PendingImportAccount(:final account) =>
+                    'Cuenta original: ${account.name ?? 'selección global'}',
+                  PendingImportCategory(:final category) =>
+                    'Categoría original: ${category.path.join(' / ')}',
+                }),
                 const Text(
                   'La decisión se aplica a todas las filas de esta referencia. Las altas se guardan junto al lote.',
                 ),
@@ -131,27 +139,27 @@ class _ReferenceDialogState extends State<_ReferenceDialog> {
                         _existing == null ? 'Elige una identidad.' : null,
                   ),
                 if (_create) ...[
-                  TextFormField(
+                  AfFormField(
                     controller: _name,
-                    decoration: const InputDecoration(labelText: 'Nombre'),
+                    label: 'Nombre',
+                    required: true,
                     validator: (v) => (v?.trim().isEmpty ?? true)
                         ? 'Escribe un nombre.'
                         : null,
                   ),
                   if (account) ...[
-                    TextFormField(
+                    AfFormField(
                       controller: _from,
-                      decoration: const InputDecoration(
-                        labelText: 'Vigente desde (AAAA-MM)',
-                      ),
+                      label: 'Vigente desde (AAAA-MM)',
+                      required: true,
+                      help: 'Primer mes en el que se puede usar la cuenta.',
                       validator: (v) =>
                           _month(v ?? '') == null ? 'Mes inválido.' : null,
                     ),
-                    TextFormField(
+                    AfFormField(
                       controller: _through,
-                      decoration: const InputDecoration(
-                        labelText: 'Vigente hasta (AAAA-MM, opcional)',
-                      ),
+                      label: 'Vigente hasta (AAAA-MM, opcional)',
+                      help: 'Deja el campo vacío si no tiene fecha de fin.',
                       validator: (v) => (v ?? '').isEmpty
                           ? null
                           : _month(v!) == null

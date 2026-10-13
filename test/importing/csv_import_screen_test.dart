@@ -101,20 +101,13 @@ void main() {
       await boot(t, width);
       selector.add(csv(validCsv));
       await tap(t, 'Seleccionar CSV');
-      expect(
-        find.textContaining('REAL: 1 · original −2,50 € · interno −2,50 €'),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining(
-          'PRESUPUESTO: 1 · original +40,00 € · interno −40,00 €',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('−2,50 €'), findsNWidgets(2));
+      expect(find.text('−40,00 €'), findsOneWidget);
       expect(c.canConfirm, isFalse);
       await t.runAsync(() => resolveCsv(c));
       await settle(t);
       expect(c.canConfirm, isTrue);
+      await tap(t, 'Ver detalle de filas');
       if (width == 1440) {
         expect(find.byType(DataTable), findsOneWidget);
       } else {
