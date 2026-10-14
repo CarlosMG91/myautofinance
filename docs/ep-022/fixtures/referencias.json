@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "syntheticOnly": true,
+  "currency": "EUR",
+  "cases": {
+    "F": {
+      "year": 2026,
+      "movements": [
+        ["f-001", "2026-01-05", "ing-salario", 310000],
+        ["f-002", "2026-01-06", "viv-alquiler", -100000],
+        ["f-003", "2026-01-07", "ali-compra", -35025],
+        ["f-004", "2026-01-08", "aho-cuenta", -50000],
+        ["f-005", "2026-01-09", "ocio-raiz", -1000],
+        ["f-006", "2026-01-09", "ocio-raiz", -1000],
+        ["f-007", "2026-02-05", "ing-salario", 302000],
+        ["f-008", "2026-02-06", "viv-alquiler", -100000],
+        ["f-009", "2026-02-07", "ali-compra", -42010],
+        ["f-010", "2026-02-08", "aho-cuenta", -50000]
+      ],
+      "directByCategory": {"ing-salario": 612000, "viv-alquiler": -200000, "ali-compra": -77035, "aho-cuenta": -100000, "ocio-raiz": -2000},
+      "monthlyTotalCents": [122975, 109990, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "annualTotalCents": 232965,
+      "rootAnnualCents": {"ingresos": 612000, "vivienda": -200000, "alimentacion": -77035, "ahorro": -100000, "ocio": -2000},
+      "details": {"ocio-enero": ["f-005", "f-006"]}
+    },
+    "J": {
+      "base": "F",
+      "year": 2026,
+      "addedMovements": [
+        ["j-001", "2026-01-10", "alimentacion", -1200],
+        ["j-002", "2026-01-11", "supermercado", 200],
+        ["j-003", "2026-01-12", null, 700],
+        ["j-004", "2026-01-13", null, -300],
+        ["j-005", "2026-01-14", "aho-cuenta", 500],
+        ["j-006", "2026-01-15", "ing-salario", -400]
+      ],
+      "directByCategory": {"alimentacion": -1200, "supermercado": 200, "compra-semanal": -35025, "aho-cuenta": -99500, "ing-salario": 608000, "unclassified": 400},
+      "monthlyTotalCents": [122475, 109990, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "annualTotalCents": 232465,
+      "rootAnnualCents": {"ingresos": 608000, "vivienda": -200000, "alimentacion": -78235, "ahorro": -99500, "ocio": -2000, "unclassified": 400},
+      "details": {"unclassified-enero": ["j-003", "j-004"]}
+    },
+    "K": {
+      "base": "F",
+      "year": 2026,
+      "addedMovements": [["k-001", "2026-01-16", "aho-cuenta", 50000, "cuenta-ahorro"]],
+      "directByCategory": {"aho-cuenta": -50000},
+      "monthlyTotalCents": [172975, 109990, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "annualTotalCents": 282965,
+      "rootAnnualCents": {"ahorro": -50000},
+      "details": {"ahorro-enero": ["f-004", "k-001"]}
+    },
+    "L": {
+      "year": 2026,
+      "categories": [
+        {"id": "ingresos", "parent": null, "name": "INGRESOS", "status": "active", "isIncome": true},
+        {"id": "salario", "parent": "ingresos", "name": "SALARIO", "status": "active", "isIncome": true},
+        {"id": "impuestos", "parent": "salario", "name": "IMPUESTOS", "status": "active", "isIncome": true},
+        {"id": "nomina", "parent": "salario", "name": "NÓMINA", "status": "active", "isIncome": true},
+        {"id": "gastos", "parent": null, "name": "GASTOS", "status": "active", "isIncome": false}
+      ],
+      "movements": [
+        ["l-001", "2026-01-05", "salario", 300000],
+        ["l-002", "2026-01-06", "impuestos", -60000]
+      ],
+      "monthlyBudgetsCents": {"everyMonth": {"nomina": 300000, "impuestos": -60000}},
+      "directByCategory": {"salario": 300000, "impuestos": -60000, "nomina": 0},
+      "annualDirectByCategoryCents": {"salario": 300000, "impuestos": -60000, "nomina": 0},
+      "monthlyTotalCents": [240000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "annualTotalCents": 240000,
+      "rootAnnualCents": {"ingresos": 240000, "gastos": 0},
+      "details": {"enero-salario": ["l-001"], "enero-impuestos": ["l-002"]}
+    },
+    "limitesYArchivo": {
+      "categories": [
+        {"id": "cat-archivada", "parent": null, "name": "Antigua", "status": "archived", "currentPath": ["cat-archivada", "cat-reubicada"]},
+        {"id": "cat-reubicada", "parent": "cat-archivada", "name": "Subrama", "status": "archived", "currentPath": ["cat-archivada", "cat-reubicada"]}
+      ],
+      "movements": [
+        ["edge-2025-end", "2025-12-31", "cat-reubicada", 100],
+        ["edge-leap-day", "2024-02-29", "cat-reubicada", -100],
+        ["edge-2026-start", "2026-01-01", "cat-reubicada", 250],
+        ["edge-2026-end", "2026-12-31", "cat-reubicada", -250]
+      ],
+      "accounts": [{"id": "cuenta-cerrada", "status": "closed", "included": true}],
+      "yearTotalsCents": {"2024": -100, "2025": 100, "2026": 0, "2027": 0},
+      "zeroNetYearHasMovements": {"2026": ["edge-2026-start", "edge-2026-end"]},
+      "emptyYear": {"year": 2027, "totalCents": 0, "movementCount": 0}
+    }
+  }
+}
