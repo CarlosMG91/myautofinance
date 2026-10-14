@@ -4,6 +4,7 @@ import '../features/importing/presentation/import_controller.dart';
 import '../features/importing/importing.dart' show LocalCsvSelector;
 import '../features/budget/presentation/budget_source.dart';
 import '../features/monthly_status/presentation/monthly_status_screen.dart';
+import '../features/actual_spending/presentation/annual_actual_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -40,6 +41,7 @@ class AutofinanceApp extends StatefulWidget {
     this.budgets,
     this.annualBudgetBuilder,
     this.monthlyStatus,
+    this.annualActual,
     this.imports,
     this.csvSelector,
     this.navigationSession,
@@ -59,6 +61,7 @@ class AutofinanceApp extends StatefulWidget {
   final BudgetLoader? budgets;
   final AnnualBudgetBuilder? annualBudgetBuilder;
   final MonthlyStatusLoader? monthlyStatus;
+  final AnnualActualLoader? annualActual;
   final ImportServicesLoader? imports;
   final LocalCsvSelector? csvSelector;
   final NavigationSession? navigationSession;
@@ -145,6 +148,8 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
             annualBudgetBuilder: widget.annualBudgetBuilder,
             monthlyStatus:
                 widget.monthlyStatus ?? widget.localSession?.monthlyStatus,
+            annualActual:
+                widget.annualActual ?? widget.localSession?.annualActual,
             imports: widget.imports ?? widget.localSession?.imports,
             csvSelector: widget.csvSelector,
             allowTestImports: widget.config.environment == AppEnvironment.test,
@@ -164,6 +169,8 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
           annualBudgetBuilder: widget.annualBudgetBuilder,
           monthlyStatus:
               widget.monthlyStatus ?? widget.localSession?.monthlyStatus,
+          annualActual:
+              widget.annualActual ?? widget.localSession?.annualActual,
           imports: widget.imports ?? widget.localSession?.imports,
           csvSelector: widget.csvSelector,
           allowTestImports: widget.config.environment == AppEnvironment.test,

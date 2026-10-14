@@ -21,11 +21,13 @@ class AfBarDatum {
     required this.value,
     required this.role,
     this.onPressed,
+    this.focusNode,
   });
   final String label;
   final AfChartValue value;
   final AfSeriesRole role;
   final VoidCallback? onPressed;
+  final FocusNode? focusNode;
 }
 
 class AfTimePoint {
@@ -34,6 +36,7 @@ class AfTimePoint {
     required this.label,
     required this.value,
     this.onPressed,
+    this.focusNode,
   });
 
   /// Índice mensual absoluto (p. ej. year * 12 + month - 1), nunca posición visual.
@@ -41,6 +44,7 @@ class AfTimePoint {
   final String label;
   final AfChartValue value;
   final VoidCallback? onPressed;
+  final FocusNode? focusNode;
 }
 
 class AfTimeSeries {
@@ -128,6 +132,7 @@ class AfBarChart extends StatelessWidget {
             label: datum.label,
             value: AfNumericText(datum.value.formatted),
             onPressed: datum.onPressed,
+            focusNode: datum.focusNode,
           ),
       ],
     );
@@ -192,6 +197,7 @@ class AfTimeChart extends StatelessWidget {
               contextLabel: item.label,
               value: AfNumericText(point.value.formatted),
               onPressed: point.onPressed,
+              focusNode: point.focusNode,
             ),
         ],
       ],

@@ -476,6 +476,8 @@ class AfDetailTable extends StatefulWidget {
     this.height = 420,
     this.labelWidth = 200,
     this.cellWidth = 160,
+    this.horizontalController,
+    this.verticalController,
   });
   final String caption;
   final List<String> columns;
@@ -483,17 +485,56 @@ class AfDetailTable extends StatefulWidget {
   final double height;
   final double labelWidth;
   final double cellWidth;
+
+  /// El consumidor conserva posición al releer o reconstruir el detalle.
+  final ScrollController? horizontalController, verticalController;
   @override
   State<AfDetailTable> createState() => _AfDetailTableState();
 }
 
 class _AfDetailTableState extends State<AfDetailTable> {
-  final _horizontal = ScrollController();
-  final _vertical = ScrollController();
+  final _ownedHorizontal = ScrollController();
+  final _ownedVertical = ScrollController();
+  final _header = ScrollController();
+  bool _syncing = false;
+  ScrollController get _horizontal =>
+      widget.horizontalController ?? _ownedHorizontal;
+  ScrollController get _vertical => widget.verticalController ?? _ownedVertical;
+  @override
+  void initState() {
+    super.initState();
+    _horizontal.addListener(_syncBody);
+    _header.addListener(_syncHeader);
+  }
+
+  void _sync(ScrollController from, ScrollController to) {
+    if (_syncing || !from.hasClients || !to.hasClients) return;
+    _syncing = true;
+    to.jumpTo(from.offset.clamp(0, to.position.maxScrollExtent));
+    _syncing = false;
+  }
+
+  void _syncBody() => _sync(_horizontal, _header);
+  void _syncHeader() => _sync(_header, _horizontal);
+  @override
+  void didUpdateWidget(AfDetailTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final previous = oldWidget.horizontalController ?? _ownedHorizontal;
+    if (!identical(previous, _horizontal)) {
+      previous.removeListener(_syncBody);
+      _horizontal.addListener(_syncBody);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _syncBody();
+      });
+    }
+  }
+
   @override
   void dispose() {
-    _horizontal.dispose();
-    _vertical.dispose();
+    _horizontal.removeListener(_syncBody);
+    _header.dispose();
+    _ownedHorizontal.dispose();
+    _ownedVertical.dispose();
     super.dispose();
   }
 
@@ -565,7 +606,39 @@ class _AfDetailTableState extends State<AfDetailTable> {
         ),
         child: child,
       );
-      final tableWidth = labelWidth + cellWidth * widget.columns.length;
+      Widget labelCell(String label, double height, {AfDetailRow? row}) => cell(
+        Row(
+          children: [
+            if (row?.onExpand != null)
+              Semantics(
+                expanded: row!.expanded,
+                child: IconButton(
+                  tooltip: '${row.expanded ? 'Contraer' : 'Expandir'} $label',
+                  onPressed: row.onExpand,
+                  icon: AfIcon(row.expanded ? AfIcons.close : AfIcons.more),
+                ),
+              ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(left: (row?.depth ?? 0) * 12),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: row?.total == true
+                        ? FontWeight.w700
+                        : FontWeight.w400,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        labelWidth,
+        height,
+        header: row == null,
+      );
+      final bodyHeight = heights.fold<double>(0, (sum, height) => sum + height);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 8,
@@ -577,132 +650,104 @@ class _AfDetailTableState extends State<AfDetailTable> {
           ),
           SizedBox(
             height: widget.height,
-            child: Scrollbar(
-              controller: _horizontal,
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                controller: _horizontal,
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: tableWidth,
-                  child: AnimatedBuilder(
-                    animation: _horizontal,
-                    builder: (context, _) {
-                      final offset = _horizontal.hasClients
-                          ? _horizontal.offset
-                          : 0.0;
-                      Widget labelCell(
-                        String label,
-                        double height, {
-                        AfDetailRow? row,
-                      }) => Transform.translate(
-                        offset: Offset(offset, 0),
-                        child: cell(
-                          Row(
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    labelCell('Concepto', headerHeight),
+                    Expanded(
+                      child: Scrollbar(
+                        controller: _header,
+                        thumbVisibility: true,
+                        child: SingleChildScrollView(
+                          controller: _header,
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
                             children: [
-                              if (row?.onExpand != null)
-                                Semantics(
-                                  expanded: row!.expanded,
-                                  child: IconButton(
-                                    tooltip: row.expanded
-                                        ? 'Contraer $label'
-                                        : 'Expandir $label',
-                                    onPressed: row.onExpand,
-                                    icon: AfIcon(
-                                      row.expanded
-                                          ? AfIcons.close
-                                          : AfIcons.more,
-                                    ),
-                                  ),
-                                ),
-                              Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    left: (row?.depth ?? 0) * 12,
-                                  ),
-                                  child: Text(
-                                    label,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: row?.total == true
-                                          ? FontWeight.w700
-                                          : FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          labelWidth,
-                          height,
-                          header: row == null,
-                        ),
-                      );
-                      Widget line(
-                        Widget label,
-                        List<Widget> values,
-                        double height, {
-                        bool header = false,
-                      }) => Stack(
-                        children: [
-                          Row(
-                            children: [
-                              SizedBox(width: labelWidth),
-                              for (final value in values)
-                                cell(value, cellWidth, height, header: header),
-                            ],
-                          ),
-                          label,
-                        ],
-                      );
-                      return Column(
-                        children: [
-                          line(
-                            labelCell('Concepto', headerHeight),
-                            [
                               for (final title in widget.columns)
-                                Semantics(
-                                  header: true,
-                                  child: Text(
-                                    title,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
+                                cell(
+                                  Semantics(
+                                    header: true,
+                                    child: Text(
+                                      title,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
+                                  cellWidth,
+                                  headerHeight,
+                                  header: true,
                                 ),
                             ],
-                            headerHeight,
-                            header: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: Scrollbar(
+                    controller: _vertical,
+                    thumbVisibility: true,
+                    child: SingleChildScrollView(
+                      controller: _vertical,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: labelWidth,
+                            child: Column(
+                              children: [
+                                for (var i = 0; i < widget.rows.length; i++)
+                                  labelCell(
+                                    widget.rows[i].label,
+                                    heights[i],
+                                    row: widget.rows[i],
+                                  ),
+                              ],
+                            ),
                           ),
                           Expanded(
-                            child: Scrollbar(
-                              controller: _vertical,
-                              thumbVisibility: true,
-                              child: ListView.builder(
-                                controller: _vertical,
-                                itemCount: widget.rows.length,
-                                itemBuilder: (context, index) {
-                                  final row = widget.rows[index];
-                                  return line(
-                                    labelCell(
-                                      row.label,
-                                      heights[index],
-                                      row: row,
-                                    ),
-                                    row.values,
-                                    heights[index],
-                                  );
-                                },
+                            child: SizedBox(
+                              height: bodyHeight,
+                              child: Scrollbar(
+                                controller: _horizontal,
+                                thumbVisibility: true,
+                                child: SingleChildScrollView(
+                                  controller: _horizontal,
+                                  scrollDirection: Axis.horizontal,
+                                  child: Column(
+                                    children: [
+                                      for (
+                                        var i = 0;
+                                        i < widget.rows.length;
+                                        i++
+                                      )
+                                        Row(
+                                          children: [
+                                            for (final value
+                                                in widget.rows[i].values)
+                                              cell(
+                                                value,
+                                                cellWidth,
+                                                heights[i],
+                                              ),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ],
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

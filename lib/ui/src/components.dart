@@ -271,6 +271,7 @@ class AfValueRow extends StatelessWidget {
     this.onPressed,
     this.icon,
     this.selected = false,
+    this.focusNode,
   });
   final String label;
   final Widget value;
@@ -278,6 +279,7 @@ class AfValueRow extends StatelessWidget {
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool selected;
+  final FocusNode? focusNode;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
@@ -328,6 +330,7 @@ class AfValueRow extends StatelessWidget {
           child: onPressed == null
               ? content
               : TextButton(
+                  focusNode: focusNode,
                   onPressed: onPressed,
                   style: TextButton.styleFrom(alignment: Alignment.centerLeft)
                       .copyWith(animationDuration: AfTokens.duration(context)),

@@ -6,6 +6,8 @@ import '../../features/importing/importing.dart' show LocalCsvSelector;
 import '../../features/importing/presentation/import_controller.dart';
 import 'budget_route.dart';
 import 'annual_budget_navigation.dart';
+import 'annual_actual_route.dart';
+import '../../features/actual_spending/presentation/annual_actual_screen.dart';
 import 'monthly_status_route.dart';
 import '../../features/monthly_status/presentation/monthly_status_screen.dart';
 import '../../features/budget/presentation/budget_source.dart';
@@ -57,6 +59,7 @@ abstract final class AppRouter {
     BudgetLoader? budgets,
     AnnualBudgetBuilder? annualBudgetBuilder,
     MonthlyStatusLoader? monthlyStatus,
+    AnnualActualLoader? annualActual,
     ImportServicesLoader? imports,
     LocalCsvSelector? csvSelector,
     bool allowTestImports = false,
@@ -165,6 +168,13 @@ abstract final class AppRouter {
           origin: origin,
           onReturned: refresh,
         ),
+      );
+    } else if (uri.path == AppRoutes.actualSpending && annualActual != null) {
+      page = AnnualActualRoute(
+        settings: originalSettings,
+        load: annualActual,
+        session: navigationSession,
+        detail: raw?.path == AppRoutes.actualDetail,
       );
     } else if (uri.path == AppRoutes.importHistory ||
         uri.path.startsWith('${AppRoutes.importHistory}/') == true) {

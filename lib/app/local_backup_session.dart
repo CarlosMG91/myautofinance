@@ -5,6 +5,8 @@ import 'import_factory.dart';
 import '../features/importing/presentation/import_controller.dart';
 import 'budget_factory.dart';
 import 'monthly_status_query_factory.dart';
+import 'annual_actual_query_factory.dart';
+import '../features/actual_spending/actual_spending.dart';
 import '../features/monthly_status/monthly_status.dart';
 import '../features/budget/presentation/budget_source.dart';
 import '../features/movements/presentation/movement_list_controller.dart';
@@ -53,6 +55,11 @@ class LocalBackupSession {
       createBudgetSource(await store.open(), categoryInvalidation);
 
   Future<MonthlyStatusQuery> monthlyStatus() async => createMonthlyStatusQuery(
+    database: await store.open(),
+    invalidation: categoryInvalidation,
+  );
+
+  Future<AnnualActualQuery> annualActual() async => createAnnualActualQuery(
     database: await store.open(),
     invalidation: categoryInvalidation,
   );
