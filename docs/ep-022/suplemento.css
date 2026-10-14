@@ -1,0 +1,17 @@
+.real-matrix{min-width:1900px;border-collapse:separate;border-spacing:0}
+.real-matrix td:first-child,.real-matrix th:first-child{min-width:250px;max-width:250px}
+.real-matrix td:first-child{background:var(--surface)}
+.real-matrix button.cell{min-height:48px;padding:8px}
+.real-matrix th,.real-matrix td{padding:8px 12px}
+.real-matrix td:first-child strong{display:block}
+.real-matrix .focused-month{background:var(--accent-tint)}
+.monthlycards .focused-month{border-left:3px solid var(--accent);padding-left:8px}
+.monthlycards .minirow{gap:12px;flex-wrap:wrap}
+.monthlycards .minirow span{min-width:0}
+.monthlycards.level-1{border-left:4px solid var(--accent)}
+.monthlycards.level-2{border-left:8px solid var(--accent)}
+.real-matrix .cell:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.real-matrix td:first-child{border-right:1px solid var(--border)}
+.bigtext .real-matrix td:first-child,.bigtext .real-matrix th:first-child{min-width:280px}
+.review p,.review label{overflow-wrap:anywhere}
+@media(min-width:840px){.mobilerows.flowlist{display:none}.bigtext .mobilerows.flowlist{display:flex}}
