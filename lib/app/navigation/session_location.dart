@@ -6,6 +6,7 @@ import 'budget_origin.dart';
 import 'app_routes.dart';
 import 'movement_links.dart';
 import 'monthly_status_origin.dart';
+import 'annual_actual_origin.dart';
 
 /// Resolución sin efectos: un error nunca cambia la sesión ni consulta datos.
 sealed class SessionLocationResult {
@@ -138,6 +139,26 @@ abstract final class SessionLocation {
         return ValidSessionLocation(
           MonthlyStatusOrigin.parse(
             uri
+                .replace(
+                  queryParameters: {
+                    ...p,
+                    'a': period.year.toString().padLeft(4, '0'),
+                    'm': period.month.toString().padLeft(2, '0'),
+                  },
+                )
+                .toString(),
+          ).context,
+        );
+      }
+      // Las entradas históricas de EP-016 conservan sus filtros opacos.
+      // Las instantáneas de retorno anual usan el contrato verificable.
+      if (destination == SessionDestination.actual &&
+          p.keys.any(
+            const {'abiertas', 'meses', 'posicion', 'foco'}.contains,
+          )) {
+        return ValidSessionLocation(
+          AnnualActualOrigin.parse(
+            raw
                 .replace(
                   queryParameters: {
                     ...p,

@@ -13,6 +13,7 @@ import 'navigation_context.dart';
 import 'primary_navigation.dart';
 import '../../ui/autofinance_ui.dart';
 import 'monthly_status_origin.dart';
+import 'annual_actual_origin.dart';
 import '../category_selector_navigation.dart';
 import '../../features/movements/presentation/category_tree_screen.dart';
 
@@ -22,6 +23,12 @@ class MovementListOrigin {
   final NavigationContext? context;
   String get label {
     final uri = Uri.tryParse(route);
+    if (const {
+      AppRoutes.actualSpending,
+      AppRoutes.actualDetail,
+    }.contains(uri?.path)) {
+      return 'Real anual, ${uri?.queryParameters['a']}';
+    }
     for (final destination in AppRoutes.destinations) {
       if (destination.path == uri?.path) {
         final a = uri?.queryParameters['a'];
@@ -230,6 +237,12 @@ class _MovementListRouteState extends State<MovementListRoute> {
                 : null;
             final restored =
                 saved ??
+                (const {
+                      AppRoutes.actualSpending,
+                      AppRoutes.actualDetail,
+                    }.contains(Uri.parse(origin).path)
+                    ? AnnualActualOrigin.parse(origin).context
+                    : null) ??
                 (const {
                           AppRoutes.monthlyStatus,
                           AppRoutes.start,

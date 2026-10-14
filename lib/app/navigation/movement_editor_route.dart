@@ -125,8 +125,9 @@ class _MovementEditorRouteState extends State<MovementEditorRoute> {
         onSaved: (saved) {
           back(saved);
           final outside = origin == null
-              ? saved.data.valueDate.value.substring(0, 7) !=
-                    date.value.substring(0, 7)
+              ? saved.data.valueDate.compareTo(query.from) < 0 ||
+                    query.until != null &&
+                        saved.data.valueDate.compareTo(query.until!) >= 0
               : saved.data.valueDate.compareTo(origin.from) < 0 ||
                     origin.until != null &&
                         saved.data.valueDate.compareTo(origin.until!) >= 0;
