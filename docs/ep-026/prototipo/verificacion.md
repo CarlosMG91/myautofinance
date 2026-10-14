@@ -1,5 +1,10 @@
 # Verificación · MA-TSK-207 · v1
 
+Actualización de T14 (2026-10-14): este informe conserva el estado de la
+verificación original. La aprobación posterior está acreditada en
+[`aprobacion.md`](aprobacion.md), incluido `approvedAt`; la validación de la app
+está en [`../validacion-integral.md`](../validacion-integral.md).
+
 Fecha: **2026-10-12**. Artefacto propuesto, **pendiente de aprobación humana**.
 Rama configurada del checkout: `ticket/ma-tsk-113`; remoto `origin` de este
 proyecto. La entrega propia se limita a `docs/ep-026/prototipo/`. README,

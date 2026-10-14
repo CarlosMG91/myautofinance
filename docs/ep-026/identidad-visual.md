@@ -254,3 +254,13 @@ app/features/data desde el kit. Estados Favorable/Desfavorable del kit son de
 presentación, no nuevo motor. Las pruebas de T05 deben verificar semántica,
 texto ampliado, contraste, valores negativos/cero/ausentes y assets sin red.
 Ni esta guía ni sus capturas conceden la aprobación o la integración nativa.
+
+## Referencia vigente y revisión de implementación
+
+La propuesta global v1 fue aceptada explícitamente; su evidencia y SHA-256
+están en [`prototipo/aprobacion.md`](prototipo/aprobacion.md). El kit de
+`lib/ui/autofinance_ui.dart` materializa la identidad; las pantallas deben
+componerlo con cifras y operaciones de sus propietarios. La guía de revisión
+vigente es [`validacion-integral.md`](validacion-integral.md), con cobertura,
+capturas de ejecución nativa y límites. No considerar integrada una vista
+que siga siendo marcador, ni sustituir la aceptación visual final con builds.

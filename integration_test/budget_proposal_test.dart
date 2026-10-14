@@ -18,6 +18,7 @@ import 'package:myautofinance/app/regional.dart';
 import 'package:myautofinance/features/budget/budget.dart';
 import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/features/wealth/wealth.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -47,23 +48,25 @@ void main() {
       );
       var db = open();
       final invalidation = CategoryReadInvalidation();
-      Future<void> settle() async {
-        for (var i = 0; i < 15; i++) {
+      Future<void> settle({Finder? until}) async {
+        for (var i = 0; i < (until == null ? 15 : 300); i++) {
           await tester.runAsync(() async {
             await tester.pump();
             await Future<void>.delayed(const Duration(milliseconds: 20));
           });
           await tester.pump(const Duration(milliseconds: 100));
+          if (until != null && until.evaluate().isNotEmpty) break;
         }
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
+        if (until != null) expect(until, findsOneWidget);
       }
 
-      Future<void> tap(Finder finder) async {
+      Future<void> tap(Finder finder, {Finder? until}) async {
         await tester.ensureVisible(finder);
         await tester.pumpAndSettle();
         await tester.runAsync(() => tester.tap(finder));
-        await settle();
+        await settle(until: until);
       }
 
       try {
@@ -109,6 +112,7 @@ void main() {
         final source = createBudgetSource(db, invalidation);
         await tester.pumpWidget(
           MaterialApp(
+            theme: AfTheme.light(),
             locale: AppRegional.locale,
             supportedLocales: AppRegional.supportedLocales,
             localizationsDelegates: AppRegional.delegates,
@@ -138,10 +142,8 @@ void main() {
         expect((await budgets.get(original.id))!.data.amountCents, -10000);
         await tap(find.text('Proponer año siguiente'));
         await tap(find.text('Generar propuesta'));
-        if (!Platform.isWindows) {
-          await tap(find.text('Alimentación'));
-          await tap(find.text('Enero'));
-        }
+        // EP-026 muestra enero en la revisión mensual inicial. La antigua
+        // expansión categoría/mes abría ahora el dropdown y tapaba la edición.
         final edit = find.byKey(ValueKey('edit-$root-2027-01-01'));
         await tap(edit);
         await tester.enterText(
@@ -198,7 +200,11 @@ void main() {
             'He revisado la comparación y confirmo «Sustituir partidas»',
           ),
         );
-        await tap(find.widgetWithText(FilledButton, 'Sustituir partidas'));
+        // Esperar el acuse SQLite visible, no un plazo fijo de 300 ms.
+        await tap(
+          find.widgetWithText(FilledButton, 'Sustituir partidas'),
+          until: find.text('Propuesta guardada en 2027'),
+        );
         expect(find.text('Propuesta guardada en 2027'), findsOneWidget);
         await tester.pumpWidget(const SizedBox());
         await settle();

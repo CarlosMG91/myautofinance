@@ -1,5 +1,12 @@
 # MA-TSK-020 · Entrega para Flutter · v1
 
+Aviso vigente (2026-10-13): la apariencia y navegación de esta entrega han sido
+sustituidas por EP-026 v1, con [aceptación explícita](../ep-026/prototipo/aprobacion.md).
+Usar el [kit Flutter](../ep-026/flutter-kit.md) y el
+[traspaso vigente](../ep-026/prototipo/traspaso.md). EP-001 conserva autoridad
+financiera. La [validación integral](../ep-026/validacion-integral.md) distingue
+implementación, evidencia nativa y pendientes de aceptación final.
+
 Entrega del 2026-10-01 para Windows y Android; no implementa widgets. Epic Board, tablero **My autofinance**, confirma MA-TSK-019 `done` y la discusión humana «Propuesta visual aceptada: http://localhost:4310/mockups/autofinance-ma-tsk-019-v1.html». La copia retenida es [mockup-final.html](mockup-final.html), commit `711843d`. Las menciones de aprobación pendiente en documentos anteriores describen su estado histórico y quedan superadas por esta aceptación.
 
 ## Uso y autoridad

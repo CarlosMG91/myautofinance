@@ -1,7 +1,8 @@
 ﻿# Autofinance
 
 Aplicación de finanzas familiares para Windows y Android, en español (es-ES)
-y EUR. Las cinco vistas financieras siguen siendo marcadores técnicos.
+y EUR. Inicio ofrece un resumen visual y las vistas implementadas permiten
+abrir su detalle completo con el sistema de diseño EP-026.
 La recuperación local ya permite crear, consultar y restaurar copias SQLite
 desde Gestión → Copias locales, también si falla la apertura de la base activa.
 
@@ -29,7 +30,7 @@ flutter run -d <id> --dart-define=APP_ENV=development
 ajustes públicos incluidos en el binario; nunca introducir secretos. La
 [infraestructura SQLite](docs/ep-004/persistencia-local.md) se abre al arrancar,
 tras resolver restauraciones interrumpidas. Un fallo ofrece recuperación local;
-los marcadores técnicos no consultan repositorios financieros.
+los marcadores pendientes no consultan repositorios financieros.
 
 ## Verificación y compilaciones
 
@@ -72,15 +73,20 @@ Cada módulo publica su entrada `<nombre>.dart`; añadir domain, data y
 presentation cuando haya implementación. `app` inyecta adaptadores por
 constructor. Seguir [arquitectura y dependencias](docs/ep-003/arquitectura.md).
 
-Las rutas `/estado`, `/patrimonio`, `/presupuesto`, `/real` e `/indicadores`
-son vacías; `/` es un índice de desarrollo y `/error` un marcador técnico.
-EP-002 entrega el [diseño y flujos para Flutter](docs/ep-002/entrega-flutter.md),
-que registra la aprobación de MA-TSK-019. Las épicas funcionales sustituirán
-los marcadores dentro de su alcance. MA-TSK-058 incorpora únicamente las
-pantallas secundarias de recuperación local.
-Las épicas de datos definirán esquema SQLite, migraciones y puertos en los
-módulos propietarios; importación y Drive continúan pendientes. No copiar los
-servicios simulados del prototipo ni código del proyecto MyFinance.
+La entrada `/` redirige a `/inicio`. Inicio, Estado, Presupuesto, Movimientos,
+Patrimonio y Gestión componen el [kit Flutter](docs/ep-026/flutter-kit.md)
+con SQLite, consultas y operaciones financieras existentes. La apariencia y
+navegación vigentes son las del [prototipo EP-026 v1 aprobado](docs/ep-026/prototipo/aprobacion.md),
+que sustituye EP-002 conservando el contrato EP-001.
+
+Real anual, Indicadores y diagnóstico siguen pendientes de EP-022/023/025;
+EP-024 conserva los filtros adicionales y desgloses. Openbank productivo
+sigue pendiente de su propietario. La [validación integral de MA-TSK-217](docs/ep-026/validacion-integral.md)
+registra cobertura, pruebas, capturas nativas y límites. La
+[galería de evidencias](docs/ep-026/validacion-capturas/index.html) permite
+revisar Windows/Android y texto 200 %. El ticket y la épica requieren todavía
+las interfaces pendientes y aceptación visual final explícita del usuario.
+No copiar servicios simulados del prototipo ni código del proyecto MyFinance.
 
 ## Contrato funcional
 

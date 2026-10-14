@@ -1,0 +1,418 @@
+{
+  "runtime": {
+    "platform": "windows",
+    "dart": "3.13.0",
+    "capturedAtUtc": "2026-10-14T06:29:22.387323Z",
+    "origin": "Native Flutter RenderRepaintBoundary",
+    "surfaceSizeForced": true,
+    "textScaleForced": true,
+    "syntheticDataOnly": true
+  },
+  "captures": [
+    {
+      "file": "windows-1440-1-inicio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ab680fa9abfb6e49c2925f35499019e0b3466d221ccafa0dab294d496adb5fae",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-estado-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "aa450e54f8b691279bb889163ce5df1c7d996488df31b99ba1431baf3470d514",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-movimiento-borrador.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "fa21e5ea0ce6d268a50d18e09c3511f997a01b6dcfac95e15fa5d8438b8b31a9",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-inicio-retorno.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "8f2bfaace3ff6723eeecda7061dcce56eb4580bc263bc899f7e3fecec1baa615",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-presupuesto.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "88c14d03b73caec31451890e5b90e92508e4f93665c3c89d2f83e3999da560d0",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-presupuesto-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f37f2bc035ea3d5a31bce0c93c9706788cdf8fd7921626587d44536e7ad1eb55",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-patrimonio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "25eec24d7d9b8f328d5ff827fe87f644f2c11994f341df3f3088b29ddad1c545",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-patrimonio-detalle.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f9b282028f70d4bcfa9554077978ec5eb1b8ee36fc91d5fc4fe5bfb47fb0e8c8",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-importar.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d68519b19521787253378ac982eadb26a9dcad4e842738aa8adbb54401656db2",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-categorizar-vacio.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e8ac76d58ad053aa25436dabf34f0a51b32cdf578b976c93b622d46ccd1fdb30",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-real-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "8282212af3e71b8364dc54fadaf8428480b21ae5b9175493b7e9574f8fb1c6f3",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-indicadores-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0cb8965b3f89f0e590d3dcd86533194fc15e6142ab939b28f8d8d57c27ec5ef3",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-diagnostico-pendiente.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "05ed3e95a184088b95d5edca0bd81475844615a41fc4132124d3c2303145014d",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-inicio-sin-foto.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "defc9b9f45d89b3bbb7d9a2b7756e31d74886f5e971fbaa9256f896303a92fb7",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1440-1-movimientos-5004.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "afbb1065841a65697232e5c71f8758828ea0be1591bcc8b9caec5991cb8ca759",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-inicio.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "5561401c8d9b0aff8778cd53bebe7c3a1119e7c7c9a27c285611b7e57ec15ad1",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-estado-detalle.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "48f29ea6321e6c20f7cd28893d95778632ccdc850f731ab4f14fcc8441ce5860",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-movimiento-borrador.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "b485398be5fb8b8b396072f764e5410ec85f43b50799a5db3e7cee1f18d6da75",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-inicio-retorno.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "5f89682505c6fd638b59cd0ea4e8b018934f913f9386d62c7208fac1654844e6",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-presupuesto.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "8b8c5956ef733982ee795af83c3306957c74122aa8319feb8f72434826bbddfd",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-presupuesto-detalle.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "20eba5f2fe7b224c03bb4ed3dcfe5508d161780c7c1abfd489b5aab77fcaf7f6",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-patrimonio.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "c38e639d3f32d322b5ae5d5efd53c5410a38a473eab889c18f8d9765d021a1cc",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-patrimonio-detalle.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "10686b21661decde971190921a056904d03eef1c843e95e5b2a1e4b32625382a",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-importar.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "ad09993e20291bffaae1d2d2449a6c0f6a3987e28aae5fc4b8d4c0306f9fffa8",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-categorizar-vacio.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "1ca0e91cbedad3adea6681286418c6bb166c5fb86af02c87da7a68d7baee449c",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-real-pendiente.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "7ac04e5233e6c3545af49e0fc5c2d325b2fc35388ef47a9a112433b12046f7dd",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-indicadores-pendiente.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "f54ee16bc29ebd714131e006cc423b7c24a6311d2316efe98e9e5791b6c6ae2c",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-diagnostico-pendiente.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "03a34aa88fec43ad8f34af529564a9810a49e8763b19b8bd643a11dba8154704",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-1024-1-inicio-sin-foto.png",
+      "width": 1024,
+      "height": 768,
+      "sha256": "027a4bd3d58ce8142a382db5020866e1d05d6074c44262fc28258390fe6c4731",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-inicio.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "a5b8bd6c91ee5cae15d3eb5f8742e87817df1d1a9714087c382cc22dd461c222",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-inicio-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "7191ed806ffc97b24778d2902dc7307e5b18190704c7e0e5af4bfbc9081a93fc",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-estado-detalle.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "f4e87da59ea801e611d284dc3b744fd91d1f6589ee463ee02ab366bac903af5b",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-estado-detalle-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "39076904924c0734bc2658a2304bb1c5f0e86ae1a49c423ac81600c85bc529a7",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-movimiento-borrador.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "e50a446dd47ae80572264fa2b2b180beca5bc59f3017306c26b4479f84e061e4",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-movimiento-borrador-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "e8709e9180e98284cbc8bbea46410e88e69ba8a4cb1bfa4f863cd1fdaaba704f",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-inicio-retorno.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "4c1a2e79519278257b3ac4fd9fe2336fe32d5fdbe3f35e4c65f2ee28b3e8858c",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-inicio-retorno-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "9872e8c0a78ba9b39464129575b0487742b81905f19298ab951c8c49f70ef88a",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-presupuesto.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "8b0771d0e6b62edb290b879ac1fba9377770f24284b21b931301f88360a679e5",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-presupuesto-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "64a017a94a69a32bcf5813675f5e96d95587c7a4d0d720fb4413a379cdfbf8a9",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-presupuesto-detalle.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "8b0771d0e6b62edb290b879ac1fba9377770f24284b21b931301f88360a679e5",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-presupuesto-detalle-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "a38d91a625aa7e5c34285c13506ab4ce54977586ac90bf8e4e0fbd7b8404c815",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-patrimonio.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "627279ef390301fcdf055bd091e2ec5da9234b64d13065a548c5bf8dd76d1229",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-patrimonio-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "48d0dd30a7dee206628e6f91fc506e999cfaf606ecb517d125135e1a92ce8296",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-patrimonio-detalle.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "627279ef390301fcdf055bd091e2ec5da9234b64d13065a548c5bf8dd76d1229",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-patrimonio-detalle-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "2259aec65a241d6ca250531d1e7db31a39b8a69b73d938ff0c0a54c7f766dedf",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-importar.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "7930639b2fa585782f2a95761f2358cdf47ad3bc25c6fb7349396377ebbccfa2",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-importar-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "7930639b2fa585782f2a95761f2358cdf47ad3bc25c6fb7349396377ebbccfa2",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-categorizar-vacio.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "e0313bc220bd3d9c10669bf57ab327454c5111904052ac1ff918ac52241bac66",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-categorizar-vacio-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "503def1bd4490c9f010f47cab6b6989c85748db251260665d357d105b88f0139",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-real-pendiente.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "ef235001f6b858481dbef5113a1a53779f9a205a9d57c61694a64b2156dd9641",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-real-pendiente-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "72790b5e91906e7d1c76f0991587ff77d86d0bea4679addd0a86120af1624452",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-indicadores-pendiente.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "e6316bdfc67cd531322c96e532d679ede180e06941eaad25255796af6fcffaf0",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-indicadores-pendiente-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "0ca71dc2347126bb163eff82bdefae31be8c98987095fe128f46dc9698872b3a",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-diagnostico-pendiente.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "ef235001f6b858481dbef5113a1a53779f9a205a9d57c61694a64b2156dd9641",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-diagnostico-pendiente-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "f19705099930ac451c359d5e5e5b35b7b9ee285744ae9ea14cbca97d04a9ff1c",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-inicio-sin-foto.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "2e9d9a3fed2cb43db3db9a3cbca2b4eae33774f1512d9290c7414eac5b7dd376",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "windows-320-2-inicio-sin-foto-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "2d17eb555b0821e0bd42b3c70ece3a705b3f64d8a96d1829143d6a573b134978",
+      "origin": "native-global-journey"
+    }
+  ],
+  "importCaptures": [
+    "native-windows-seleccion.png",
+    "native-windows-resumen.png",
+    "native-windows-resultado.png"
+  ],
+  "limitations": "Viewport y escala forzados por el binding; sin marco del SO. Selector CSV y respuestas Drive sintéticos. Marcadores pendientes no acreditan integración ni aceptación visual."
+}

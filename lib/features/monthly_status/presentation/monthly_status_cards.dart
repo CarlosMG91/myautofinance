@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../ui/autofinance_ui.dart';
+
 /// Composición móvil de las mismas celdas y acciones que usa la tabla.
 /// Recibe importes ya presentados: no agrega ni interpreta datos financieros.
 class MonthlyStatusCards extends StatelessWidget {
@@ -26,10 +28,9 @@ class MonthlyStatusCards extends StatelessWidget {
       for (final entry in entries)
         Semantics(
           container: true,
-          child: Card(
-            margin: const EdgeInsets.symmetric(vertical: 6),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: AfCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

@@ -1,8 +1,9 @@
 # Traspaso de MA-TSK-207 a EP-026 y suplementos
 
-Estado: **propuesta v1, sin aprobación humana todavía**. El artefacto está
-conservado en el repositorio. La publicación para revisión no aprueba T04,
-no permite implementar T05–T13 y no cierra la épica.
+Estado: **v1 aceptada explícitamente**, con evidencia reconciliada en
+[`aprobacion.md`](aprobacion.md). El artefacto publicado coincide por SHA-256
+con el conservado en el repositorio. Esta aprobación permite la implementación;
+no sustituye la aceptación visual final de T14 ni cierra la épica.
 
 ## Fuentes y precedencia
 
@@ -15,11 +16,11 @@ no permite implementar T05–T13 y no cierra la épica.
    aprobado sustituyen la apariencia/navegación EP-002. No sustituyen sus
    reglas financieras ni las validaciones de sus propietarios.
 
-Al llegar la aprobación, registrar evidencia textual, fecha, versión,
-artefacto/hash y alcance en `aprobacion.md`. Actualizar entonces las referencias
-visuales en AGENTS.md, README y entrega de EP-002 con un enlace a ese registro.
-No anticipar ni fabricar dicha aprobación. Los cambios pedidos requieren
-una versión revisable y nueva evidencia antes del cierre.
+`aprobacion.md` registra evidencia textual, versión, artefacto/hash y alcance.
+La fecha procede del campo `approvedAt` del tablero, comprobado el 2026-10-14.
+Los cambios pedidos requieren una versión revisable y nueva
+evidencia antes del cierre. La validación nativa vigente y sus límites se
+registran en [`../validacion-integral.md`](../validacion-integral.md).
 
 ## Distribución de implementación
 
@@ -44,7 +45,7 @@ escalado nativo, SQLite o Drive; se verifican al implementar e integrar.
 
 ## Coordinación con EP-022/023/024/025
 
-Estados consultados el 2026-10-12: MA-TSK-174 terminado; 175–180 bloqueados;
+Estados consultados el 2026-10-14: MA-TSK-174 terminado; 175–180 bloqueados;
 EP-023/024/025 en backlog. Esta entrega solo coordina su representación.
 
 | Suplemento | Referencia de v1 | Condición de reutilización de aprobación |

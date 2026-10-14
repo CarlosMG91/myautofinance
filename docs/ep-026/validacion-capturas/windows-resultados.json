@@ -1,0 +1,52 @@
+[
+  {
+    "width": 1440.0,
+    "height": 900.0,
+    "textScale": 1.0,
+    "realUnavailable": true,
+    "indicatorsUnavailable": true,
+    "diagnosticsUnavailable": true,
+    "largeLoadMilliseconds": 1591,
+    "renderedRecords": 100,
+    "financialWrites": "Movimiento -10 a -9 EUR; foto principal 6000 a 0 EUR",
+    "pendingOwners": [
+      "EP-022",
+      "EP-023",
+      "EP-024",
+      "EP-025"
+    ],
+    "reopened": true
+  },
+  {
+    "width": 1024.0,
+    "height": 768.0,
+    "textScale": 1.0,
+    "realUnavailable": true,
+    "indicatorsUnavailable": true,
+    "diagnosticsUnavailable": true,
+    "financialWrites": "Movimiento -10 a -9 EUR; foto principal 6000 a 0 EUR",
+    "pendingOwners": [
+      "EP-022",
+      "EP-023",
+      "EP-024",
+      "EP-025"
+    ],
+    "reopened": true
+  },
+  {
+    "width": 320.0,
+    "height": 800.0,
+    "textScale": 2.0,
+    "realUnavailable": true,
+    "indicatorsUnavailable": true,
+    "diagnosticsUnavailable": true,
+    "financialWrites": "Movimiento -10 a -9 EUR; foto principal 6000 a 0 EUR",
+    "pendingOwners": [
+      "EP-022",
+      "EP-023",
+      "EP-024",
+      "EP-025"
+    ],
+    "reopened": true
+  }
+]

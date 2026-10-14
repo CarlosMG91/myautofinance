@@ -19,7 +19,7 @@ Este repositorio contiene una aplicación nueva de finanzas familiares, independ
 
 ## Diseño y entrega
 
-- EP-002 diseña las cinco vistas y flujos clave con tablas compactas en PC y tarjetas en Android. La implementación de pantallas Flutter espera la aprobación explícita del mockup de **MA-TSK-019**; la infraestructura puede avanzar antes.
+- EP-026 v1 es la referencia visual y de navegación vigente, aprobada explícitamente en MA-TSK-207; evidencia y hash en `docs/ep-026/prototipo/aprobacion.md`. Sustituye la apariencia de EP-002, conservando EP-001. Usar `lib/ui/autofinance_ui.dart`, resumen como entrada, detalle completo y adaptación Windows/Android. La aceptación visual final de MA-TSK-217 es independiente y no debe inferirse de tests o builds.
 - Usar datos sintéticos en prototipos y pruebas. No añadir extractos bancarios reales, credenciales, tokens ni bases de datos personales al repositorio.
 - Respetar el alcance y los archivos de otros tickets que estén ejecutándose en el mismo checkout. Antes de cambiar un contrato compartido, comprobar sus casos de referencia y las dependencias afectadas.
 - Verificar el comportamiento cambiado con las pruebas pertinentes; cuando exista el proyecto Flutter, ejecutar también los análisis y pruebas del módulo afectado. Informar qué se comprobó y qué quedó sin verificar.
@@ -42,13 +42,15 @@ Este repositorio contiene una aplicación nueva de finanzas familiares, independ
   cambio afecte plataformas. Windows necesita Visual Studio C++; Android SDK
   y JDK 17. Los builds CI usan estas mismas versiones y conservan artefactos
   durante 14 días; no añaden firma de distribución.
-- `/estado`, `/patrimonio`, `/presupuesto`, `/real` e `/indicadores` son
-  marcadores técnicos; `/` y `/error` tampoco son pantallas de producto.
-  `docs/ep-002/entrega-flutter.md` registra aprobación de MA-TSK-019 y concreta
-  el traspaso visual. Su implementación pertenece a las épicas funcionales,
-  fuera de MA-TSK-029; revisar esa evidencia y el ticket correspondiente.
-- SQLite, migraciones, importadores, lógica financiera y Google Drive quedan
-  para las épicas de datos/funciones. Definir puertos mínimos en su dominio
-  propietario sin usar simulaciones del prototipo como servicios reales.
+- `/` redirige a `/inicio`; Inicio, Estado, Presupuesto, Movimientos,
+  Patrimonio y Gestión tienen implementación. Real anual, Indicadores y
+  diagnóstico conservan propietarios EP-022/023/025; los filtros EP-024
+  también requieren su entrega. No duplicar sus motores ni convertir un
+  marcador en una funcionalidad simulada. La matriz de cobertura y la
+  validación vigente están en `docs/ep-026/validacion-integral.md`.
+- Reutilizar SQLite, migraciones, importadores, lógica financiera y copias
+  existentes. Definir los puertos mínimos en su dominio propietario sin usar
+  simulaciones del prototipo como servicios reales. Capturas del HTML,
+  goldens y capturas del runner nativo deben identificarse por su origen.
 - `APP_ENV` admite development/test/production y es público. No poner
   credenciales en dart-defines ni subir SDK, caches, builds o datos personales.

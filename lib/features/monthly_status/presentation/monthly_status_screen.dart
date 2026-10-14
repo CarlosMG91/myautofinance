@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../ui/autofinance_ui.dart';
+
 import '../../budget/budget.dart';
 import '../../movements/movements.dart';
 import '../domain/monthly_figure_detail.dart';
@@ -282,14 +284,17 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
           }
         },
         style: TextButton.styleFrom(
-          foregroundColor:
-              difference == null || MediaQuery.highContrastOf(context)
+          foregroundColor: MediaQuery.highContrastOf(context)
               ? null
+              : difference == null
+              ? key.endsWith(':previsto') && !missing
+                    ? AfTokens.seriesBudget
+                    : AfTokens.text
               : cents < 0
-              ? const Color(0xff9f2733)
+              ? AfTokens.unfavorable
               : cents > 0
-              ? const Color(0xff166534)
-              : const Color(0xff17212b),
+              ? AfTokens.favorable
+              : AfTokens.text,
           alignment: Alignment.centerRight,
           minimumSize: Size(48, compact ? 40 : 48),
           padding: const EdgeInsets.all(10),
@@ -514,39 +519,36 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: LayoutBuilder(
-              builder: (context, constraints) => Wrap(
-                spacing: 24,
-                runSpacing: 12,
-                children: [
-                  for (final (index, label) in [
-                    (0, 'Previsto agregado'),
-                    (2, 'Real agregado'),
-                    (3, 'Diferencia real − previsto'),
-                  ])
-                    SizedBox(
-                      width: constraints.maxWidth.clamp(0, 280),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(label),
-                          _figures(
-                            'resumen-$index',
-                            'Total del mes',
-                            data.total,
-                            data.total.actualCents,
-                            compact: false,
-                            emphasized: true,
-                          )[index],
-                        ],
-                      ),
+        AfCard(
+          child: LayoutBuilder(
+            builder: (context, constraints) => Wrap(
+              spacing: 24,
+              runSpacing: 12,
+              children: [
+                for (final (index, label) in [
+                  (0, 'Previsto agregado'),
+                  (2, 'Real agregado'),
+                  (3, 'Diferencia real − previsto'),
+                ])
+                  SizedBox(
+                    width: constraints.maxWidth.clamp(0, 280),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label),
+                        _figures(
+                          'resumen-$index',
+                          'Total del mes',
+                          data.total,
+                          data.total.actualCents,
+                          compact: false,
+                          emphasized: true,
+                        )[index],
+                      ],
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -579,10 +581,12 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
                 key: const ValueKey('monthly-status-table'),
                 columnWidths: const {0: FlexColumnWidth(1.8)},
                 defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                border: TableBorder.all(color: const Color(0xffdce2e8)),
+                border: TableBorder.all(color: AfTokens.border),
                 children: [
                   TableRow(
-                    decoration: const BoxDecoration(color: Color(0xffedf2f7)),
+                    decoration: const BoxDecoration(
+                      color: AfTokens.surfaceSubtle,
+                    ),
                     children: [
                       for (final label in [
                         'Categoría',
@@ -603,7 +607,11 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
                         ),
                     ],
                   ),
-                  for (final entry in entries(true)) TableRow(children: entry),
+                  for (final entry in entries(true))
+                    TableRow(
+                      decoration: const BoxDecoration(color: AfTokens.surface),
+                      children: entry,
+                    ),
                 ],
               );
             }

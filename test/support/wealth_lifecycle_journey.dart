@@ -17,6 +17,7 @@ import 'package:myautofinance/app/local_backup_session.dart';
 import 'package:myautofinance/features/movements/movements.dart'
     show MovementInput, ValueDate;
 import 'package:myautofinance/features/wealth/wealth.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 /// Rutas de producto y SQLite en archivo, compartidas con los runners nativos.
 /// La carpeta es siempre temporal y sintética, nunca la base de la instalación.
@@ -43,7 +44,7 @@ Future<void> wealthLifecycleJourney(
     return result as T;
   }
 
-  Future<void> settle() async {
+  Future<void> settle({Finder? until}) async {
     for (var turn = 0; turn < 300; turn++) {
       await tester.runAsync(() async {
         await tester.pump();
@@ -51,7 +52,16 @@ Future<void> wealthLifecycleJourney(
       });
       await tester.pump(const Duration(milliseconds: 100));
       if (turn >= 15 &&
-          find.byType(LinearProgressIndicator).evaluate().isEmpty) {
+          find.byType(LinearProgressIndicator).evaluate().isEmpty &&
+          find.byType(CircularProgressIndicator).evaluate().isEmpty &&
+          find
+              .byWidgetPredicate(
+                (widget) =>
+                    widget is AfStatus && widget.kind == AfStatusKind.loading,
+              )
+              .evaluate()
+              .isEmpty &&
+          (until == null || until.evaluate().isNotEmpty)) {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         return;
@@ -82,6 +92,7 @@ Future<void> wealthLifecycleJourney(
     (w) => w is TextField && w.decoration?.labelText == label,
   );
   Future<void> enter(Finder target, String text) async {
+    await settle(until: target);
     await tester.ensureVisible(target);
     await tester.enterText(target, text);
     await tester.pump();

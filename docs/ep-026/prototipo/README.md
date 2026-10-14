@@ -1,9 +1,11 @@
 # MA-TSK-207 · Prototipo integral v1
 
-Artefacto del **2026-10-12**, pendiente de aprobación humana explícita.
+Artefacto del **2026-10-12**, aceptado explícitamente en la discusión de T04;
+evidencia reconciliada el 2026-10-13 en [aprobacion.md](aprobacion.md).
 El ticket, sus requisitos T02/T03 y los criterios de MA-TSK-175/185/191/199
 se consultaron mediante `GET http://localhost:4310/api/data`, tablero
-**My autofinance**. No se han implementado tickets posteriores.
+**My autofinance**. T05–T13 figuran completados; T14 conserva la revisión
+nativa y la aceptación visual final como requisitos propios.
 
 ## Abrir y revisar
 
@@ -13,7 +15,7 @@ se consultaron mediante `GET http://localhost:4310/api/data`, tablero
   [interacciones](prototipo.js) y [generador](generar.mjs).
 - [Traspaso y cobertura de suplementos](traspaso.md).
 - [Verificación y capturas](verificacion.md).
-- [Registro de aprobación pendiente](aprobacion.md).
+- [Registro de aprobación v1](aprobacion.md).
 
 El HTML incluye los tres pesos Roboto de T03, sus tokens y SVG originales.
 No necesita red, dependencias, servidor de aplicación ni datos personales.

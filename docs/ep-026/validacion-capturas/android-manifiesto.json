@@ -1,0 +1,418 @@
+{
+  "runtime": {
+    "platform": "android",
+    "dart": "3.13.0",
+    "capturedAtUtc": "2026-10-14T07:13:00.610320Z",
+    "origin": "Native Flutter RenderRepaintBoundary",
+    "surfaceSizeForced": true,
+    "textScaleForced": true,
+    "syntheticDataOnly": true
+  },
+  "captures": [
+    {
+      "file": "android-412-1-inicio.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "c0ce7e2bcd6aad195f78beff06ce3134f84efd79934aa9b9ed533419916a83a2",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-estado-detalle.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "80ab0ae41e1b988e3ce56ad83e1f084c2dcce5ef4b6b757da5b9cbd435533c2e",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-movimiento-borrador.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "2ac2e7eda241afa1b12bfca220e0b5ef1fc0f9e0554ca63198ffe2f03f7baea9",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-inicio-retorno.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "20bcb33201983f48ec0607bbaf69f0e2a5ad7c8e31c79268fa02774f11db1fc4",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-presupuesto.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "da2a1a07b26406c9145575f8b6a7734b9b363830981342bc3f3e9c7a06fe45e5",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-presupuesto-detalle.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "7118d09d51bb5dca44b75ff95243e8db5593342c49f17ad1f99457258d7003f2",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-patrimonio.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "5584fc1fc14f697e9baebe81b3753b2efd389597a793863f07ea58adf27f9ce4",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-patrimonio-detalle.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "c1baf12d2b7ed0479e6f82d707b10b267a98bed93782dc56adb45f2c07accf86",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-importar.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "12fe5d0b3ac39f4413b3e100b509de5953bf17c49cb35ae916e41059162e42b1",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-categorizar-vacio.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "ab174947779dab79c37f5dc91a8182430c7d73ef8e4c72093c41156aad07f27b",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-real-pendiente.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "0f0b725e889e091116c5a58847d54ad696bb234d16ba20d881fad00dcf388695",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-indicadores-pendiente.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "9c65cf84daac8a696ccb69f7e24d0ff1d52b5870f3f62c14de87ce75b3be2356",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-diagnostico-pendiente.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "cf0e7e7522e8087b7f71bc35a91dec49b989bddc1b1f678a76e8a5df2912501d",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-inicio-sin-foto.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "b2187abe40f657a7c5733a4c0877b6228a2cc024c980a97d338fdda87471e82a",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-412-1-movimientos-5004.png",
+      "width": 412,
+      "height": 915,
+      "sha256": "652ffa8072545851d81556b0123032b3a298b54615df5cc7247a97364f202eed",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-inicio.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "c4b9aa78279931780cfe1d9b1a2831afd0e5a2be5b621be7ba5fe8f8a134758e",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-estado-detalle.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "fb45b3274fc9d2c81496072c76c080046fa2e77d84102f2ecbced1c772ec6e70",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-movimiento-borrador.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "a26ba9ef27194301ffafb81538f165360d92ebf010c717347f8dc7bc21a629e5",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-inicio-retorno.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "d21a477a9791f467d3e2c049a1628b73f96ece083380494eee244f5996f6f7b7",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-presupuesto.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "dca0ca8b081fa2b550a80c4eac1adfa56728a6de721b89e901a4a7455850d97e",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-presupuesto-detalle.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "123cfcf764a17eb761b0daa353868430666a239e98616bcc080428c1701fae51",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-patrimonio.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "eb8c1600dc346549eed14ec80840e1a8e668dce468008708d7fa8624884dc207",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-patrimonio-detalle.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "ee38d442c34cc5bec8a5a80c0b3f004bfb3bd3c3771496ca09b8117541aee57c",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-importar.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "f73fb3710120ebabfba28f6e7fac76634f08766903e05cb0af089876adf74035",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-categorizar-vacio.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "1ba4c1c37c8ce8f11ff360875f04877a03af5c2e3a09c07b058b4ef72fe508ae",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-real-pendiente.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "7c1524a6b4a5b71b60eef451d3cf134caedae79cc69dd6a297a658950d0ee1bf",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-indicadores-pendiente.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "12e05786015165fe727e190709f5c23212552f82394e7e505469ce9d5cd2d03b",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-diagnostico-pendiente.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "4bc7c4842809ff2fff9224ea6ceff470990761eacfe9d9d68deae650612db11e",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-360-1-inicio-sin-foto.png",
+      "width": 360,
+      "height": 800,
+      "sha256": "adf5e684bc43be67ce1785532e1b171ec38df158af47d036cdf4e4e0f38d96b3",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-inicio.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "24ae2dc978b36a0f190c883b71c0d3dff4e891a2d8b45fb77d42e37ab87d54a5",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-inicio-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "efa9da671c3061e95802252ad5aec1bf6280e99364ea61fbfe063a91e480952a",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-estado-detalle.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "b1cb1bfef956e6487cfd3fe5f8e890ad2e61ee079ccfadc053998a4bef910e19",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-estado-detalle-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "ff6d93674d1b666e631297151ac1f00dedc0ae081329142b05616d899b216268",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-movimiento-borrador.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "a9e156259dea4d9aca53becea54beaa125514590c0dc298bf089ded2bb7d21a9",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-movimiento-borrador-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "51e6dfdc78b26a2fdcedb638fd063a08a158f9344a71e1be3b35c0e575ebd342",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-inicio-retorno.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "d04f6d80df7a6627e0b91c75f607c8431d56618370d2c28db93c0906304dae18",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-inicio-retorno-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "9141b3f0c369caf72925a9c3bbbb52378c62f592f178a679bd3c9c5a60f1b9ae",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-presupuesto.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "639a40a4bcbb792ae8f8621db3e573ffbabbc92b1e0dd89b531a6776f71657f9",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-presupuesto-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "c66ac8b3bb0ea7673f96f34ee3fe8cc4542fa9740996def61796d4b99ef88338",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-presupuesto-detalle.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "639a40a4bcbb792ae8f8621db3e573ffbabbc92b1e0dd89b531a6776f71657f9",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-presupuesto-detalle-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "e7db7f7f3d7a43fd58c98e12151b80598d4eb6de51e4cb4a528c96784518eaea",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-patrimonio.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "3c0acaa88b7c72941e35ba34e202caec7c8397a804cb14de054929b9afe108af",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-patrimonio-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "6681a07702226aa9cb4770dafb1a79ba07cbe0b8e74782f6b3e2f36ce9c1504a",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-patrimonio-detalle.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "3c0acaa88b7c72941e35ba34e202caec7c8397a804cb14de054929b9afe108af",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-patrimonio-detalle-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "d49857f45bc47a7086608a00330e54069a2cac2783e62044c97537b4e2ddf110",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-importar.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "04865bd4d130fc2d721dbe1ada34e4fe44c90baff1a0743e2d14da1026b5ad26",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-importar-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "04865bd4d130fc2d721dbe1ada34e4fe44c90baff1a0743e2d14da1026b5ad26",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-categorizar-vacio.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "f1e5988e538927ee5a372845bf7dd82a2941fba253d3914e16e3c1699f8f8a8f",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-categorizar-vacio-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "55f910182f6c82b006cfadd5c40c38f4ba76088e8c9dc79109da51f1a54e058c",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-real-pendiente.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "71c94d974fef5988f1687e8a278da9503a6b2794d91bfb5b9c3939fb176ec0bf",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-real-pendiente-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "22108aebcd10e31c11da2e15235b2298942c44f25dde8e3516c9040fc2981412",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-indicadores-pendiente.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "e4ca54903195783fed28408e2489f67fd58b4f066ac005f5ddfbdd7d06672436",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-indicadores-pendiente-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "7911e6068e1fe13772b11d608945924395d24ef5f6a955fca609dcc509b87942",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-diagnostico-pendiente.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "71c94d974fef5988f1687e8a278da9503a6b2794d91bfb5b9c3939fb176ec0bf",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-diagnostico-pendiente-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "3e7cecbde5074d418693de4c8b8ce6e954487bbe19ce4256959603bc3a42121f",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-inicio-sin-foto.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "e813e28ead8691b7067fc263627d2e5146fdb8bf1f8004d53cf899f97a59d41d",
+      "origin": "native-global-journey"
+    },
+    {
+      "file": "android-320-2-inicio-sin-foto-contenido.png",
+      "width": 320,
+      "height": 800,
+      "sha256": "49f165deb5b8ee8fc37cd5c5f50cdc0ada901b0323472d5ddb562841ebf88ad2",
+      "origin": "native-global-journey"
+    }
+  ],
+  "importCaptures": [
+    "native-android-seleccion.png",
+    "native-android-resumen.png",
+    "native-android-resultado.png"
+  ],
+  "limitations": "Viewport y escala forzados por el binding; sin marco del SO. Selector CSV y respuestas Drive sintéticos. Marcadores pendientes no acreditan integración ni aceptación visual."
+}
