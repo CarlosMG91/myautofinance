@@ -10,6 +10,25 @@ import 'package:myautofinance/features/wealth/wealth.dart';
 void main() {
   const id = '00000000-0000-0000-0000-000000000001';
   final defaultMonth = Month(2026, 10);
+  test(
+    'Total general solo identifica un despliegue de meses, nunca una categoría',
+    () {
+      for (final context in [
+        NavigationContext(
+          destination: SessionDestination.actual,
+          period: NavigationPeriod(2026, 2),
+          branchId: 'total-general',
+        ),
+        NavigationContext(
+          destination: SessionDestination.actual,
+          period: NavigationPeriod(2026, 2),
+          filters: {'abiertas': 'total-general'},
+        ),
+      ]) {
+        expect(() => AnnualActualOrigin(context), throwsException);
+      }
+    },
+  );
   test('Contrato independiente: año/mes, rama/directo, total y NULL', () {
     for (final year in [1, 2024, 2026, 9999]) {
       for (final month in [null, 1, 2, 12]) {
@@ -68,7 +87,10 @@ void main() {
           period: NavigationPeriod(9999, 12),
           branchId: 'sin-clasificar',
           scope: MovementCategoryScope.direct,
-          filters: {'abiertas': id, 'meses': '$id,sin-clasificar'},
+          filters: {
+            'abiertas': id,
+            'meses': '$id,sin-clasificar,total-general',
+          },
           scrollOffset: 123.5,
           focus: '$id:anual',
         ),

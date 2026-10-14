@@ -306,45 +306,49 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Cambio año oculta datos, descarta respuesta tardía; error reintentable y vacío cero',
-    (tester) async {
-      final delayed = Completer<AnnualActualQuery>();
-      var calls = 0;
-      var fail = false;
-      await boot(
-        tester,
-        loader: () {
-          calls++;
-          if (calls == 2) return delayed.future;
-          if (fail) return Future.error(StateError('synthetic'));
-          return Future.value(query);
-        },
-      );
-      await session.selectYear(2027);
-      await tester.pump();
-      expect(find.byType(AfTimeChart), findsNothing);
-      expect(find.text('Cargando real anual…'), findsOneWidget);
-      await session.selectYear(2028);
-      await settle(tester);
-      expect(amount(tester, 'summary-all:year'), '0,00 €');
-      delayed.complete(query);
-      await settle(tester);
-      expect(
-        tester.widget<AfTimeChart>(find.byType(AfTimeChart)).period,
-        'Año 2028',
-      );
-      fail = true;
-      await session.selectYear(2029);
-      await settle(tester);
-      expect(find.byType(AfTimeChart), findsNothing);
-      expect(find.text('Reintentar'), findsOneWidget);
-      expect(find.text('0,00 €'), findsNothing);
-      fail = false;
-      await tap(tester, find.text('Reintentar'));
-      expect(amount(tester, 'summary-all:year'), '0,00 €');
-    },
-  );
+  for (final platform in [TargetPlatform.windows, TargetPlatform.android]) {
+    testWidgets(
+      '$platform: cambio año oculta datos, descarta respuesta tardía; error reintentable y vacío cero',
+      (tester) async {
+        final delayed = Completer<AnnualActualQuery>();
+        var calls = 0;
+        var fail = false;
+        await boot(
+          tester,
+          platform: platform,
+          width: platform == TargetPlatform.android ? 412 : 1440,
+          loader: () {
+            calls++;
+            if (calls == 2) return delayed.future;
+            if (fail) return Future.error(StateError('synthetic'));
+            return Future.value(query);
+          },
+        );
+        await session.selectYear(2027);
+        await tester.pump();
+        expect(find.byType(AfTimeChart), findsNothing);
+        expect(find.text('Cargando real anual…'), findsOneWidget);
+        await session.selectYear(2028);
+        await settle(tester);
+        expect(amount(tester, 'summary-all:year'), '0,00 €');
+        delayed.complete(query);
+        await settle(tester);
+        expect(
+          tester.widget<AfTimeChart>(find.byType(AfTimeChart)).period,
+          'Año 2028',
+        );
+        fail = true;
+        await session.selectYear(2029);
+        await settle(tester);
+        expect(find.byType(AfTimeChart), findsNothing);
+        expect(find.text('Reintentar'), findsOneWidget);
+        expect(find.text('0,00 €'), findsNothing);
+        fail = false;
+        await tap(tester, find.text('Reintentar'));
+        expect(amount(tester, 'summary-all:year'), '0,00 €');
+      },
+    );
+  }
 
   testWidgets(
     'Invalidación relee catálogo y nueva conexión tras restauración/importación',
@@ -460,12 +464,180 @@ void main() {
     expect(find.text('Error de navegación'), findsOneWidget);
   });
 
+  for (final (width, scale) in [(412.0, 1.0), (320.0, 2.0), (840.0, 1.0)]) {
+    testWidgets(
+      'Android tarjetas $width/$scale: origen, retorno y doce meses',
+      (tester) async {
+        await boot(
+          tester,
+          detail: true,
+          width: width,
+          scale: scale,
+          platform: TargetPlatform.android,
+        );
+        expect(find.byType(AfDetailTable), findsNothing);
+        expect(find.byKey(ValueKey('actual-card-$child')), findsNothing);
+        final branch = find.byKey(ValueKey('actual-branch-$root'));
+        await tester.ensureVisible(branch);
+        await tester.pumpAndSettle();
+        expect(tester.getSize(branch).height, greaterThanOrEqualTo(48));
+        await tap(tester, branch);
+        await tap(tester, find.byKey(ValueKey('actual-branch-$child')));
+        expect(find.byKey(ValueKey('actual-card-$leaf')), findsOneWidget);
+        expect(find.text('Nivel 3 de 3'), findsOneWidget);
+        expect(find.text('Ocio · Archivada'), findsOneWidget);
+        final data = await query.read(2026);
+        for (final row in [...data.rows, data.unclassified]) {
+          final id = row.categoryId ?? 'sin-clasificar';
+          expect(
+            amount(tester, '$id:year'),
+            AfAmount(row.annualTotal.amountCents).format(),
+          );
+          await tap(tester, find.byKey(ValueKey('actual-months-$id')));
+          for (final cell in row.months) {
+            expect(
+              amount(tester, '$id:${cell.month}'),
+              AfAmount(cell.total.amountCents).format(),
+            );
+          }
+        }
+        await tap(tester, find.byKey(const Key('actual-months-total-general')));
+        for (var m = 1; m <= 12; m++) {
+          expect(
+            amount(tester, 'all:$m'),
+            AfAmount(data.months[m - 1].amountCents).format(),
+          );
+        }
+        final zero = find.byKey(ValueKey('actual-$saving:1'));
+        await tester.ensureVisible(zero);
+        await tester.pumpAndSettle();
+        expect(tester.getSize(zero).height, greaterThanOrEqualTo(48));
+        final offset = session.context.scrollOffset;
+        await tap(tester, zero);
+        expect(find.text('Transferencia salida'), findsWidgets);
+        expect(find.text('Transferencia entrada'), findsWidgets);
+        await tester.binding.handlePopRoute();
+        await settle(tester);
+        expect(session.period, NavigationPeriod(2026, 2));
+        expect(session.context.filters['abiertas'], contains(child));
+        expect(session.context.filters['meses'], contains('total-general'));
+        expect(session.context.scrollOffset, closeTo(offset, .1));
+        expect(button(tester, '$saving:1').focusNode!.hasFocus, isTrue);
+        await tap(
+          tester,
+          find.byKey(const ValueKey('actual-sin-clasificar:1')),
+        );
+        expect(find.text('Sin categoría'), findsWidgets);
+        expect(find.text('Ingreso enero'), findsNothing);
+        await tester.binding.handlePopRoute();
+        await settle(tester);
+        await tap(
+          tester,
+          find.byKey(const ValueKey('actual-sin-clasificar:2')),
+        );
+        expect(find.textContaining('No hay movimientos'), findsWidgets);
+        await tester.binding.handlePopRoute();
+        await settle(tester);
+        await tap(tester, find.byKey(const Key('actual-months-total-general')));
+        expect(find.byKey(const Key('actual-all:12')), findsNothing);
+        await tap(tester, find.byKey(ValueKey('actual-branch-$root')));
+        expect(find.byKey(ValueKey('actual-card-$child')), findsNothing);
+        expect(find.byType(TextFormField), findsNothing);
+      },
+    );
+  }
+
+  testWidgets('Android Back en detalle sin pila reconstruye resumen', (
+    tester,
+  ) async {
+    await boot(
+      tester,
+      detail: true,
+      width: 412,
+      platform: TargetPlatform.android,
+    );
+    await tester.binding.handlePopRoute();
+    await settle(tester);
+    expect(find.byKey(const Key('actual-show-detail')), findsOneWidget);
+    expect(session.period, NavigationPeriod(2026, 2));
+    await tap(tester, find.byKey(const Key('actual-show-detail')));
+    await tester.binding.handlePopRoute();
+    await settle(tester);
+    expect(find.byKey(const Key('actual-show-detail')), findsOneWidget);
+  });
+
+  testWidgets('Android alta y refresco conservan mes, despliegues y foco', (
+    tester,
+  ) async {
+    await boot(
+      tester,
+      detail: true,
+      width: 412,
+      platform: TargetPlatform.android,
+    );
+    await tap(tester, find.byKey(ValueKey('actual-branch-$root')));
+    await tap(tester, find.byKey(ValueKey('actual-months-$root')));
+    await tap(tester, find.text('Añadir movimiento'));
+    final date = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Fecha de valor · AAAA-MM-DD'),
+    );
+    expect(date.controller!.text, '2026-02-01');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Concepto'),
+      'Alta Android sintética',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Importe firmado (EUR)'),
+      '-15',
+    );
+    await tap(tester, find.byType(DropdownButtonFormField<String>));
+    await tap(tester, find.textContaining('Cuenta sintética ·').last);
+    await tap(tester, find.text('Guardar movimiento'));
+    // El formulario devuelve al origen existente sin asignar una categoría.
+    if (find.text('Alta Android sintética').evaluate().isNotEmpty) {
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+    }
+    expect(session.period, NavigationPeriod(2026, 2));
+    expect(session.context.filters['abiertas'], contains(root));
+    expect(session.context.filters['meses'], contains(root));
+    expect(amount(tester, 'sin-clasificar:year'), '−11,00 €');
+    await tap(tester, find.byKey(ValueKey('actual-$root:year')));
+    await tester.runAsync(
+      () => movements.create(
+        MovementInput(
+          accountId: account,
+          valueDate: ValueDate(2026, 2, 1),
+          concept: 'Alta sintética febrero',
+          amountCents: -1500,
+          categoryId: root,
+        ),
+      ),
+    );
+    await tester.binding.handlePopRoute();
+    await settle(tester);
+    final data = await query.read(2026);
+    expect(amount(tester, '$root:2'), '−15,00 €');
+    expect(
+      amount(tester, '$root:year'),
+      AfAmount(
+        data.rows
+            .singleWhere((row) => row.categoryId == root)
+            .annualTotal
+            .amountCents,
+      ).format(),
+    );
+    expect(button(tester, '$root:year').focusNode!.hasFocus, isTrue);
+    expect(session.context.filters['meses'], contains(root));
+  });
+
   for (final (name, width, scale, platform, detail) in [
     ('windows-resumen', 1440.0, 1.0, TargetPlatform.windows, false),
     ('windows-detalle', 1440.0, 1.0, TargetPlatform.windows, true),
     ('android-resumen', 412.0, 1.0, TargetPlatform.android, false),
     ('android-detalle', 412.0, 1.0, TargetPlatform.android, true),
     ('estrecho-texto-200', 320.0, 2.0, TargetPlatform.windows, true),
+    ('android-texto-200', 320.0, 2.0, TargetPlatform.android, true),
   ]) {
     testWidgets('Kit visual $name y reflujo sin overflow', (tester) async {
       await boot(

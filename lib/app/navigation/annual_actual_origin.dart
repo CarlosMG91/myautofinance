@@ -16,6 +16,7 @@ final class AnnualActualOrigin {
     _category(context.branchId);
     for (final key in const ['abiertas', 'meses']) {
       for (final id in (context.filters[key] ?? '').split(',')) {
+        if (key == 'meses' && id == 'total-general') continue;
         if (id.isNotEmpty) _category(id);
       }
     }

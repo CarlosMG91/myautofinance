@@ -93,6 +93,17 @@ class _AnnualActualRouteState extends State<AnnualActualRoute> {
     }
   }
 
+  Future<bool> _back() async {
+    if (Navigator.of(context).canPop()) {
+      return Navigator.of(context).maybePop();
+    }
+    final origin = _session.context.withPosition(0, null);
+    Navigator.of(
+      context,
+    ).pushReplacementNamed(AnnualActualOrigin(origin).route, arguments: origin);
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_invalid) return SessionNavigationError(origin: _session.context);
@@ -110,47 +121,41 @@ class _AnnualActualRouteState extends State<AnnualActualRoute> {
               AnnualActualOrigin(_session.context, detail: widget.detail),
           session: _session,
         );
-        return AnnualActualScreen(
-          load: widget.load,
-          year: _display!.period.year,
-          focusedMonth: _display!.period.month,
-          detail: widget.detail,
-          initialExpanded: (saved.filters['abiertas'] ?? '')
-              .split(',')
-              .where((id) => id.isNotEmpty)
-              .toSet(),
-          initialExpandedMonths: (saved.filters['meses'] ?? '')
-              .split(',')
-              .where((id) => id.isNotEmpty)
-              .toSet(),
-          initialOffset: saved.scrollOffset,
-          initialFocus: saved.focus,
-          onPosition: _position,
-          open: navigation.open,
-          addMovement: navigation.addMovement,
-          onDetail: _detail,
-          shell: (body, scroll, refresh) => PrimaryNavigation(
-            session: _session,
-            title: widget.detail ? 'Detalle del real anual' : 'Real anual',
-            contextTrail: Text(
-              'Año ${_display!.period.year} · Todas las cuentas · Fecha de valor',
+        return PopScope(
+          canPop: !widget.detail || Navigator.of(context).canPop(),
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && widget.detail) _back();
+          },
+          child: AnnualActualScreen(
+            load: widget.load,
+            year: _display!.period.year,
+            focusedMonth: _display!.period.month,
+            detail: widget.detail,
+            initialExpanded: (saved.filters['abiertas'] ?? '')
+                .split(',')
+                .where((id) => id.isNotEmpty)
+                .toSet(),
+            initialExpandedMonths: (saved.filters['meses'] ?? '')
+                .split(',')
+                .where((id) => id.isNotEmpty)
+                .toSet(),
+            initialOffset: saved.scrollOffset,
+            initialFocus: saved.focus,
+            onPosition: _position,
+            open: navigation.open,
+            addMovement: navigation.addMovement,
+            onDetail: _detail,
+            shell: (body, scroll, refresh) => PrimaryNavigation(
+              session: _session,
+              title: widget.detail ? 'Detalle del real anual' : 'Real anual',
+              contextTrail: Text(
+                'Año ${_display!.period.year} · Todas las cuentas · Fecha de valor',
+              ),
+              scrollController: scroll,
+              backLabel: widget.detail ? 'Volver al resumen' : 'Volver',
+              onBack: widget.detail ? _back : null,
+              child: body,
             ),
-            scrollController: scroll,
-            backLabel: widget.detail ? 'Volver al resumen' : 'Volver',
-            onBack: widget.detail
-                ? () async {
-                    if (Navigator.of(context).canPop()) {
-                      return Navigator.of(context).maybePop();
-                    }
-                    final origin = _session.context.withPosition(0, null);
-                    Navigator.of(context).pushReplacementNamed(
-                      AnnualActualOrigin(origin).route,
-                      arguments: origin,
-                    );
-                    return true;
-                  }
-                : null,
-            child: body,
           ),
         );
       },

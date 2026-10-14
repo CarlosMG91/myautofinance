@@ -288,6 +288,27 @@ class _AnnualActualScreenState extends State<AnnualActualScreen> {
     _publish();
   }
 
+  Widget _toggle(
+    String token,
+    String label,
+    bool expanded,
+    VoidCallback action,
+  ) => Semantics(
+    expanded: expanded,
+    child: TextButton(
+      key: ValueKey('actual-$token'),
+      focusNode: _focus(token),
+      onFocusChange: (focused) {
+        if (focused) {
+          _focusToken = token;
+          _publish();
+        }
+      },
+      onPressed: _opening ? null : action,
+      child: Text(label),
+    ),
+  );
+
   Widget _amount(
     AnnualActualTotal total,
     AnnualActualRow? row,
@@ -532,6 +553,7 @@ class _AnnualActualScreenState extends State<AnnualActualScreen> {
     children: [
       for (final row in _visible)
         AfCard(
+          key: ValueKey('actual-card-${_id(row)}'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 12,
@@ -544,12 +566,14 @@ class _AnnualActualScreenState extends State<AnnualActualScreen> {
                     '${_label(row)}${row.category?.node.archived == true ? ' · Archivada' : ''}',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
+                  if (row.category != null)
+                    Text('Nivel ${row.category!.node.depth} de 3'),
                   if (_children(row))
-                    TextButton(
-                      onPressed: () => _expand(row),
-                      child: Text(
-                        '${_expanded.contains(_id(row)) ? 'Contraer' : 'Expandir'} rama',
-                      ),
+                    _toggle(
+                      'branch-${_id(row)}',
+                      '${_expanded.contains(_id(row)) ? 'Contraer' : 'Expandir'} rama',
+                      _expanded.contains(_id(row)),
+                      () => _expand(row),
                     ),
                 ],
               ),
@@ -559,6 +583,7 @@ class _AnnualActualScreenState extends State<AnnualActualScreen> {
               ),
               AfValueRow(
                 label: '${months[widget.focusedMonth - 1]} · Enfocado',
+                selected: true,
                 value: _amount(
                   row.months[widget.focusedMonth - 1].total,
                   row,
@@ -566,9 +591,13 @@ class _AnnualActualScreenState extends State<AnnualActualScreen> {
                   prefix: 'focused-',
                 ),
               ),
-              TextButton(
-                key: ValueKey('actual-months-${_id(row)}'),
-                onPressed: () {
+              _toggle(
+                'months-${_id(row)}',
+                _expandedMonths.contains(_id(row))
+                    ? 'Ocultar doce meses'
+                    : 'Ver doce meses',
+                _expandedMonths.contains(_id(row)),
+                () {
                   setState(() {
                     if (!_expandedMonths.remove(_id(row))) {
                       _expandedMonths.add(_id(row));
@@ -576,16 +605,13 @@ class _AnnualActualScreenState extends State<AnnualActualScreen> {
                   });
                   _publish();
                 },
-                child: Text(
-                  _expandedMonths.contains(_id(row))
-                      ? 'Ocultar doce meses'
-                      : 'Ver doce meses',
-                ),
               ),
               if (_expandedMonths.contains(_id(row)))
                 for (final cell in row.months)
                   AfValueRow(
-                    label: months[cell.month - 1],
+                    label:
+                        '${months[cell.month - 1]}${cell.month == widget.focusedMonth ? ' · Enfocado' : ''}',
+                    selected: cell.month == widget.focusedMonth,
                     value: _amount(cell.total, row, cell.month),
                   ),
             ],
@@ -601,11 +627,39 @@ class _AnnualActualScreenState extends State<AnnualActualScreen> {
               label: 'Total anual',
               value: _amount(_data!.annualTotal, null, null),
             ),
-            for (var m = 1; m <= 12; m++)
-              AfValueRow(
-                label: months[m - 1],
-                value: _amount(_data!.months[m - 1], null, m),
+            AfValueRow(
+              label: '${months[widget.focusedMonth - 1]} · Enfocado',
+              selected: true,
+              value: _amount(
+                _data!.months[widget.focusedMonth - 1],
+                null,
+                widget.focusedMonth,
+                prefix: 'focused-',
               ),
+            ),
+            _toggle(
+              'months-total-general',
+              _expandedMonths.contains('total-general')
+                  ? 'Ocultar doce meses'
+                  : 'Ver doce meses',
+              _expandedMonths.contains('total-general'),
+              () {
+                setState(() {
+                  if (!_expandedMonths.remove('total-general')) {
+                    _expandedMonths.add('total-general');
+                  }
+                });
+                _publish();
+              },
+            ),
+            if (_expandedMonths.contains('total-general'))
+              for (var m = 1; m <= 12; m++)
+                AfValueRow(
+                  label:
+                      '${months[m - 1]}${m == widget.focusedMonth ? ' · Enfocado' : ''}',
+                  selected: m == widget.focusedMonth,
+                  value: _amount(_data!.months[m - 1], null, m),
+                ),
           ],
         ),
       ),

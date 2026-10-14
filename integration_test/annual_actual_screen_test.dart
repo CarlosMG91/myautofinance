@@ -100,6 +100,9 @@ void main() {
         await settle();
       }
       await capture('detalle');
+      if (Platform.isAndroid) {
+        await tap(find.byKey(const Key('actual-months-total-general')));
+      }
       await tap(find.byKey(const ValueKey('actual-all:1')));
       expect(find.text('Café'), findsWidgets);
       await tap(find.text('Volver a Real anual, 2026'));
