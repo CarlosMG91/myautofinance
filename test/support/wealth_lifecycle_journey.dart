@@ -14,6 +14,7 @@ import 'app_navigation.dart';
 
 import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
 import 'package:myautofinance/app/local_backup_session.dart';
+import 'package:myautofinance/features/actual_spending/presentation/annual_actual_screen.dart';
 import 'package:myautofinance/features/movements/movements.dart'
     show MovementInput, ValueDate;
 import 'package:myautofinance/features/wealth/wealth.dart';
@@ -561,11 +562,19 @@ Future<void> wealthLifecycleJourney(
     await capture('08-historico-tras-reapertura');
     // Navegar a otra vista transmite el periodo, sin escribir.
     await selectAppDestination(tester, SessionDestination.actual);
+    await settle(until: find.byKey(const ValueKey('actual-summary-all:year')));
+    final actual = find.byType(AnnualActualScreen);
+    expect(actual, findsOneWidget);
     expect(
-      ModalRoute.of(tester.element(find.textContaining('Marcador técnico')))!
-          .settings
-          .name,
+      ModalRoute.of(tester.element(actual))!.settings.name,
       '/real?a=2026&m=03',
+    );
+    final report = tester.widget<AnnualActualScreen>(actual);
+    expect(report.year, 2026);
+    expect(report.focusedMonth, 3);
+    expect(
+      find.byKey(const ValueKey('actual-summary-all:year')),
+      findsOneWidget,
     );
     expect(await image(), durable);
   } finally {

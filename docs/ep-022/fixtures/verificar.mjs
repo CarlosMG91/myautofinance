@@ -44,11 +44,26 @@ assert.equal(F.details['ocio-enero'].length, 2); // two identical Café rows rem
 
 const J = data.cases.J;
 verifyMovements(J, F);
-assert.deepEqual(J.rootAnnualCents, { ingresos: 608000, vivienda: -200000, alimentacion: -78235, ahorro: -99500, ocio: -2000, unclassified: 400 });
+assert.deepEqual(J.rootAnnualCents, { ingresos: 611600, vivienda: -200000, alimentacion: -78035, ahorro: -99500, ocio: -2000, unclassified: 400 });
 assert.equal(J.monthlyTotalCents[0], 122475);
 assert.deepEqual(J.details['unclassified-enero'], ['j-003', 'j-004']);
-assert.equal(J.directByCategory.supermercado + J.directByCategory['compra-semanal'], -34825);
-assert.equal(J.directByCategory.alimentacion + J.directByCategory.supermercado + J.directByCategory['compra-semanal'], -36025);
+assert.equal(J.januaryDirectByCategoryCents.supermercado + J.januaryDirectByCategoryCents['ali-compra'], -34825);
+assert.equal(J.januaryDirectByCategoryCents.alimentacion + J.januaryDirectByCategoryCents.supermercado + J.januaryDirectByCategoryCents['ali-compra'], -36025);
+
+// Contrastar las cifras declaradas con los registros, no con otra constante.
+const rootOf = { 'ing-salario': 'ingresos', 'viv-alquiler': 'vivienda',
+  'ali-compra': 'alimentacion', alimentacion: 'alimentacion',
+  supermercado: 'alimentacion', 'aho-cuenta': 'ahorro', 'ocio-raiz': 'ocio' };
+for (const testCase of [F, J]) {
+  const rows = testCase.base ? [...F.movements, ...testCase.addedMovements] : testCase.movements;
+  for (const [root, cents] of Object.entries(testCase.rootAnnualCents)) {
+    assert.equal(sum(rows.filter(row => (row[2] === null ? 'unclassified' : rootOf[row[2]]) === root)), cents, `raíz anual ${root}`);
+  }
+  assert.equal(Object.values(testCase.rootAnnualCents).reduce((a, b) => a + b, 0), testCase.annualTotalCents);
+  for (const [category, cents] of Object.entries(testCase.directByCategory)) {
+    assert.equal(sum(rows.filter(row => (row[2] ?? 'unclassified') === category)), cents, `directo anual ${category}`);
+  }
+}
 
 const K = data.cases.K;
 verifyMovements(K, F);

@@ -34,10 +34,11 @@
         ["j-005", "2026-01-14", "aho-cuenta", 500],
         ["j-006", "2026-01-15", "ing-salario", -400]
       ],
-      "directByCategory": {"alimentacion": -1200, "supermercado": 200, "compra-semanal": -35025, "aho-cuenta": -99500, "ing-salario": 608000, "unclassified": 400},
+      "directByCategory": {"alimentacion": -1200, "supermercado": 200, "ali-compra": -77035, "aho-cuenta": -99500, "ing-salario": 611600, "viv-alquiler": -200000, "ocio-raiz": -2000, "unclassified": 400},
+      "januaryDirectByCategoryCents": {"alimentacion": -1200, "supermercado": 200, "ali-compra": -35025},
       "monthlyTotalCents": [122475, 109990, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       "annualTotalCents": 232465,
-      "rootAnnualCents": {"ingresos": 608000, "vivienda": -200000, "alimentacion": -78235, "ahorro": -99500, "ocio": -2000, "unclassified": 400},
+      "rootAnnualCents": {"ingresos": 611600, "vivienda": -200000, "alimentacion": -78035, "ahorro": -99500, "ocio": -2000, "unclassified": 400},
       "details": {"unclassified-enero": ["j-003", "j-004"]}
     },
     "K": {

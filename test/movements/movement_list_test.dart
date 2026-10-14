@@ -340,7 +340,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(list.controller.selected, {ids[2]});
-      expect(find.byTooltip('Volver a Real anual, 03/2026'), findsOneWidget);
+      expect(find.byTooltip('Volver a Real anual, 2026'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       controller.dispose();
     },

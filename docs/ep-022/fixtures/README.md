@@ -9,8 +9,9 @@ sintético; no se importa ningún extracto ni se depende del motor/UI.
 
 Desde la raíz: `node docs/ep-022/fixtures/verificar.mjs`.
 
-Cada movimiento tiene UUID estable para permitir comprobar detalle por origen.
-Las categorías se identifican por UUID, no por nombre; categoría nula es el
+El manifiesto usa alias estables de movimientos y categorías. Las pruebas
+SQLite los vinculan a los UUID creados por los repositorios para comprobar
+el detalle por origen. Las categorías se identifican por UUID, no por nombre; categoría nula es el
 grupo de informe «Sin clasificar». `active` y `archived` solo afectan la
 visibilidad del nodo raíz, nunca borran su historia. `categoryPath` representa
 la ubicación actual, de modo que los UUID de registros sobreviven a traslados.
@@ -18,10 +19,13 @@ la ubicación actual, de modo que los UUID de registros sobreviven a traslados.
 J parte del caso F y añade los seis movimientos descritos por EP-001. K parte
 de F y añade la segunda pierna de 500 EUR entre cuentas. L es una base
 independiente con el árbol de tres niveles y los dos movimientos de enero más
-24 presupuestos anuales descritos en EP-001. El año esperado de L contiene
-12 × (3.000 − 600) = 28.800 EUR en la rama de ingreso, incluido el movimiento
-directo de enero en `SALARIO`; los presupuestos no forman parte de estos
-resultados reales.
+24 presupuestos descritos en EP-001. El real anual de L contiene solo los dos
+movimientos de enero: 3.000 − 600 = 2.400 EUR. Los 28.800 EUR anuales
+presupuestados no forman parte de estos resultados reales.
+
+MA-TSK-180 corrige las cifras anuales de J: Ingresos 6.116 EUR y Alimentación
+−780,35 EUR. El comprobador contrasta raíces y directos contra sus registros,
+y distingue el desglose directo de enero del desglose anual.
 
 Las expectativas del manifiesto especifican cifras directas por nodo. El
 agregado de una rama es la suma de los movimientos cuyos UUID apuntan al nodo
