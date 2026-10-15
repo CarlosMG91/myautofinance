@@ -667,9 +667,13 @@ class _MonthlyBudgetScreenState extends BudgetDraftState<MonthlyBudgetScreen> {
       ],
     );
     return PopScope(
-      canPop: allowPop || (!dirty && !locked),
+      canPop:
+          (Navigator.of(context).canPop() || widget.onReturn == null) &&
+          (allowPop || (!dirty && !locked)),
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) leave(() => Navigator.of(context).pop());
+        if (!didPop) {
+          leave(widget.onReturn ?? () => Navigator.of(context).pop());
+        }
       },
       child: CallbackShortcuts(
         bindings: {

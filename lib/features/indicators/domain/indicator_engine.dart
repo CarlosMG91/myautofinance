@@ -15,11 +15,15 @@ final class IndicatorEvaluation {
     required this.definition,
     required this.month,
     required this.result,
+    required this.inputs,
   });
 
   final IndicatorDefinition definition;
   final Month month;
   final IndicatorResult result;
+
+  /// Entradas de la misma lectura que produjo el resultado; sin segunda consulta.
+  final IndicatorInputs inputs;
 }
 
 final class IndicatorEngine {
@@ -60,6 +64,7 @@ final class IndicatorEngine {
       definition: definition,
       month: month,
       result: result,
+      inputs: inputs,
     );
   }
 

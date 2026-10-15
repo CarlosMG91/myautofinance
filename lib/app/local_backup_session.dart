@@ -22,6 +22,7 @@ import '../features/wealth/wealth.dart';
 import 'wealth_management_factory.dart';
 import '../features/indicators/indicators.dart';
 import 'indicator_input_factory.dart';
+import '../features/indicators/presentation/indicator_source.dart';
 
 /// Una sola conexión y los servicios locales de la instalación, sin OAuth.
 class LocalBackupSession {
@@ -82,6 +83,11 @@ class LocalBackupSession {
 
   Future<IndicatorInputProvider> indicatorInputs() async =>
       createIndicatorInputProvider(database: await store.open());
+
+  Future<IndicatorSource> indicators() async => createIndicatorSource(
+    database: await store.open(),
+    invalidation: categoryInvalidation,
+  );
 
   Future<CategoryManagement> categories() async => createCategoryManagement(
     database: await store.open(),

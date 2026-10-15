@@ -2,7 +2,10 @@ import '../domain/indicator_result.dart';
 
 /// Presentación es-ES de una razón exacta. Half-up decimal: los empates se
 /// alejan de cero. Solo redondea aquí, sin convertir el valor a double.
-String formatCalculatedIndicator(CalculatedIndicator result) {
+String formatCalculatedIndicator(
+  CalculatedIndicator result, {
+  bool includeUnit = true,
+}) {
   final value = result.value;
   final scale = BigInt.from(10).pow(result.precision);
   final scaled = value.numerator.abs() * scale;
@@ -18,5 +21,5 @@ String formatCalculatedIndicator(CalculatedIndicator result) {
       ? ''
       : ',${(rounded % scale).toString().padLeft(result.precision, '0')}';
   final sign = value.numerator.isNegative && rounded != BigInt.zero ? '−' : '';
-  return '$sign$integer$fraction ${result.unit}';
+  return '$sign$integer$fraction${includeUnit ? ' ${result.unit}' : ''}';
 }

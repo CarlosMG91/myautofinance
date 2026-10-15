@@ -79,7 +79,9 @@ con SQLite, consultas y operaciones financieras existentes. La apariencia y
 navegación vigentes son las del [prototipo EP-026 v1 aprobado](docs/ep-026/prototipo/aprobacion.md),
 que sustituye EP-002 conservando el contrato EP-001.
 
-Real anual, Indicadores y diagnóstico siguen pendientes de EP-022/023/025;
+Indicadores consulta el catálogo y motor real de EP-023, con retorno a fotos
+y presupuesto mensual para completar datos; ver [vista y evidencias](docs/ep-023/vista-indicadores.md).
+Real anual y diagnóstico siguen pendientes de EP-022/025;
 EP-024 conserva los filtros adicionales y desgloses. Openbank productivo
 sigue pendiente de su propietario. La [validación integral de MA-TSK-217](docs/ep-026/validacion-integral.md)
 registra cobertura, pruebas, capturas nativas y límites. La

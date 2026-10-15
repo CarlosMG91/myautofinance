@@ -7,6 +7,7 @@ import 'app_routes.dart';
 import 'movement_links.dart';
 import 'monthly_status_origin.dart';
 import 'annual_actual_origin.dart';
+import 'indicator_origin.dart';
 
 /// Resolución sin efectos: un error nunca cambia la sesión ni consulta datos.
 sealed class SessionLocationResult {
@@ -89,6 +90,26 @@ abstract final class SessionLocation {
           : m == null
           ? session.periodForYear(int.parse(a), effectiveView)
           : NavigationPeriod(int.parse(a), int.parse(m));
+      if (destination == SessionDestination.indicators &&
+          (raw.path == AppRoutes.indicatorDetail ||
+              p.keys.any(const {'posicion', 'foco', 'detalle'}.contains) ||
+              p.keys.every(
+                const {'a', 'm', 'rama', 'c', 'alcance', 'concepto'}.contains,
+              ))) {
+        return ValidSessionLocation(
+          IndicatorOrigin.parse(
+            raw
+                .replace(
+                  queryParameters: {
+                    ...p,
+                    'a': period.year.toString().padLeft(4, '0'),
+                    'm': period.month.toString().padLeft(2, '0'),
+                  },
+                )
+                .toString(),
+          ).context,
+        );
+      }
       if (destination == SessionDestination.movements) {
         // Fechas de movimientos se validan con su parser, nunca como meses.
         final query = MovementLinks.parse(

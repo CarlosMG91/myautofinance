@@ -307,7 +307,9 @@ class _WealthPhotoScreenState extends State<WealthPhotoScreen> {
   Widget build(BuildContext context) {
     final date = DateTime.parse(widget.month.value);
     return PopScope<Object?>(
-      canPop: _allowPop || (!_dirty && !_locked),
+      canPop:
+          Navigator.of(context).canPop() &&
+          (_allowPop || (!_dirty && !_locked)),
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) _leave(widget.onReturn);
       },

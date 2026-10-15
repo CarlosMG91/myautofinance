@@ -1,0 +1,182 @@
+[
+  {
+    "runtime": {
+      "platform": "windows",
+      "syntheticDataOnly": true,
+      "origin": "Native Flutter RenderRepaintBoundary",
+      "surfaceSizeForced": true,
+      "compactCapturesScrollToCard": true,
+      "capturedAtUtc": "2026-10-15T08:06:43.551083Z"
+    },
+    "images": [
+      {
+        "file": "windows-resumen.png",
+        "width": 1440,
+        "height": 1000,
+        "sha256": "6f11ca92688f3807d5e30a5f3f2827e0153bb0f383c05d9e7d570f3058b798bb"
+      },
+      {
+        "file": "windows-detalle.png",
+        "width": 1440,
+        "height": 1000,
+        "sha256": "d4bc0e164d646cab84fd52b8b808050fa7a51e8f4d3a467b701e068073c0004c"
+      },
+      {
+        "file": "windows-foto-ausente.png",
+        "width": 1440,
+        "height": 1000,
+        "sha256": "2405cfa70d837b669e4eb28d797868995b4c6eaf57b7c457cc0430792c973f2a"
+      },
+      {
+        "file": "windows-foto-corregida.png",
+        "width": 1440,
+        "height": 1000,
+        "sha256": "30b7f2f1510856adfae5ffb6c95cdab50c25c41aa67ae8010bdcc05b842e3acc"
+      },
+      {
+        "file": "windows-cero.png",
+        "width": 1440,
+        "height": 1000,
+        "sha256": "f523e5bf8e63e2c0c5121b9d97955c09604b727aef4a64eeb5259b6a654d7189"
+      },
+      {
+        "file": "windows-restaurado.png",
+        "width": 1440,
+        "height": 1000,
+        "sha256": "19bb74e728ef0640c2798bce2118fd31c208d681570b0a7133977acfd87fc1ce"
+      },
+      {
+        "file": "windows-320-200-calculable.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "a762b04bc360267bae0e41b37b2b07f35ba30bebb672193868aaa928f50ce15b"
+      },
+      {
+        "file": "windows-320-200-foto-ausente.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "c8bf215aa8a3c1516768c41ab719a8910687469c917027393243df679685c775"
+      },
+      {
+        "file": "windows-320-200-foto-incompleta.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "ab14d292de95a83c63f6e43f9a72afd54b0af420c0f2756a9519d18d3d250767"
+      },
+      {
+        "file": "windows-320-200-cero.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "81947380225b9e09689f20d691facc502633ec26c209a134d818325c92525ec0"
+      },
+      {
+        "file": "windows-320-200-ingresos-nulos.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "51ae8007d544aa2fef6763777c56dc323a580bcbd5d118e0ea1e4840170b85c4"
+      },
+      {
+        "file": "windows-320-200-ingresos-negativos.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "c0205a3d4f36952310798859f8c2b647f97926bff5cb28dbdf5e34d9d29565fb"
+      },
+      {
+        "file": "windows-320-200-ingresos-incompletos.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "2fe9f3a15c42386868ce510b719292edc02df8b1421983e984f455bcda50a9fc"
+      }
+    ]
+  },
+  {
+    "runtime": {
+      "platform": "android",
+      "syntheticDataOnly": true,
+      "origin": "Native Flutter RenderRepaintBoundary",
+      "surfaceSizeForced": true,
+      "compactCapturesScrollToCard": true,
+      "capturedAtUtc": "2026-10-15T08:13:09.668667Z"
+    },
+    "images": [
+      {
+        "file": "android-resumen.png",
+        "width": 412,
+        "height": 1000,
+        "sha256": "d39afe1a68a18deca2f316eb5e46c716ebb1573fbee2ac2547190e38c7debd16"
+      },
+      {
+        "file": "android-detalle.png",
+        "width": 412,
+        "height": 1000,
+        "sha256": "65341bf47813c604c752d50a8fc49980b9bf5dd37a004ffc0f7eda4b9a512dc8"
+      },
+      {
+        "file": "android-foto-ausente.png",
+        "width": 412,
+        "height": 1000,
+        "sha256": "2edccc37120eaead62d1d595586b820af1357a7ecbbe352fcfa320c0c1c13c6e"
+      },
+      {
+        "file": "android-foto-corregida.png",
+        "width": 412,
+        "height": 1000,
+        "sha256": "e7e50c9614032ce766bd8c90c0b5bb7d3437e86ebb4439d7ae633e25e89d5dfa"
+      },
+      {
+        "file": "android-cero.png",
+        "width": 412,
+        "height": 1000,
+        "sha256": "ae61a4b04024fbeb3b5815d1c2eaba9c4ef4785c5a33c02e742403d93119e435"
+      },
+      {
+        "file": "android-restaurado.png",
+        "width": 412,
+        "height": 1000,
+        "sha256": "115408db9423439c1302852567724d774677b4509e043413895b11daad399aa5"
+      },
+      {
+        "file": "android-320-200-calculable.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "aba1b0ca906e700219c605ecab8f89ad897bbcd1945a529080c22dda0883c2fa"
+      },
+      {
+        "file": "android-320-200-foto-ausente.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "385cf5d0c39e0911be71384946aaddf89bd4dd3dbdb379f9ab831a0de2d89a17"
+      },
+      {
+        "file": "android-320-200-foto-incompleta.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "f7e67cbad4191b201412e93777b99c944ba6f9a1e46bdc0e06dd304eb107b017"
+      },
+      {
+        "file": "android-320-200-cero.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "0786ab9b7b108bace74607f99ae0d82649cd732db4db0129068dd1ba39a9d6fb"
+      },
+      {
+        "file": "android-320-200-ingresos-nulos.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "459b232b903a39def3ae1055a145479ace0af6fffad447b96d05bde3e47a9ddc"
+      },
+      {
+        "file": "android-320-200-ingresos-negativos.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "6c6ecf5642d47dcb21ae75584386ba2556acab1431a8043537f2f7cfe913082e"
+      },
+      {
+        "file": "android-320-200-ingresos-incompletos.png",
+        "width": 320,
+        "height": 1000,
+        "sha256": "311ffee0663ce98a56dc54fac4b78aca2f682754d9d2535f2fba743406c39eb9"
+      }
+    ]
+  }
+]

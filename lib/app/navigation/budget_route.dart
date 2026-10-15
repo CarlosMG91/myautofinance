@@ -277,7 +277,11 @@ class _BudgetRouteState extends State<BudgetRoute> {
                     session: local,
                     beforeChange: (period) => change(period.budgetMonth),
                   ),
-                  backLabel: 'Volver a Presupuesto anual',
+                  backLabel:
+                      returnOrigin?.context.destination ==
+                          SessionDestination.indicators
+                      ? 'Volver a Indicadores'
+                      : 'Volver a Presupuesto anual',
                   onBack: () async {
                     if (!await canLeave() || !mounted) return false;
                     back();

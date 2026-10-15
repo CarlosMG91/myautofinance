@@ -8,6 +8,9 @@ import 'budget_route.dart';
 import 'annual_budget_navigation.dart';
 import 'annual_actual_route.dart';
 import '../../features/actual_spending/presentation/annual_actual_screen.dart';
+import '../../features/indicators/presentation/indicator_source.dart';
+import 'indicator_route.dart';
+import 'indicator_origin.dart';
 import 'monthly_status_route.dart';
 import '../../features/monthly_status/presentation/monthly_status_screen.dart';
 import '../../features/budget/presentation/budget_source.dart';
@@ -60,6 +63,7 @@ abstract final class AppRouter {
     AnnualBudgetBuilder? annualBudgetBuilder,
     MonthlyStatusLoader? monthlyStatus,
     AnnualActualLoader? annualActual,
+    IndicatorLoader? indicators,
     ImportServicesLoader? imports,
     LocalCsvSelector? csvSelector,
     bool allowTestImports = false,
@@ -175,6 +179,14 @@ abstract final class AppRouter {
         load: annualActual,
         session: navigationSession,
         detail: raw?.path == AppRoutes.actualDetail,
+      );
+    } else if (uri.path == AppRoutes.indicators && indicators != null) {
+      page = IndicatorRoute(
+        settings: originalSettings,
+        load: indicators,
+        session: navigationSession,
+        photosAvailable: wealth != null,
+        budgetsAvailable: budgets != null,
       );
     } else if (uri.path == AppRoutes.importHistory ||
         uri.path.startsWith('${AppRoutes.importHistory}/') == true) {
@@ -483,12 +495,18 @@ class _WealthRouteState extends State<_WealthRoute> {
     }
     if (uri?.path == AppRoutes.wealthPhoto) {
       final WealthRoute route;
+      IndicatorOrigin? indicatorOrigin;
       try {
+        if (uri!.queryParameters['origen'] != null) {
+          indicatorOrigin = IndicatorOrigin.parse(
+            uri.queryParameters['origen']!,
+          );
+        }
         route = WealthRoute.parse(
           widget.settings.name!,
           defaultMonth: madridMonth(DateTime.now()),
         );
-      } on AccountFailure catch (e) {
+      } catch (e) {
         return Scaffold(
           appBar: AppBar(title: const Text('Patrimonio')),
           body: SafeArea(
@@ -498,7 +516,11 @@ class _WealthRouteState extends State<_WealthRoute> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('No se pudo abrir este detalle'),
-                  Text(e.message),
+                  Text(
+                    e is AccountFailure
+                        ? e.message
+                        : 'Origen de foto inválido.',
+                  ),
                   TextButton(
                     onPressed: back,
                     child: const Text('Volver al origen'),
@@ -519,8 +541,8 @@ class _WealthRouteState extends State<_WealthRoute> {
             back();
           } else {
             Navigator.of(context).pushReplacementNamed(
-              '${AppRoutes.wealth}?$period',
-              arguments: widget.settings.arguments,
+              indicatorOrigin?.route ?? '${AppRoutes.wealth}?$period',
+              arguments: indicatorOrigin?.context ?? widget.settings.arguments,
             );
           }
         },
@@ -529,8 +551,8 @@ class _WealthRouteState extends State<_WealthRoute> {
             back(saved);
           } else {
             Navigator.of(context).pushReplacementNamed(
-              '${AppRoutes.wealth}?$period',
-              arguments: widget.settings.arguments,
+              indicatorOrigin?.route ?? '${AppRoutes.wealth}?$period',
+              arguments: indicatorOrigin?.context ?? widget.settings.arguments,
             );
             _photoNotice(context, saved);
           }
