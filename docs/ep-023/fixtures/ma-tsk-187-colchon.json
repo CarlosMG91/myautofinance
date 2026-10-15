@@ -1,0 +1,43 @@
+{
+  "id": "MA-TSK-187",
+  "description": "Casos sintéticos independientes para el colchón de emergencia. Importes enteros en céntimos; los valores numéricos no son datos personales.",
+  "base": {
+    "year": 2026,
+    "monthlyIncomeCents": 300000,
+    "explicitIncomeMonths": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "januaryWealth": {
+      "complete": true,
+      "liquidAssetCents": [600000, 300000],
+      "mediumAssetCents": [1000000],
+      "debtCents": [500000]
+    }
+  },
+  "cases": [
+    { "id": "enero-base", "month": 1, "annualIncomeCents": "3600000", "liquidCents": "900000", "expected": { "kind": "value", "exact": "3/1", "display": "3,00" } },
+    { "id": "febrero-foto-ausente", "month": 2, "photo": "absent", "expected": { "kind": "missing", "code": "foto_ausente", "text": "sin dato: falta foto patrimonial" } },
+    { "id": "febrero-foto-incompleta", "month": 2, "photo": "partial", "pending": ["Cuenta de ahorro", "Cartera"], "expected": { "kind": "missing", "code": "foto_incompleta", "text": "sin dato: foto patrimonial incompleta" } },
+    { "id": "febrero-completa-6200", "month": 2, "annualIncomeCents": "3600000", "liquidCents": "620000", "expected": { "kind": "value", "exact": "31/15", "display": "2,07" } },
+    { "id": "febrero-corregida-6300", "month": 2, "annualIncomeCents": "3600000", "liquidCents": "630000", "expected": { "kind": "value", "exact": "21/10", "display": "2,10" } },
+    { "id": "doce-ceros-explicitos", "explicitIncomeMonths": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "annualIncomeCents": "0", "expected": { "kind": "missing", "code": "ingresos_nulos", "text": "sin dato: ingresos presupuestados nulos" } },
+    { "id": "falta-ingreso-marzo", "explicitIncomeMonths": [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12], "annualIncomeCents": "3300000", "expected": { "kind": "missing", "code": "ingresos_incompletos", "text": "sin dato: presupuesto anual de ingresos incompleto", "pendingMonths": [3] } },
+    { "id": "ingresos-negativos", "explicitIncomeMonths": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "annualIncomeCents": "-1200", "expected": { "kind": "missing", "code": "ingresos_negativos", "text": "sin dato: ingresos presupuestados no positivos" } },
+    { "id": "liquidos-cero", "annualIncomeCents": "3600000", "liquidCents": "0", "expected": { "kind": "value", "exact": "0/1", "display": "0,00" } },
+    { "id": "varias-partidas-solo-enero", "incomeRows": [{ "month": 1, "cents": "100000" }, { "month": 1, "cents": "200000" }], "explicitIncomeMonths": [1], "expected": { "kind": "missing", "code": "ingresos_incompletos", "text": "sin dato: presupuesto anual de ingresos incompleto", "pendingMonths": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }, "expectedPendingMonths": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+    { "id": "precedencia-foto-antes-ingresos", "photo": "absent", "explicitIncomeMonths": [], "annualIncomeCents": "-1", "expected": { "kind": "missing", "code": "foto_ausente" } },
+    { "id": "precedencia-foto-incompleta", "photo": "partial", "explicitIncomeMonths": [], "annualIncomeCents": "0", "expected": { "kind": "missing", "code": "foto_incompleta" } },
+    { "id": "precedencia-ingresos-incompletos-antes-nulos", "photo": "complete", "explicitIncomeMonths": [1], "annualIncomeCents": "0", "expected": { "kind": "missing", "code": "ingresos_incompletos" } },
+    { "id": "limite-redondeo-a-par", "liquidCents": "1", "annualIncomeCents": "2400000", "expected": { "kind": "value", "exact": "1/200000", "display": "0,00" } },
+    { "id": "suma-grande-exacta", "annualIncomeCents": "900719925474099312345678", "liquidCents": "900719925474099312345678", "expected": { "kind": "value", "exact": "12/1", "display": "12,00" } }
+  ],
+  "classificationRows": [
+    { "month": 1, "root": "Salario", "rootIsIncome": true, "categoryArchived": false, "cents": "300000" },
+    { "month": 1, "root": "Otros ingresos", "rootIsIncome": true, "categoryArchived": true, "cents": "50000" },
+    { "month": 1, "root": "Otros ingresos", "rootIsIncome": true, "categoryArchived": true, "reparentedToCurrentRoot": true, "cents": "-50000" },
+    { "month": 1, "root": "Gastos", "rootIsIncome": false, "categoryArchived": false, "cents": "9000000" },
+    { "month": 1, "root": "Ahorro", "rootIsIncome": false, "categoryArchived": false, "cents": "-9000000" },
+    { "month": 1, "root": "Salario", "rootIsIncome": true, "categoryArchived": false, "cents": "0" }
+  ],
+  "classificationExpected": { "monthOnePresent": true, "monthTwoPresent": false, "yearTotalCents": "3600000", "rule": "La marca de ingreso de la raíz selecciona; el signo, el nombre y el estado archivado de la categoría no seleccionan. Filas múltiples o cero explícito cuentan solo para su mes." },
+  "temporalExpected": { "januaryLiquidCents": "900000", "februaryLiquidCents": "620000", "januaryAfterFebruaryCorrectionCents": "900000", "rule": "Las fotos y la liquidez histórica se evalúan por mes; corregir febrero no altera enero." },
+  "extensionTest": { "id": "indicador_sintetico_test", "productionCatalogIds": ["colchon_emergencia"], "rule": "Una definición adicional de prueba se registra y evalúa con el motor genérico; nunca se añade al catálogo de producción ni depende de entidades base nuevas." }
+}
