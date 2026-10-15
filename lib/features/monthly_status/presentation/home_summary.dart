@@ -72,7 +72,9 @@ class HomeSummary extends StatelessWidget {
               ? AfChartValue.euros(totals.plannedCents)
               : const AfChartValue.unbudgeted(),
           role: AfSeriesRole.budget,
-          onPressed: () => details.onBudgets(detail),
+          onPressed: detail.unclassified
+              ? null
+              : () => details.onBudgets(detail),
         ),
       ],
     );

@@ -73,10 +73,13 @@ void main() {
           scope: scope,
           unclassified: true,
         );
-        final parsed = BudgetLinks.parse(BudgetLinks.list(nulls.budgets));
-        expect(parsed.categoryId, isNull);
-        expect(parsed.unclassified, isTrue);
-        expect(parsed.scope, scope);
+        expect(() => nulls.budgets, throwsA(isA<BudgetFailure>()));
+        expect(
+          () => BudgetLinks.parse(
+            '/presupuesto/partidas?a=2026&m=01&rama=sin-clasificar',
+          ),
+          throwsA(isA<BudgetFailure>()),
+        );
       }
     },
   );

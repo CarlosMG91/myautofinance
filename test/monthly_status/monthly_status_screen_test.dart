@@ -426,11 +426,18 @@ void main() {
     expect(find.text('Abrir'), findsNWidgets(2));
     expect(find.text('0,00 € (registrado)'), findsOneWidget);
     await tap(tester, find.text('Volver al origen'));
-    await tap(tester, find.byKey(const ValueKey('sin-clasificar:previsto')));
     expect(
-      find.textContaining('Sin presupuesto · No hay partidas'),
-      findsOneWidget,
+      tester
+          .widget<TextButton>(
+            find.byKey(const ValueKey('sin-clasificar:previsto')),
+          )
+          .onPressed,
+      isNull,
     );
+    await tap(tester, find.byKey(const ValueKey('sin-clasificar:diferencia')));
+    expect(find.text('Ver partidas previstas'), findsNothing);
+    await tap(tester, find.text('Ver movimientos reales'));
+    expect(find.text('Movimiento sintético'), findsOneWidget);
   });
 
   windowsTest(

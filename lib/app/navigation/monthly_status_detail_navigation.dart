@@ -57,10 +57,11 @@ MonthlyStatusDetailCallbacks createMonthlyStatusDetailCallbacks({
               onPressed: () => Navigator.pop(context, false),
               child: const Text('Ver movimientos reales'),
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Ver partidas previstas'),
-            ),
+            if (!detail.unclassified)
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Ver partidas previstas'),
+              ),
           ],
         ),
       );

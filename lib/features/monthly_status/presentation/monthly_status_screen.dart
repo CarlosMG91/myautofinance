@@ -263,6 +263,7 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
     String? difference,
     bool compact = true,
     bool emphasized = false,
+    bool enabled = true,
   }) {
     final text = missing
         ? 'Sin presupuesto'
@@ -307,12 +308,14 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
             fontWeight: emphasized ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
-        onPressed: () => _open(
-          key,
-          detail.unclassified ? 'sin-clasificar' : detail.categoryId,
-          detail.scope,
-          () => open(detail),
-        ),
+        onPressed: !enabled
+            ? null
+            : () => _open(
+                key,
+                detail.unclassified ? 'sin-clasificar' : detail.categoryId,
+                detail.scope,
+                () => open(detail),
+              ),
         child: Text(
           '$text${difference == null ? '' : '\n$difference'}',
           textAlign: TextAlign.right,
@@ -349,6 +352,7 @@ class _MonthlyStatusScreenState extends State<MonthlyStatusScreen> {
         totals.plannedCents,
         branch,
         widget.details.onBudgets,
+        enabled: !unclassified,
         missing: !totals.hasBudget,
         registered: totals.hasBudget,
         compact: compact,

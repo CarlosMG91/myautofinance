@@ -151,7 +151,7 @@ void main() {
     expect(
       () => BudgetListQuery.range(
         month: BudgetMonth(2026, 1),
-        firstMonth: BudgetMonth(2025, 1),
+        firstMonth: BudgetMonth(2027, 1),
         lastMonth: BudgetMonth(2026, 12),
       ),
       throwsException,

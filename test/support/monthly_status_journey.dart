@@ -381,16 +381,13 @@ Future<void> monthlyStatusJourney(
     await press('Guardar movimiento');
     await settle(until: find.text('Estado del mes'));
     await total(110000, 121775, 11775);
-    await tap(key('sin-clasificar:previsto'));
     expect(
-      find.text('Sin presupuesto · No hay partidas en este alcance.'),
-      findsOneWidget,
+      tester.widget<TextButton>(key('sin-clasificar:previsto')).onPressed,
+      isNull,
     );
-    await back();
     await tap(key('sin-clasificar:diferencia'));
-    await press('Ver partidas previstas');
-    expect(find.text('Abrir'), findsNothing);
-    await back();
+    expect(find.text('Ver partidas previstas'), findsNothing);
+    await press('Cancelar');
     await tap(key('sin-clasificar:real'));
     expect(list().unclassified, isTrue);
     expect(list().page!.subtotalCents, -1200);
@@ -517,6 +514,8 @@ Future<void> monthlyStatusJourney(
     );
     // Las escrituras de preparación por repositorio no simulan un retorno UI.
     // Solicitar la relectura explícita después de terminar el fixture.
+    // Esperar también las invalidaciones del árbol antes de desplazar el botón.
+    await settle();
     await tap(key('status-refresh'));
     await tap(key('$parent:expandir'));
     expect(row(await status(), noBudgetChild).totals.hasBudget, isFalse);

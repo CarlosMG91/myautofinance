@@ -145,10 +145,8 @@ void main() {
       isEmpty,
     );
     expect(
-      await budgets.read(
-        MonthlyFigureDetail(month: month, unclassified: true).budgets,
-      ),
-      isEmpty,
+      () => MonthlyFigureDetail(month: month, unclassified: true).budgets,
+      throwsA(isA<BudgetFailure>()),
     );
     expect(
       (await budgets.read(MonthlyFigureDetail(month: month).budgets))

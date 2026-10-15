@@ -120,15 +120,15 @@ void main() {
       isEmpty,
     );
     expect(
-      await reader.read(BudgetListQuery(month: month, unclassified: true)),
-      isEmpty,
+      () => BudgetListQuery(month: month, unclassified: true),
+      throwsA(isA<BudgetFailure>()),
     );
     expect(
       (await reader.read(BudgetListQuery(month: month)))
           .map((e) => e.record.id),
       unorderedEquals([leaf, sibling]),
     );
-    expect(unit.reads, 4);
+    expect(unit.reads, 3);
     repo.fail = true;
     await expectLater(
       reader.read(BudgetListQuery(month: month)),
