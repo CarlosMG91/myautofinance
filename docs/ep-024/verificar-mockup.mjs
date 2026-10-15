@@ -1,0 +1,42 @@
+import {createRequire} from 'node:module';
+import {mkdirSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'../../.tools/ma-tsk-141-browser/node_modules/playwright');
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+await page.route('https://**',r=>r.abort());
+const url=process.env.MOCKUP_URL||new URL('mockup-desgloses.html',import.meta.url).href;
+const dir=new URL('capturas/',import.meta.url);mkdirSync(dir,{recursive:true});
+const entry=async value=>{await page.locator('#entry').selectOption(value);};
+const apply=async()=>page.locator('#filters button.primary').click();
+try{
+ await page.goto(url);await page.locator('.review summary').click();
+ assert.equal(await page.locator('#count').innerText(),'3 registros');assert.match(await page.locator('#subtotal').innerText(),/−30,00/);
+ assert.equal(await page.getByRole('button',{name:/Café/}).count(),2);
+ await page.locator('[name=account]').selectOption('Cuenta diaria');await apply();assert.equal(await page.locator('#count').innerText(),'2 registros');assert.match(await page.locator('#subtotal').innerText(),/−10,00/);assert.match(await page.locator('.scope').innerText(),/Nuevo ámbito local/);assert.match(await page.locator('.origin').innerText(),/−30,00/);
+ await page.locator('#restore').click();assert.equal(await page.locator('#count').innerText(),'3 registros');
+ await entry('budgetMonth');assert.equal(await page.locator('#period').inputValue(),'month');assert.match(await page.locator('#subtotal').innerText(),/−100,00/);assert.match(await page.locator('.origin').innerText(),/Estado/i);
+ await entry('budget');assert.equal(await page.locator('[name=account],[name=concept]').count(),0);assert.equal(await page.locator('[name=cat] option[value=none]').count(),0);assert.match(await page.locator('#subtotal').innerText(),/−390,00/);
+ await page.locator('#period').selectOption('range');await page.locator('#from').fill('2026-01');await page.locator('#until').fill('2026-02');await apply();assert.match(await page.locator('#subtotal').innerText(),/−180,00/);await page.locator('#restore').click();assert.equal(await page.locator('#period').inputValue(),'year');
+ await page.locator('#period').selectOption('month');await page.locator('#from').fill('2026-03');await apply();assert.match(await page.locator('#subtotal').innerText(),/−120,00/);
+ await page.locator('[data-record]').click();assert.equal(await page.locator('dt').filter({hasText:/Cuenta/}).count(),0);await page.keyboard.press('Escape');
+ await entry('actual');assert.match(await page.locator('#subtotal').innerText(),/−192,00/);await entry('direct');assert.equal(await page.locator('#count').innerText(),'1 registros');assert.match(await page.locator('#subtotal').innerText(),/−12,00/);await page.locator('[name=scope]').selectOption('branch');await apply();assert.match(await page.locator('#subtotal').innerText(),/−192,00/);
+ await entry('zero');assert.equal(await page.locator('#count').innerText(),'2 registros');assert.match(await page.locator('#subtotal').innerText(),/0,00/);assert.match(await page.locator('#results').innerText(),/Neto cero con registros/);
+ await entry('empty');assert.match(await page.locator('#results').innerText(),/No hay registros/);assert.equal(await page.locator('.origin').count(),1);
+ await entry('unclassified');assert.match(await page.locator('#subtotal').innerText(),/\+4,00/);
+ await entry('pages');assert.equal(await page.locator('[data-record]').count(),100);assert.equal(await page.locator('#count').innerText(),'205 registros');assert.match(await page.locator('#subtotal').innerText(),/−205,00/);await page.locator('#next').click();await page.locator('#next').click();assert.equal(await page.locator('[data-record]').count(),5);assert.equal(await page.locator('#count').innerText(),'205 registros');assert.match(await page.locator('#subtotal').innerText(),/−205,00/);
+ await page.locator('#prev').click();await page.locator('#listregion').evaluate(e=>e.scrollTop=700);const row=page.locator('[data-record]').nth(10),id=await row.getAttribute('data-record');await row.focus();const scroll=await page.locator('#listregion').evaluate(e=>e.scrollTop);await page.keyboard.press('Enter');await page.locator('#backList').click();assert.equal(await page.locator('#listregion').evaluate(e=>e.scrollTop),scroll);assert.equal(await page.evaluate(()=>document.activeElement.dataset.record),id);assert.match(await page.locator('.pagination').innerText(),/Página 2/);
+ await page.locator('#backReport').click();await page.locator('#reportMonth').selectOption('02');await page.locator('#reportregion').evaluate(e=>e.scrollTop=80);await page.locator('#openFigure').focus();const reportScroll=await page.locator('#reportregion').evaluate(e=>e.scrollTop);await page.keyboard.press('Enter');await page.locator('#backReport').click();assert.equal(await page.locator('#reportMonth').inputValue(),'02');assert.equal(await page.locator('#expand').getAttribute('aria-expanded'),'true');assert.equal(await page.locator('#reportregion').evaluate(e=>e.scrollTop),reportScroll);assert.equal(await page.evaluate(()=>document.activeElement.id),'openFigure');
+ await page.locator('#openFigure').click();await page.locator('#changeData').click();assert.match(await page.locator('#content').innerText(),/Los datos han cambiado/);assert.match(await page.locator('#subtotal').innerText(),/−206,00/);await page.locator('#backReport').click();assert.match(await page.locator('#openFigure').innerText(),/−206,00/);
+ await entry('state');await page.locator('#scenario').selectOption('error');assert.equal(await page.locator('#subtotal').count(),0);assert.match(await page.locator('#results').innerText(),/No se pudo leer/);await page.locator('#retry').click();assert.equal(await page.locator('#count').innerText(),'3 registros');await page.locator('#scenario').selectOption('loading');assert.equal(await page.locator('#subtotal').count(),0);await page.locator('#finish').click();
+ await page.locator('#invalidate').click();assert.equal(await page.locator('#restore').isDisabled(),true);assert.match(await page.locator('#content').innerText(),/categoría de origen ya no existe/);
+ await entry('budget');await page.locator('#period').selectOption('range');await page.locator('#from').fill('2026-05');await page.locator('#until').fill('2026-01');await apply();assert.match(await page.locator('#filterError').innerText(),/mes final/);
+ await entry('state');await page.locator('[name=concept]').fill('cafe');await apply();assert.equal(await page.locator('#count').innerText(),'2 registros');await page.locator('#restore').click();
+ await page.locator('.review summary').click();await page.screenshot({path:new URL('windows.png',dir).pathname.replace(/^\/([A-Z]:)/,'$1'),fullPage:true});
+ for(const [width,height] of [[1024,768],[360,800],[412,915],[320,800]]){await page.setViewportSize({width,height});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`Overflow ${width}`);}
+ await page.setViewportSize({width:360,height:800});await page.screenshot({path:new URL('android.png',dir).pathname.replace(/^\/([A-Z]:)/,'$1'),fullPage:true});
+ await page.locator('.review summary').click();await page.locator('#bigtext').check();await page.locator('.review summary').click();await page.setViewportSize({width:320,height:800});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Overflow 200%');await page.screenshot({path:new URL('texto-200.png',dir).pathname.replace(/^\/([A-Z]:)/,'$1'),fullPage:true});
+ assert.deepEqual(errors,[]);console.log('OK: ámbitos, filtros, partidas/reales, duplicados, cero/vacío, 205 registros, retorno/foco/scroll, cambios, carga/error, 5 anchos y texto 200 %.');
+}finally{await browser.close();}
