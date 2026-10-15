@@ -240,6 +240,28 @@ Future<void> indicatorJourney(
       reason: 'El control del mes pendiente ya no existe.',
     );
 
+    // Editar una partida existente desde el detalle también relee todo el año,
+    // pero conserva febrero y el contexto al volver del formulario propietario.
+    for (final edit in [('4200', '2,03 meses'), ('3000', '2,10 meses')]) {
+      await tap(action('detail-budget'));
+      await tap(find.descendant(of: row, matching: find.text('Abrir detalle')));
+      await press('Editar');
+      await tester.ensureVisible(amount);
+      await tester.enterText(amount, edit.$1);
+      await press('Guardar partida');
+      await press('Volver a Indicadores');
+      await total(edit.$2);
+      expect(navigation.period, NavigationPeriod(2026, 2));
+      expect(navigation.context.filters['detalle'], '1');
+      expect(
+        tester
+            .widget<OutlinedButton>(action('detail-budget'))
+            .focusNode!
+            .hasFocus,
+        isTrue,
+      );
+    }
+
     // Relectura al volver de ruta secundaria, sin invalidación del árbol.
     await tap(action('detail-photo'));
     await io(

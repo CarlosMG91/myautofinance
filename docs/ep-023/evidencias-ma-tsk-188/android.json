@@ -1,0 +1,12 @@
+{
+  "ticket": "MA-TSK-188",
+  "platform": "android",
+  "dart": "3.13.0",
+  "appEnvironment": "test",
+  "syntheticDataOnly": true,
+  "startedAtUtc": "2026-10-15T15:13:43.964477Z",
+  "completed": [
+    "sqlite-contract-and-extension",
+    "source-return-import-restore-reopen"
+  ]
+}
