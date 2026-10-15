@@ -1,4 +1,6 @@
 import '../../wealth/wealth.dart' show Month, WealthReading;
+import '../../budget/budget.dart' show BudgetRecord;
+import '../../../core/persistence/unit_of_work.dart';
 import 'indicator_definition.dart';
 
 /// Suma firmada ya normalizada, solo de ramas cuya raíz actual es ingreso.
@@ -9,7 +11,9 @@ final class AnnualIncomeBudget {
     required this.year,
     required this.totalCents,
     required Set<int> presentMonths,
-  }) : presentMonths = Set.unmodifiable(presentMonths) {
+    List<BudgetRecord> sourceBudgets = const [],
+  }) : presentMonths = Set.unmodifiable(presentMonths),
+       sourceBudgets = List.unmodifiable(sourceBudgets) {
     if (year < 1 ||
         year > 9999 ||
         presentMonths.any((month) => month < 1 || month > 12)) {
@@ -20,6 +24,9 @@ final class AnnualIncomeBudget {
   final int year;
   final BigInt totalCents;
   final Set<int> presentMonths;
+
+  /// Partidas originales, sin agregados del árbol ni límite de doce filas.
+  final List<BudgetRecord> sourceBudgets;
   List<int> get pendingMonths => List.unmodifiable([
     for (var month = 1; month <= 12; month++)
       if (!presentMonths.contains(month)) month,
@@ -31,11 +38,19 @@ final class AnnualIncomeBudget {
 /// conserva estado, fichas pendientes y líquidos solo con foto completa.
 /// null significa entrada no solicitada, nunca ausencia financiera de foto.
 final class IndicatorInputs {
-  const IndicatorInputs({required this.month, this.wealth, this.annualIncome});
+  const IndicatorInputs({
+    required this.month,
+    this.wealth,
+    this.annualIncome,
+    this.datasetState,
+  });
 
   final Month month;
   final WealthReading? wealth;
   final AnnualIncomeBudget? annualIncome;
+
+  /// Identidad y revisión de la misma instantánea que las entradas leídas.
+  final DatasetState? datasetState;
 }
 
 enum IndicatorReadFailureCode { read, invalidInputs }

@@ -93,44 +93,42 @@ WHERE wealth_values.amount_cents<>excluded.amount_cents''',
         );
       });
   @override
-  Future<WealthSnapshot> read(Month month) => database.writeTransaction(
-    () async {
-      final accounts = await SqliteAccountRepository(database)
-          .listForMonth(month);
-      final snapshot = await _snapshot(month);
-      final rows = await database
-          .customSelect(
-            'SELECT * FROM wealth_values WHERE snapshot_id=?',
-            variables: [Variable(snapshot ?? '')],
-          )
-          .get();
-      final byAccount = {for (final r in rows) r.read<String>('account_id'): r};
-      final values = <WealthValue>[], pending = <AccountRecord>[];
-      for (final a in accounts) {
-        final row = byAccount[a.id];
-        if (row == null) {
-          pending.add(a);
-        } else {
-          values.add(
-            WealthValue(
-              id: row.read<String>('id'),
-              account: a,
-              amountCents: row.read<int>('amount_cents'),
-            ),
-          );
-        }
+  Future<WealthSnapshot> read(Month month) => database.transaction(() async {
+    final accounts = await SqliteAccountRepository(database)
+        .listForMonth(month);
+    final snapshot = await _snapshot(month);
+    final rows = await database
+        .customSelect(
+          'SELECT * FROM wealth_values WHERE snapshot_id=?',
+          variables: [Variable(snapshot ?? '')],
+        )
+        .get();
+    final byAccount = {for (final r in rows) r.read<String>('account_id'): r};
+    final values = <WealthValue>[], pending = <AccountRecord>[];
+    for (final a in accounts) {
+      final row = byAccount[a.id];
+      if (row == null) {
+        pending.add(a);
+      } else {
+        values.add(
+          WealthValue(
+            id: row.read<String>('id'),
+            account: a,
+            amountCents: row.read<int>('amount_cents'),
+          ),
+        );
       }
-      return WealthSnapshot(
-        month: month,
-        snapshotId: snapshot,
-        status: values.isEmpty
-            ? WealthSnapshotStatus.absent
-            : pending.isNotEmpty
-            ? WealthSnapshotStatus.incomplete
-            : WealthSnapshotStatus.complete,
-        values: values,
-        pending: pending,
-      );
-    },
-  );
+    }
+    return WealthSnapshot(
+      month: month,
+      snapshotId: snapshot,
+      status: values.isEmpty
+          ? WealthSnapshotStatus.absent
+          : pending.isNotEmpty
+          ? WealthSnapshotStatus.incomplete
+          : WealthSnapshotStatus.complete,
+      values: values,
+      pending: pending,
+    );
+  });
 }
