@@ -1,4 +1,10 @@
 import 'dart:io';
+import 'dart:async';
+
+import '../support/drilldown_capture.dart';
+
+import 'package:myautofinance/ui/autofinance_ui.dart';
+
 import 'dart:ui' as ui;
 
 import 'package:drift/native.dart';
@@ -22,6 +28,7 @@ import 'package:myautofinance/features/wealth/wealth.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
+    await loadDrilldownFonts();
     if (const bool.fromEnvironment('CAPTURE_MOVEMENT_LIST')) {
       final bytes = ByteData.sublistView(
         await File('C:/Windows/Fonts/segoeui.ttf').readAsBytes(),
@@ -136,6 +143,146 @@ void main() {
     expect(controller.concept, 'cafe');
     controller.dispose();
   });
+  test(
+    'Reset recupera ámbito inicial y descarta cursor, selección y foco',
+    () async {
+      await controller.refresh();
+      await controller.next();
+      controller.selectPage();
+      controller.concept = 'cafe';
+      await controller.apply();
+      expect(controller.reportFiltersChanged, isTrue);
+      controller.scrollOffset = 400;
+      controller.focus = ids[1];
+      controller.selectPage();
+      await controller.resetToReport();
+      expect(controller.reportFiltersChanged, isFalse);
+      expect(controller.pageIndex, 0);
+      expect(controller.selected, isEmpty);
+      expect(controller.scrollOffset, 0);
+      expect(controller.focus, isNull);
+      expect(controller.page!.totalCount, 3);
+      expect(controller.page!.subtotalCents, 600);
+      controller.dispose();
+    },
+  );
+  test(
+    'Respuesta tardía no reemplaza filtros ni subtotal del nuevo periodo',
+    () async {
+      final pending = Completer<MovementListSource>();
+      var calls = 0;
+      controller.dispose();
+      controller = MovementListController(
+        load: () => ++calls == 1
+            ? pending.future
+            : Future.value(createMovementListSource(db, invalidation)),
+        from: ValueDate(2026, 3, 1),
+        until: ValueDate(2026, 4, 1),
+      );
+      final old = controller.refresh();
+      await controller.changePeriod(
+        ValueDate(2026, 2, 1),
+        ValueDate(2026, 3, 1),
+      );
+      expect(controller.page!.totalCount, 0);
+      pending.complete(createMovementListSource(db, invalidation));
+      await old;
+      expect(controller.from.value, '2026-02-01');
+      expect(controller.page!.totalCount, 0);
+      expect(controller.page!.subtotalCents, 0);
+      controller.dispose();
+    },
+  );
+  test(
+    'Restauración invalida selección antes de una lectura fallida',
+    () async {
+      controller.dispose();
+      var restored = false;
+      final identity = Object();
+      controller = MovementListController(
+        load: () async {
+          final source = createMovementListSource(db, invalidation);
+          return MovementListSource(
+            movements: source.movements,
+            categories: source.categories,
+            accounts: restored
+                ? () async => throw StateError('Fallo tras sustituir')
+                : source.accounts,
+            invalidation: invalidation,
+            identity: restored ? identity : db,
+            management: source.management,
+          );
+        },
+        from: ValueDate(2026, 3, 1),
+        until: ValueDate(2026, 4, 1),
+        pageSize: 2,
+      );
+      await controller.refresh();
+      await controller.next();
+      controller.selectPage();
+      expect(controller.selected, isNotEmpty);
+      restored = true;
+      await controller.refresh();
+      expect(controller.error, isNotNull);
+      expect(controller.page, isNull);
+      expect(controller.selected, isEmpty);
+      expect(controller.pageIndex, 0);
+      expect(controller.beginBatch(), isNull);
+      controller.dispose();
+    },
+  );
+  test(
+    'Una escritura invalida el cursor previo al volver del editor',
+    () async {
+      await controller.refresh();
+      await controller.next();
+      expect(controller.pageIndex, 1);
+      await SqliteMovementRepository(db).delete(ids[0]);
+      await controller.refresh();
+      expect(controller.pageIndex, 0);
+      expect(controller.page!.totalCount, 2);
+      expect(controller.page!.records.map((r) => r.id), [ids[2], ids[1]]);
+      controller.dispose();
+    },
+  );
+  test(
+    'Una escritura durante la lectura retira el resultado hasta reintentar',
+    () async {
+      controller.dispose();
+      var mutate = true;
+      controller = MovementListController(
+        from: ValueDate(2026, 3, 1),
+        until: ValueDate(2026, 4, 1),
+        load: () async {
+          final source = createMovementListSource(db, invalidation);
+          return MovementListSource(
+            movements: source.movements,
+            categories: source.categories,
+            accounts: () async {
+              if (mutate) {
+                mutate = false;
+                await SqliteMovementRepository(db).delete(ids[0]);
+              }
+              return source.accounts();
+            },
+            invalidation: source.invalidation,
+            identity: source.identity,
+            management: source.management,
+            readState: source.readState,
+          );
+        },
+      );
+      await controller.refresh();
+      expect(controller.page, isNull);
+      expect(controller.error, isNotNull);
+      expect(controller.reportFiltersChanged, isFalse);
+      await controller.refresh();
+      expect(controller.error, isNull);
+      expect(controller.page!.totalCount, 2);
+      expect(controller.page!.subtotalCents, -400);
+      controller.dispose();
+    },
+  );
   for (final (width, scale) in [
     (320.0, 1.0),
     (412.0, 1.0),
@@ -156,13 +303,22 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             navigatorKey: navigator,
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(scale)),
-              child: child!,
+            theme: AfTheme.light().copyWith(
+              platform: width >= 840
+                  ? TargetPlatform.windows
+                  : TargetPlatform.android,
+            ),
+            builder: (context, child) => RepaintBoundary(
+              key: drilldownCaptureKey,
+              child: MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(scale)),
+                child: child!,
+              ),
             ),
             home: MovementListScreen(
               controller: controller,
+              reportOrigin: 'Estado del mes, 03/2026',
               onReturn: () {},
               onOpen: (id) async {
                 opened = id;
@@ -182,6 +338,7 @@ void main() {
           }
         });
         await tester.pumpAndSettle();
+        await captureDrilldown(tester, 'movimientos-${width.toInt()}-$scale');
         expect(find.byType(Table), findsNothing);
         expect(find.byType(MovementActivityRow), findsNWidgets(2));
         expect(find.byType(Card), findsNothing);
@@ -237,6 +394,19 @@ void main() {
         await tester.pumpAndSettle();
         expect(controller.page!.records.single.id, ids[0]);
         expect(controller.selected, isEmpty);
+        expect(find.text('Nuevo ámbito local'), findsOneWidget);
+        await tester.ensureVisible(
+          find.text('Restablecer filtros del informe'),
+        );
+        await tester.tap(find.text('Restablecer filtros del informe'));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 80)),
+        );
+        await tester.pumpAndSettle();
+        expect(controller.concept, isEmpty);
+        expect(controller.page!.totalCount, 3);
+        expect(controller.page!.subtotalCents, 600);
+        expect(find.text('Filtros del informe'), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       },
@@ -306,7 +476,14 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('Periodo 2026-03-01'), findsOneWidget);
+      expect(find.byKey(const Key('period-year')), findsNothing);
+      expect(find.textContaining('Periodo del informe:'), findsOneWidget);
       await _capture(tester, captureKey, '1440');
+      await captureDrilldown(
+        tester,
+        'movimientos-shell-windows',
+        key: captureKey,
+      );
       await tester.ensureVisible(find.byType(Checkbox).first);
       await tester.tap(find.byType(Checkbox).first);
       await tester.pump();
@@ -317,6 +494,11 @@ void main() {
       tester.view.physicalSize = const Size(412, 1000);
       await tester.pumpAndSettle();
       await _capture(tester, captureKey, '412');
+      await captureDrilldown(
+        tester,
+        'movimientos-shell-android',
+        key: captureKey,
+      );
       expect(
         tester
             .widget<MovementListScreen>(find.byType(MovementListScreen))

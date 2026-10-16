@@ -11,12 +11,17 @@ import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_wealth_repository.dart';
 import 'package:myautofinance/app/local_backup_session.dart';
 import 'package:myautofinance/app/navigation/movement_links.dart';
+import 'package:myautofinance/app/navigation/navigation_context.dart';
+
+import 'app_navigation.dart';
+
 import 'package:myautofinance/features/budget/budget.dart';
 import 'package:myautofinance/features/importing/importing.dart';
 import 'package:myautofinance/features/movements/movements.dart';
 import 'package:myautofinance/features/movements/presentation/movement_list_controller.dart';
 import 'package:myautofinance/features/movements/presentation/movement_list_screen.dart';
 import 'package:myautofinance/features/wealth/wealth.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 /// Guion común de host y Windows/Android nativos. Solo usa una carpeta sintética
 /// suministrada por el runner y la composición/persistencia reales de la app.
@@ -285,8 +290,13 @@ Future<void> movementLifecycleJourney(
     await tester.pumpWidget(AutofinanceApp(localSession: session));
     navigator().pushNamed('/real?a=2026&m=03');
     await settle();
-    await tap('Gestión');
-    await tap('Movimientos');
+    await selectAppDestination(tester, SessionDestination.management);
+    await settle();
+    // Abrir la acción de Gestión; la barra global tiene el mismo rótulo.
+    final movementEntry = find.widgetWithText(AfAction, 'Movimientos');
+    await tester.ensureVisible(movementEntry);
+    await tester.tap(movementEntry);
+    await settle();
     expect(list().from.value, march.from.value);
     expect(list().until!.value, march.until!.value);
     expect(list().categoryId, isNull);
@@ -446,7 +456,8 @@ Future<void> movementLifecycleJourney(
           expect(newRows[i], oldRows[i]);
         }
       }
-      await tap('Página anterior');
+      // Una escritura cambia la revisión: no se reutiliza el cursor previo.
+      expect(paged.pageIndex, 0);
       expect(paged.selected, isEmpty);
       expect(paged.page!.records.map((r) => r.id), first);
     } finally {
@@ -621,9 +632,9 @@ Future<void> movementLifecycleJourney(
     expect(await snapshot(), unchanged);
 
     // Contrato de informes: intersección y retorno al contexto original.
-    navigator().pop();
-    await settle();
     final origin = '/real?a=2026&m=03&rama=$root&alcance=rama';
+    // Gestión puede abrir Movimientos como raíz. Sustituir la lista actual
+    // conserva una ruta válida también cuando no existe otra debajo.
     navigator().pushReplacementNamed(origin);
     await settle();
     final reportQuery = MovementListQuery(

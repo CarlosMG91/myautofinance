@@ -175,7 +175,11 @@ class _BudgetRouteState extends State<BudgetRoute> {
     try {
       final uri = Uri.parse(widget.settings.name!);
       if (uri.path == BudgetLinks.path) {
-        return BudgetListRoute(settings: widget.settings, load: widget.load);
+        return BudgetListRoute(
+          settings: widget.settings,
+          load: widget.load,
+          navigationSession: widget.navigationSession,
+        );
       }
       if (uri.hasScheme ||
           uri.hasAuthority ||

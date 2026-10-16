@@ -21,6 +21,7 @@ MovementListSource createMovementListSource(
   },
   invalidation: invalidation,
   identity: database,
+  readState: database.readState,
   management: createMovementManagement(database: database),
   editor: () async => MovementEditorSource(
     identity: database,

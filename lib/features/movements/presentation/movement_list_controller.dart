@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/persistence/unit_of_work.dart';
+
 import '../domain/movement_repository.dart';
+import '../domain/movement_list_query.dart';
 import '../domain/category_repository.dart';
 import '../domain/category_read_invalidation.dart';
 import '../domain/movement_management.dart';
@@ -18,6 +21,7 @@ class MovementListSource {
     required this.identity,
     required this.management,
     this.editor,
+    this.readState,
   });
   final MovementRepository movements;
   final CategoryRepository categories;
@@ -28,6 +32,7 @@ class MovementListSource {
   final Object identity;
   final MovementManagement management;
   final MovementEditorLoader? editor;
+  final Future<DatasetState> Function()? readState;
 }
 
 typedef MovementListLoader = Future<MovementListSource> Function();
@@ -78,8 +83,17 @@ class MovementListController extends ChangeNotifier {
     this.scope = MovementCategoryScope.branch,
     this.unclassified = false,
     this.pageSize = 100,
-  });
+  }) : initialQuery = MovementListQuery(
+         from: from,
+         until: until,
+         categoryId: categoryId,
+         accountId: accountId,
+         concept: concept,
+         scope: scope,
+         unclassified: unclassified,
+       );
   final MovementListLoader load;
+  final MovementListQuery initialQuery;
   final int pageSize;
   ValueDate from;
   ValueDate? until;
@@ -87,6 +101,7 @@ class MovementListController extends ChangeNotifier {
   String concept;
   MovementCategoryScope scope;
   bool unclassified;
+  bool originCategoryMissing = false;
   bool loading = false;
   bool batchActive = false;
   bool get locked => loading || batchActive;
@@ -103,6 +118,8 @@ class MovementListController extends ChangeNotifier {
   bool _disposed = false;
   Object? _readIdentity;
   StreamSubscription<int>? _changes;
+  CategoryReadInvalidation? _invalidation;
+  DatasetState? _datasetState;
   MovementSelection? get selection =>
       selected.isEmpty ? null : MovementSelection(selected.toList());
   MovementListContext get context => MovementListContext(
@@ -145,13 +162,42 @@ class MovementListController extends ChangeNotifier {
           ..add(null);
         pageIndex = 0;
         cursor = null;
+        selected.clear();
+        periodRevision++;
+        scrollOffset = 0;
+        focus = null;
+        notice = 'La base local ha cambiado. Revisa los movimientos y selecciona de nuevo.';
       }
-      _changes ??= source.invalidation.changes.listen((_) {
-        unawaited(refresh());
-      });
+      _readIdentity = source.identity;
+      if (!identical(_invalidation, source.invalidation)) {
+        await _changes?.cancel();
+        if (_disposed || generation != _generation) return;
+        _invalidation = source.invalidation;
+        _changes = source.invalidation.changes.listen((_) {
+          clearSelection();
+          unawaited(refresh(restart: true));
+        });
+      }
+      final categoryGeneration = source.invalidation.generation;
+      final state = await source.readState?.call();
+      if (_disposed || generation != _generation) return;
+      if (state != null &&
+          _datasetState != null &&
+          (state.datasetId != _datasetState!.datasetId ||
+              state.revision != _datasetState!.revision)) {
+        _cursors
+          ..clear()
+          ..add(null);
+        pageIndex = 0;
+        cursor = null;
+      }
       final labels = await source.accounts();
       final nodes = await source.categories.list();
+      if (_disposed || generation != _generation) return;
       final byId = {for (final node in nodes) node.id: node};
+      originCategoryMissing =
+          initialQuery.categoryId != null &&
+          !byId.containsKey(initialQuery.categoryId);
       if (query.categoryId != null && !byId.containsKey(query.categoryId)) {
         throw const MovementFailure('La categoría no existe.');
       }
@@ -170,19 +216,33 @@ class MovementListController extends ChangeNotifier {
         after: cursor,
         limit: pageSize,
       );
+      final after = await source.readState?.call();
       if (_disposed || generation != _generation) return;
+      if (state != null &&
+          after != null &&
+          (state.datasetId != after.datasetId ||
+              state.revision != after.revision)) {
+        _cursors
+          ..clear()
+          ..add(null);
+        pageIndex = 0;
+        throw const MovementFailure(
+          'Los datos han cambiado durante la lectura. Reintenta.',
+        );
+      }
+      if (categoryGeneration != source.invalidation.generation) {
+        throw const MovementFailure(
+          'El árbol ha cambiado. Reintenta la lectura.',
+        );
+      }
       accounts = labels;
       paths = categories;
       page = result;
-      if (replaced) {
-        selected.clear();
-        notice = 'La base local ha cambiado. Revisa los movimientos y selecciona de nuevo.';
-      }
-      _readIdentity = source.identity;
+      _datasetState = state;
       selected.retainAll(result.records.map((e) => e.id));
     } catch (_) {
       if (_disposed || generation != _generation) return;
-      error = 'No se pudieron leer los movimientos. Reintenta conservando los filtros y la selección.';
+      error = 'No se pudieron leer los movimientos. Reintenta conservando los filtros.';
     }
     if (_disposed || generation != _generation) return;
     loading = false;
@@ -200,10 +260,32 @@ class MovementListController extends ChangeNotifier {
   Future<void> apply() {
     if (locked) return Future.value();
     clearSelection();
+    periodRevision++;
     scrollOffset = 0;
     focus = null;
     return refresh(restart: true);
   }
+
+  Future<void> resetToReport() {
+    if (locked) return Future.value();
+    from = initialQuery.from;
+    until = initialQuery.until;
+    accountId = initialQuery.accountId;
+    categoryId = initialQuery.categoryId;
+    scope = initialQuery.scope;
+    unclassified = initialQuery.unclassified;
+    concept = initialQuery.concept;
+    return apply();
+  }
+
+  bool get reportFiltersChanged =>
+      from.value != initialQuery.from.value ||
+      until?.value != initialQuery.until?.value ||
+      accountId != initialQuery.accountId ||
+      categoryId != initialQuery.categoryId ||
+      scope != initialQuery.scope ||
+      unclassified != initialQuery.unclassified ||
+      concept != initialQuery.concept;
 
   /// El default de sesión puede cambiar mientras una lectura sigue pendiente.
   /// Los rangos explícitos se resuelven en app y no llaman a este método.

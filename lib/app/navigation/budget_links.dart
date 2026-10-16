@@ -11,9 +11,9 @@ abstract final class BudgetLinks {
       'a': query.month.value.substring(0, 4),
       'm': query.month.value.substring(5, 7),
       if (!query.isMonthly || query.month.value != query.firstMonth.value)
-        'desde': query.firstMonth.value.substring(5, 7),
+        'desde': query.firstMonth.value.substring(0, 7),
       if (!query.isMonthly || query.month.value != query.firstMonth.value)
-        'hasta': query.lastMonth.value.substring(5, 7),
+        'hasta': query.lastMonth.value.substring(0, 7),
       if (query.categoryId != null) 'rama': query.categoryId!,
       if (query.unclassified) 'rama': 'sin-clasificar',
       'alcance': query.scope == MovementCategoryScope.direct
@@ -64,20 +64,26 @@ abstract final class BudgetLinks {
     if (p['origen'] != null) BudgetOrigin.parse(p['origen']!);
     if (p.containsKey('desde') != p.containsKey('hasta') ||
         p['desde'] != null &&
-            (!RegExp(r'^(0[1-9]|1[0-2])$').hasMatch(p['desde']!) ||
-                !RegExp(r'^(0[1-9]|1[0-2])$').hasMatch(p['hasta']!))) {
+            (!RegExp(r'^(?:[0-9]{4}-)?(0[1-9]|1[0-2])$')
+                    .hasMatch(p['desde']!) ||
+                !RegExp(r'^(?:[0-9]{4}-)?(0[1-9]|1[0-2])$')
+                    .hasMatch(p['hasta']!) ||
+                p['desde']!.length != p['hasta']!.length)) {
       throw const BudgetFailure('Rango de partidas inválido.');
     }
+    BudgetMonth boundary(String? value) {
+      if (value == null) {
+        return BudgetMonth(int.parse(p['a']!), int.parse(p['m']!));
+      }
+      return value.length == 2
+          ? BudgetMonth(int.parse(p['a']!), int.parse(value))
+          : BudgetMonth.parse('$value-01');
+    }
+
     return BudgetListQuery.range(
       month: BudgetMonth(int.parse(p['a']!), int.parse(p['m']!)),
-      firstMonth: BudgetMonth(
-        int.parse(p['a']!),
-        int.parse(p['desde'] ?? p['m']!),
-      ),
-      lastMonth: BudgetMonth(
-        int.parse(p['a']!),
-        int.parse(p['hasta'] ?? p['m']!),
-      ),
+      firstMonth: boundary(p['desde']),
+      lastMonth: boundary(p['hasta']),
       categoryId: p['rama'] == 'sin-clasificar' ? null : p['rama'],
       unclassified: p['rama'] == 'sin-clasificar',
       scope: scope,

@@ -169,7 +169,35 @@ class _MovementListRouteState extends State<MovementListRoute> {
         );
       }
 
+      void returnToOrigin() {
+        final navigator = Navigator.of(context);
+        if (navigator.canPop()) {
+          navigator.pop();
+        } else {
+          final saved = widget.settings.arguments is MovementListOrigin
+              ? (widget.settings.arguments as MovementListOrigin).context
+              : null;
+          final restored =
+              saved ??
+              (const {
+                    AppRoutes.actualSpending,
+                    AppRoutes.actualDetail,
+                  }.contains(Uri.parse(origin).path)
+                  ? AnnualActualOrigin.parse(origin).context
+                  : null) ??
+              (const {
+                        AppRoutes.monthlyStatus,
+                        AppRoutes.start,
+                      }.contains(Uri.parse(origin).path) &&
+                      Uri.parse(origin).hasQuery
+                  ? MonthlyStatusOrigin.parse(origin).context
+                  : null);
+          navigator.pushReplacementNamed(origin, arguments: restored);
+        }
+      }
+
       return MovementListScreen(
+        reportOrigin: principal ? null : MovementListOrigin(origin).label,
         returnLabel: 'Volver a ${MovementListOrigin(origin).label}',
         shell: widget.navigationSession == null
             ? null
@@ -179,14 +207,19 @@ class _MovementListRouteState extends State<MovementListRoute> {
                 backLabel: 'Volver a ${MovementListOrigin(origin).label}',
                 scrollController: scroll,
                 beforeNavigate: canLeave,
+                periodControl: principal
+                    ? null
+                    : Text(
+                        'Periodo del informe: ${controller.initialQuery.from.value} a ${controller.initialQuery.until?.value ?? 'fin del calendario'}',
+                      ),
                 contextTrail: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_explicitPeriod)
                       Text(
-                        'Rango propio: ${controller.from.value} → ${controller.until?.value ?? 'fin del calendario'}',
+                        'Rango propio: ${controller.from.value} a ${controller.until?.value ?? 'fin del calendario'}',
                       ),
-                    if (_explicitPeriod)
+                    if (_explicitPeriod && principal)
                       AfAction(
                         label: 'Usar mes seleccionado',
                         icon: AfIcons.calendar,
@@ -206,7 +239,7 @@ class _MovementListRouteState extends State<MovementListRoute> {
                         if (Navigator.of(context).canPop()) {
                           return Navigator.of(context).maybePop();
                         }
-                        Navigator.of(context).pushReplacementNamed(origin);
+                        returnToOrigin();
                         return true;
                       },
                 child: body,
@@ -227,32 +260,7 @@ class _MovementListRouteState extends State<MovementListRoute> {
           capture(0, null);
           setState(() {});
         },
-        onReturn: () {
-          final navigator = Navigator.of(context);
-          if (navigator.canPop()) {
-            navigator.pop();
-          } else {
-            final saved = widget.settings.arguments is MovementListOrigin
-                ? (widget.settings.arguments as MovementListOrigin).context
-                : null;
-            final restored =
-                saved ??
-                (const {
-                      AppRoutes.actualSpending,
-                      AppRoutes.actualDetail,
-                    }.contains(Uri.parse(origin).path)
-                    ? AnnualActualOrigin.parse(origin).context
-                    : null) ??
-                (const {
-                          AppRoutes.monthlyStatus,
-                          AppRoutes.start,
-                        }.contains(Uri.parse(origin).path) &&
-                        Uri.parse(origin).hasQuery
-                    ? MonthlyStatusOrigin.parse(origin).context
-                    : null);
-            navigator.pushReplacementNamed(origin, arguments: restored);
-          }
-        },
+        onReturn: returnToOrigin,
         selectCategory: widget.categories == null
             ? null
             : () => selectCategory(context, loadManagement: widget.categories!),
@@ -279,7 +287,14 @@ class _MovementListRouteState extends State<MovementListRoute> {
       return Scaffold(
         appBar: AppBar(title: const Text('No se pudo abrir este detalle')),
         body: TextButton(
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            final navigator = Navigator.of(context);
+            if (navigator.canPop()) {
+              navigator.pop();
+            } else {
+              navigator.pushReplacementNamed(AppRoutes.start);
+            }
+          },
           child: const Text('Volver al origen'),
         ),
       );

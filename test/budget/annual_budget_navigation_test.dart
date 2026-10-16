@@ -201,7 +201,8 @@ void main() {
       expect(find.text('Partidas del año'), findsOneWidget);
       expect(find.text('Total de partidas: −3,00 €'), findsOneWidget);
       expect(find.textContaining('Archivada'), findsOneWidget);
-      expect(find.text('2026-01'), findsOneWidget);
+      // El mes aparece en la partida y en el filtro local de inicio.
+      expect(find.text('2026-01'), findsNWidgets(2));
       expect(find.text('2026-02'), findsOneWidget);
       await tap(tester, find.text('Volver al origen'));
       expect(identical(session.context, original), isTrue);

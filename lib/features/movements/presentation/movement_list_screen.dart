@@ -22,8 +22,10 @@ class MovementListScreen extends StatefulWidget {
     this.returnLabel = 'Volver al origen',
     this.shell,
     this.onOrigin,
+    this.reportOrigin,
   });
   final MovementListController controller;
+  final String? reportOrigin;
   final Future<void> Function(String id) onOpen;
   final VoidCallback onReturn;
   final Future<void> Function()? onCreate;
@@ -142,6 +144,11 @@ class _MovementListScreenState extends State<MovementListScreen> {
       _shownPeriodRevision = c.periodRevision;
       _from.text = c.from.value;
       _until.text = c.until?.value ?? '';
+      _search.text = c.concept;
+      _accountId = c.accountId;
+      _categoryId = c.categoryId;
+      _scope = c.scope;
+      _unclassified = c.unclassified;
       _validation = null;
       if (_scroll.hasClients) _scroll.jumpTo(0);
       FocusManager.instance.primaryFocus?.unfocus();
@@ -282,7 +289,7 @@ class _MovementListScreenState extends State<MovementListScreen> {
         title: Focus(autofocus: true, child: Text(title)),
         content: Text(
           'Solo los UUID seleccionados: ${request.selection.ids.join(', ')}.\n'
-          'Periodo ${request.context.from.value} → ${request.context.until?.value ?? 'fin del calendario'}.\n'
+          'Periodo ${request.context.from.value} a ${request.context.until?.value ?? 'fin del calendario'}.\n'
           '${deleting ? 'El borrado no se puede deshacer en la app. Se conserva la procedencia histórica de importación.' : 'Categoría destino: ${category!.path}. Se conservan los demás campos y la procedencia.'}\n'
           'Si falla un movimiento, no se modifica ninguno.',
         ),
@@ -515,12 +522,68 @@ class _MovementListScreenState extends State<MovementListScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 16,
       children: [
+        if (widget.reportOrigin != null)
+          AfCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 8,
+              children: [
+                Text(
+                  'Origen: ${widget.reportOrigin}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  'Ámbito del informe: ${c.initialQuery.from.value} a ${c.initialQuery.until?.value ?? 'fin del calendario'} · '
+                  '${c.initialQuery.unclassified
+                      ? 'Sin clasificar'
+                      : c.initialQuery.categoryId == null
+                      ? 'Todas las categorías'
+                      : c.categoryLabel(c.initialQuery.categoryId)} · '
+                  '${c.initialQuery.scope == MovementCategoryScope.branch ? 'Rama completa' : 'Solo directos'} · '
+                  '${c.initialQuery.accountId == null ? 'Todas las cuentas' : c.accounts[c.initialQuery.accountId] ?? c.initialQuery.accountId}'
+                  '${c.initialQuery.concept.isEmpty ? '' : ' · Concepto: ${c.initialQuery.concept}'}',
+                ),
+                const Text(
+                  'Se consultan los datos actuales. La cifra puede variar si cambió la base; restablecer recupera filtros, no datos anteriores.',
+                ),
+                Text(
+                  c.reportFiltersChanged
+                      ? 'Nuevo ámbito local'
+                      : 'Filtros del informe',
+                ),
+                TextButton(
+                  onPressed: c.locked || c.originCategoryMissing
+                      ? null
+                      : () async {
+                          await c.resetToReport();
+                          if (!mounted) return;
+                          setState(() {
+                            _from.text = c.from.value;
+                            _until.text = c.until?.value ?? '';
+                            _search.text = c.concept;
+                            _accountId = c.accountId;
+                            _categoryId = c.categoryId;
+                            _scope = c.scope;
+                            _unclassified = c.unclassified;
+                            _validation = null;
+                          });
+                        },
+                  child: const Text('Restablecer filtros del informe'),
+                ),
+                if (c.originCategoryMissing)
+                  const AfStatus(
+                    kind: AfStatusKind.error,
+                    message: 'La categoría del informe ya no existe. Vuelve al origen para elegir otro ámbito.',
+                  ),
+              ],
+            ),
+          ),
         Focus(
           focusNode: _contentFocus,
           child: Semantics(
             header: true,
             child: Text(
-              'Periodo ${c.from.value} → ${c.until?.value ?? 'fin del calendario'} · Recientes primero',
+              'Periodo ${c.from.value} a ${c.until?.value ?? 'fin del calendario'} · Recientes primero',
             ),
           ),
         ),
