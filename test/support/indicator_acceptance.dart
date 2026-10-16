@@ -165,6 +165,7 @@ Future<void> indicatorAcceptance(WidgetTester tester) async {
     final accounts = await io(wealth.catalog);
     final main = accounts.singleWhere((a) => a.name == 'Cuenta principal');
     final savings = accounts.singleWhere((a) => a.name == 'Cuenta de ahorro');
+    final portfolio = accounts.singleWhere((a) => a.name == 'Cartera');
     final debt = accounts.singleWhere((a) => a.kind == AccountKind.debt);
     final salary = (await io(() => budgets.readYear(2026, incomeOnly: true)));
     Future<void> incomes(int amount) async {
@@ -186,7 +187,7 @@ Future<void> indicatorAcceptance(WidgetTester tester) async {
     await check(feb, code: 'foto_ausente');
     await io(() async {
       await wealth.photos.setValue(feb, main.id, 620000);
-      await wealth.photos.setValue(feb, debt.id, 500000);
+      await wealth.photos.setValue(feb, debt.id, 480000);
     });
     await check(
       feb,
@@ -214,14 +215,76 @@ Future<void> indicatorAcceptance(WidgetTester tester) async {
     await check(jan, code: 'ingresos_negativos');
     await io(() => incomes(300000));
     await io(() async {
-      for (final a in accounts) {
-        await wealth.photos.setValue(feb, a.id, a.id == main.id ? 620000 : 0);
-      }
+      await wealth.photos.setValue(feb, savings.id, 0);
+      await wealth.photos.setValue(feb, portfolio.id, 1050000);
     });
     await check(feb, exact: '31/15', display: '2,07 meses');
+    // MA-TSK-200: variante D integrada con proveedor SQLite y motor EP-023.
+    // Las cifras esperadas son las del contrato, sin recalcularlas en el test.
+    final originalPhoto = await io(() => wealth.readMonth(feb));
+    expect(originalPhoto.totals!.netWorthCents, 1190000);
+    final valuesBefore = await io(
+      () async =>
+          (await db
+                  .customSelect('SELECT * FROM wealth_values ORDER BY id')
+                  .get())
+              .map((row) => row.data)
+              .toList(),
+    );
+    final history = await io(
+      () => wealth.changeLiquidity(portfolio.id, feb, Liquidity.liquid),
+    );
+    expect(history.history, hasLength(2));
+    expect(history.history.first.from.value, '2026-01-01');
+    expect(history.history.first.until!.value, '2026-02-01');
+    expect(history.history.first.liquidity, Liquidity.medium);
+    expect(history.history.last.from.value, '2026-02-01');
+    expect(history.history.last.liquidity, Liquidity.liquid);
+    await check(jan, exact: '3/1', display: '3,00 meses');
+    await check(feb, exact: '167/30', display: '5,57 meses');
+    final liquidPhoto = await io(() => wealth.readMonth(feb));
+    expect(liquidPhoto.liquidAssetsCents, 1670000);
+    expect(liquidPhoto.totals!.assetsCents, 1670000);
+    expect(liquidPhoto.totals!.debtsCents, 480000);
+    expect(liquidPhoto.totals!.netWorthCents, 1190000);
+    await io(
+      () => wealth.correctHistoricalLiquidity(
+        portfolio.id,
+        feb,
+        Month(2026, 3),
+        Liquidity.medium,
+      ),
+    );
+    await check(feb, exact: '31/15', display: '2,07 meses');
+    expect(
+      await io(
+        () async =>
+            (await db
+                    .customSelect('SELECT * FROM wealth_values ORDER BY id')
+                    .get())
+                .map((row) => row.data)
+                .toList(),
+      ),
+      valuesBefore,
+    );
     await io(() => wealth.photos.setValue(feb, main.id, 630000));
     await check(feb, exact: '21/10', display: '2,10 meses');
+    final correctedPhoto = await io(() => wealth.readMonth(feb));
+    expect(
+      correctedPhoto.snapshot.snapshotId,
+      originalPhoto.snapshot.snapshotId,
+    );
+    expect(correctedPhoto.totals!.netWorthCents, 1200000);
     await check(jan, exact: '3/1', display: '3,00 meses');
+    expect(
+      (await io(() => wealth.readMonth(jan))).totals!.netWorthCents,
+      1400000,
+    );
+    // Sin foto, la clasificación histórica tampoco produce un resultado.
+    await io(() => wealth.photos.deleteSnapshot(feb));
+    await check(feb, code: 'foto_ausente');
+    await io(() => wealth.changeLiquidity(portfolio.id, feb, Liquidity.liquid));
+    await check(feb, code: 'foto_ausente');
     await io(() async {
       await wealth.photos.setValue(jan, main.id, 0);
       await wealth.photos.setValue(jan, savings.id, 0);
