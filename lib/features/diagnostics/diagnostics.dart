@@ -1,6 +1,7 @@
 import '../../core/modules/feature_module.dart';
 
 export 'domain/diagnostic_action.dart';
+export 'domain/diagnostic_executor.dart';
 export 'domain/diagnostic_evidence.dart';
 export 'domain/diagnostic_result.dart';
 export 'domain/diagnostic_rule.dart';

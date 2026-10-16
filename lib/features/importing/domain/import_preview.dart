@@ -2,6 +2,7 @@ import '../../budget/budget.dart';
 import '../../movements/movements.dart';
 import '../../wealth/wealth.dart';
 import 'import_creation.dart';
+import 'import_movement_match.dart';
 import 'import_session.dart';
 import 'interpreted_import.dart';
 
@@ -382,10 +383,18 @@ final class _Preview {
           continue;
         }
         final data = existing.data;
-        if (data.accountId == account.id &&
-            data.valueDate.value == row.valueDate.value &&
-            data.amountCents == row.amount.internalCents &&
-            _key(data.concept) == _key(row.concept)) {
+        if (importMovementMatch(
+              accountId: data.accountId,
+              valueDate: data.valueDate.value,
+              amountCents: data.amountCents,
+              concept: data.concept,
+            ) ==
+            importMovementMatch(
+              accountId: account.id,
+              valueDate: row.valueDate.value,
+              amountCents: row.amount.internalCents,
+              concept: row.concept,
+            )) {
           overlaps.add(
             ImportOverlap(
               sourceOrdinal: row.sourceOrdinal,
