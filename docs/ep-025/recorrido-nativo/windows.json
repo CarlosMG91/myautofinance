@@ -1,0 +1,406 @@
+{
+  "ticket": "MA-TSK-202",
+  "platform": "windows",
+  "syntheticDataOnly": true,
+  "origin": "Native Flutter integration_test; production SQLite services",
+  "surfaceSizeForced": true,
+  "androidBack": "Flutter binding handlePopRoute",
+  "csvSha256": "0b997f5c8092369aa47a08c8cca6d4c22050abca320880a173818d4e34576b62",
+  "startedAtUtc": "2026-10-16T12:52:52.947186Z",
+  "stages": {
+    "csv-repetido-sin-altas": {
+      "month": "2026-01-01",
+      "datasetId": "1624d005-3e87-499e-aff6-fec284d64177",
+      "revision": 5,
+      "generation": 1,
+      "executedAt": "2026-10-16T12:53:00.990550Z",
+      "obsolete": false,
+      "movementCount": 10,
+      "budgetCount": 48,
+      "photoStatus": "complete",
+      "pendingAccounts": [],
+      "liquidAssetsCents": 900000,
+      "netWorthCents": 1400000,
+      "indicator": {
+        "numerator": "3",
+        "denominator": "1"
+      },
+      "rules": {
+        "integridad_local": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "referencia_invalida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "presupuesto_solapado": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "importacion_repetida_persistida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "coincidencia_entre_lotes": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "movimiento_sin_categoria": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_ausente": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_incompleta": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "indicador_sin_dato": {
+          "status": "conformant",
+          "findings": 0
+        }
+      }
+    },
+    "categorizado-resultado-obsoleto": {
+      "month": "2026-01-01",
+      "datasetId": "1624d005-3e87-499e-aff6-fec284d64177",
+      "revision": 6,
+      "generation": 1,
+      "executedAt": "2026-10-16T12:53:05.010889Z",
+      "obsolete": true,
+      "movementCount": 12,
+      "budgetCount": 48,
+      "photoStatus": "complete",
+      "pendingAccounts": [],
+      "liquidAssetsCents": 900000,
+      "netWorthCents": 1400000,
+      "indicator": {
+        "numerator": "3",
+        "denominator": "1"
+      },
+      "rules": {
+        "integridad_local": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "referencia_invalida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "presupuesto_solapado": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "importacion_repetida_persistida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "coincidencia_entre_lotes": {
+          "status": "findings",
+          "findings": 2
+        },
+        "movimiento_sin_categoria": {
+          "status": "findings",
+          "findings": 1
+        },
+        "foto_ausente": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_incompleta": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "indicador_sin_dato": {
+          "status": "conformant",
+          "findings": 0
+        }
+      }
+    },
+    "pendiente-resuelto-avisos-conservados": {
+      "month": "2026-01-01",
+      "datasetId": "1624d005-3e87-499e-aff6-fec284d64177",
+      "revision": 7,
+      "generation": 1,
+      "executedAt": "2026-10-16T12:53:27.095741Z",
+      "obsolete": false,
+      "movementCount": 12,
+      "budgetCount": 48,
+      "photoStatus": "complete",
+      "pendingAccounts": [],
+      "liquidAssetsCents": 900000,
+      "netWorthCents": 1400000,
+      "indicator": {
+        "numerator": "3",
+        "denominator": "1"
+      },
+      "rules": {
+        "integridad_local": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "referencia_invalida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "presupuesto_solapado": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "importacion_repetida_persistida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "coincidencia_entre_lotes": {
+          "status": "findings",
+          "findings": 2
+        },
+        "movimiento_sin_categoria": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_ausente": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_incompleta": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "indicador_sin_dato": {
+          "status": "conformant",
+          "findings": 0
+        }
+      }
+    },
+    "foto-incompleta-sin-acarreo": {
+      "month": "2026-02-01",
+      "datasetId": "1624d005-3e87-499e-aff6-fec284d64177",
+      "revision": 8,
+      "generation": 1,
+      "executedAt": "2026-10-16T12:53:39.199933Z",
+      "obsolete": false,
+      "movementCount": 12,
+      "budgetCount": 48,
+      "photoStatus": "incomplete",
+      "pendingAccounts": [
+        "Cartera",
+        "Cuenta de ahorro"
+      ],
+      "liquidAssetsCents": null,
+      "netWorthCents": null,
+      "indicator": {
+        "unavailable": "foto_incompleta"
+      },
+      "rules": {
+        "integridad_local": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "referencia_invalida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "presupuesto_solapado": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "importacion_repetida_persistida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "coincidencia_entre_lotes": {
+          "status": "findings",
+          "findings": 2
+        },
+        "movimiento_sin_categoria": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_ausente": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_incompleta": {
+          "status": "findings",
+          "findings": 1
+        },
+        "indicador_sin_dato": {
+          "status": "findings",
+          "findings": 1
+        }
+      }
+    },
+    "foto-completa-cero-valido-colchon-2-07": {
+      "month": "2026-02-01",
+      "datasetId": "1624d005-3e87-499e-aff6-fec284d64177",
+      "revision": 9,
+      "generation": 1,
+      "executedAt": "2026-10-16T12:53:47.291300Z",
+      "obsolete": false,
+      "movementCount": 12,
+      "budgetCount": 48,
+      "photoStatus": "complete",
+      "pendingAccounts": [],
+      "liquidAssetsCents": 620000,
+      "netWorthCents": 1190000,
+      "indicator": {
+        "numerator": "31",
+        "denominator": "15"
+      },
+      "rules": {
+        "integridad_local": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "referencia_invalida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "presupuesto_solapado": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "importacion_repetida_persistida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "coincidencia_entre_lotes": {
+          "status": "findings",
+          "findings": 2
+        },
+        "movimiento_sin_categoria": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_ausente": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_incompleta": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "indicador_sin_dato": {
+          "status": "conformant",
+          "findings": 0
+        }
+      }
+    },
+    "correccion-febrero-colchon-2-10": {
+      "month": "2026-02-01",
+      "datasetId": "1624d005-3e87-499e-aff6-fec284d64177",
+      "revision": 10,
+      "generation": 1,
+      "executedAt": "2026-10-16T12:53:57.159456Z",
+      "obsolete": false,
+      "movementCount": 12,
+      "budgetCount": 48,
+      "photoStatus": "complete",
+      "pendingAccounts": [],
+      "liquidAssetsCents": 630000,
+      "netWorthCents": 1200000,
+      "indicator": {
+        "numerator": "21",
+        "denominator": "10"
+      },
+      "rules": {
+        "integridad_local": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "referencia_invalida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "presupuesto_solapado": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "importacion_repetida_persistida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "coincidencia_entre_lotes": {
+          "status": "findings",
+          "findings": 2
+        },
+        "movimiento_sin_categoria": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_ausente": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_incompleta": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "indicador_sin_dato": {
+          "status": "conformant",
+          "findings": 0
+        }
+      }
+    },
+    "recuperacion-y-repeticion-explicita": {
+      "month": "2026-02-01",
+      "datasetId": "1624d005-3e87-499e-aff6-fec284d64177",
+      "revision": 10,
+      "generation": 2,
+      "executedAt": "2026-10-16T12:54:03.682959Z",
+      "obsolete": false,
+      "movementCount": 12,
+      "budgetCount": 48,
+      "photoStatus": "complete",
+      "pendingAccounts": [],
+      "liquidAssetsCents": 630000,
+      "netWorthCents": 1200000,
+      "indicator": {
+        "numerator": "21",
+        "denominator": "10"
+      },
+      "rules": {
+        "integridad_local": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "referencia_invalida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "presupuesto_solapado": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "importacion_repetida_persistida": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "coincidencia_entre_lotes": {
+          "status": "findings",
+          "findings": 2
+        },
+        "movimiento_sin_categoria": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_ausente": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "foto_incompleta": {
+          "status": "conformant",
+          "findings": 0
+        },
+        "indicador_sin_dato": {
+          "status": "conformant",
+          "findings": 0
+        }
+      }
+    }
+  }
+}
