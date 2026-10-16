@@ -38,6 +38,14 @@ acíclico. El motor recibe un puerto de lectura por constructor y app aporta
 la instantánea SQLite sobre los repositorios existentes. Ver el
 [contrato de previsualización](../ep-012/previsualizacion.md).
 
+MA-TSK-197 incorpora `diagnostics`, propietario del contrato EP-025. Consume
+solo contratos públicos de `movements`, `budget`, `importing`, `wealth` e
+`indicators`; ningún módulo depende de diagnóstico. `core` añade únicamente
+su identidad técnica, sin reglas financieras. App registra el descriptor,
+sin ejecutar controles ni conectar la ruta de producto. Se revisan catálogo
+y prueba de fronteras: el grafo sigue acíclico. El contrato y el traspaso al
+ejecutor están en [reglas del diagnóstico](../ep-025/contrato-diagnostico.md).
+
 ## Reglas de dependencias
 
 MA-TSK-208 añade `lib/ui/autofinance_ui.dart` como entrada pública de

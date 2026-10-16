@@ -13,6 +13,7 @@ const _folders = <String, ModuleId>{
   'movements': ModuleId.movements,
   'importing': ModuleId.importing,
   'synchronization': ModuleId.synchronization,
+  'diagnostics': ModuleId.diagnostics,
 };
 
 void _expectAcyclic<T>(Map<T, Iterable<T>> graph) {

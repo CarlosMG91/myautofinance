@@ -7,6 +7,7 @@ import '../features/indicators/indicators.dart';
 import '../features/movements/movements.dart';
 import '../features/importing/importing.dart';
 import '../features/synchronization/synchronization.dart';
+import '../features/diagnostics/diagnostics.dart';
 
 /// Composición explícita; importar este catálogo no activa los módulos.
 const applicationModules = <FeatureModule>[
@@ -18,4 +19,5 @@ const applicationModules = <FeatureModule>[
   movementsModule,
   importingModule,
   synchronizationModule,
+  diagnosticsModule,
 ];

@@ -8,6 +8,7 @@ enum ModuleId {
   movements,
   importing,
   synchronization,
+  diagnostics,
 }
 
 /// Contrato mínimo para componer funcionalidades en el arranque.
