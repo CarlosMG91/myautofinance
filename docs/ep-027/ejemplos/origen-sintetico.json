@@ -1,0 +1,325 @@
+{
+  "notice": "Solo datos sintéticos de contrato; no base de usuario ni formato importable.",
+  "schemaVersion": 8,
+  "filter": {
+    "mode": "months",
+    "fromMonth": "2026-01-01",
+    "throughMonth": "2026-03-01"
+  },
+  "tables": {
+    "database_state": [
+      {
+        "singleton": 1,
+        "dataset_id": "27000000-0000-4000-8000-000000000900",
+        "revision": "9223372036854775807"
+      }
+    ],
+    "accounts": [
+      {
+        "id": "27000000-0000-4000-8000-000000000001",
+        "name": "Cuenta; \"familiar\"",
+        "kind": "account",
+        "active_from": "2025-01-01",
+        "active_through": null,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000002",
+        "name": "Cartera 🌱",
+        "kind": "portfolio",
+        "active_from": "2026-01-01",
+        "active_through": null,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000003",
+        "name": "Deuda",
+        "kind": "debt",
+        "active_from": "2026-01-01",
+        "active_through": null,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000004",
+        "name": "Cuenta cerrada",
+        "kind": "account",
+        "active_from": "2025-01-01",
+        "active_through": "2025-12-01",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      }
+    ],
+    "categories": [
+      {
+        "id": "27000000-0000-4000-8000-000000000011",
+        "parent_id": null,
+        "name": "Gastos / hogar",
+        "is_income": 0,
+        "archived": 0,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000012",
+        "parent_id": "27000000-0000-4000-8000-000000000011",
+        "name": "Café; \"té\"",
+        "is_income": null,
+        "archived": 0,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000013",
+        "parent_id": "27000000-0000-4000-8000-000000000012",
+        "name": "Compra\r\nsemanal",
+        "is_income": null,
+        "archived": 0,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000014",
+        "parent_id": null,
+        "name": "Ingresos",
+        "is_income": 1,
+        "archived": 0,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000015",
+        "parent_id": null,
+        "name": "Contexto archivado",
+        "is_income": 0,
+        "archived": 1,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      }
+    ],
+    "account_liquidity_periods": [
+      {
+        "id": "27000000-0000-4000-8000-000000000021",
+        "account_id": "27000000-0000-4000-8000-000000000001",
+        "from_month": "2025-01-01",
+        "until_month": "2026-02-01",
+        "liquidity": "liquid",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000022",
+        "account_id": "27000000-0000-4000-8000-000000000001",
+        "from_month": "2026-02-01",
+        "until_month": null,
+        "liquidity": "medium",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000023",
+        "account_id": "27000000-0000-4000-8000-000000000002",
+        "from_month": "2026-01-01",
+        "until_month": null,
+        "liquidity": "illiquid",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000024",
+        "account_id": "27000000-0000-4000-8000-000000000004",
+        "from_month": "2025-01-01",
+        "until_month": "2026-01-01",
+        "liquidity": "liquid",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      }
+    ],
+    "import_batches": [
+      {
+        "id": "27000000-0000-4000-8000-000000000031",
+        "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source_kind": "historical_csv",
+        "original_name": "sintetico.csv",
+        "contract_version": "1",
+        "imported_at": "2026-10-16T12:00:00.000Z",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      }
+    ],
+    "import_rows": [
+      {
+        "id": "27000000-0000-4000-8000-000000000032",
+        "batch_id": "27000000-0000-4000-8000-000000000031",
+        "source_ordinal": "9007199254740993",
+        "record_kind": "movement",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000033",
+        "batch_id": "27000000-0000-4000-8000-000000000031",
+        "source_ordinal": "7",
+        "record_kind": "budget",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      }
+    ],
+    "movements": [
+      {
+        "id": "27000000-0000-4000-8000-000000000041",
+        "account_id": "27000000-0000-4000-8000-000000000001",
+        "value_date": "2025-12-31",
+        "concept": "Fuera antes",
+        "amount_cents": "-1",
+        "category_id": "27000000-0000-4000-8000-000000000013",
+        "discretion": null,
+        "import_row_id": null,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000042",
+        "account_id": "27000000-0000-4000-8000-000000000001",
+        "value_date": "2026-01-01",
+        "concept": "=SUM(1;2) \"café\"\r\n第二行 🌱\nfin\rsolo",
+        "amount_cents": "-9223372036854775808",
+        "category_id": "27000000-0000-4000-8000-000000000013",
+        "discretion": " Necesario; \"sí\" ",
+        "import_row_id": null,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000043",
+        "account_id": "27000000-0000-4000-8000-000000000001",
+        "value_date": "2026-01-31",
+        "concept": "@texto literal",
+        "amount_cents": "700",
+        "category_id": null,
+        "discretion": "",
+        "import_row_id": null,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000044",
+        "account_id": "27000000-0000-4000-8000-000000000001",
+        "value_date": "2026-03-31",
+        "concept": "+ajuste",
+        "amount_cents": "9223372036854775807",
+        "category_id": "27000000-0000-4000-8000-000000000014",
+        "discretion": null,
+        "import_row_id": "27000000-0000-4000-8000-000000000032",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000045",
+        "account_id": "27000000-0000-4000-8000-000000000001",
+        "value_date": "2026-04-01",
+        "concept": "Fuera después",
+        "amount_cents": "1",
+        "category_id": null,
+        "discretion": null,
+        "import_row_id": null,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      }
+    ],
+    "budgets": [
+      {
+        "id": "27000000-0000-4000-8000-000000000051",
+        "month": "2026-01-01",
+        "category_id": "27000000-0000-4000-8000-000000000013",
+        "amount_cents": "0",
+        "concept": null,
+        "discretion": "",
+        "import_row_id": null,
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000052",
+        "month": "2026-02-01",
+        "category_id": "27000000-0000-4000-8000-000000000014",
+        "amount_cents": "-60000",
+        "concept": "Retención ingreso",
+        "discretion": null,
+        "import_row_id": "27000000-0000-4000-8000-000000000033",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      }
+    ],
+    "wealth_snapshots": [
+      {
+        "id": "27000000-0000-4000-8000-000000000061",
+        "month": "2026-01-01",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000062",
+        "month": "2026-02-01",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000063",
+        "month": "2026-03-01",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      }
+    ],
+    "wealth_values": [
+      {
+        "id": "27000000-0000-4000-8000-000000000071",
+        "snapshot_id": "27000000-0000-4000-8000-000000000061",
+        "account_id": "27000000-0000-4000-8000-000000000001",
+        "amount_cents": "0",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000072",
+        "snapshot_id": "27000000-0000-4000-8000-000000000061",
+        "account_id": "27000000-0000-4000-8000-000000000002",
+        "amount_cents": "9223372036854775807",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000073",
+        "snapshot_id": "27000000-0000-4000-8000-000000000061",
+        "account_id": "27000000-0000-4000-8000-000000000003",
+        "amount_cents": "50000",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      },
+      {
+        "id": "27000000-0000-4000-8000-000000000074",
+        "snapshot_id": "27000000-0000-4000-8000-000000000063",
+        "account_id": "27000000-0000-4000-8000-000000000001",
+        "amount_cents": "100",
+        "created_at": "2026-10-16T12:00:00.000Z",
+        "updated_at": "2026-10-16T12:00:00.000Z"
+      }
+    ],
+    "import_batch_metadata": [
+      {
+        "batch_id": "27000000-0000-4000-8000-000000000031",
+        "format_version": "1",
+        "movement_count": "1",
+        "budget_count": "1"
+      }
+    ],
+    "import_row_originals": [
+      {
+        "import_row_id": "27000000-0000-4000-8000-000000000032",
+        "payload": "{\"concepto\":\"Original sintético\"}"
+      }
+    ]
+  }
+}

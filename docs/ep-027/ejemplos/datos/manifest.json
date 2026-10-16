@@ -1,0 +1,83 @@
+{
+  "kind": "autofinance.dataExport",
+  "formatVersion": 1,
+  "exportId": "27000000-0000-4000-8000-000000000901",
+  "createdAtUtc": "2026-10-16T12:00:00.000Z",
+  "datasetId": "27000000-0000-4000-8000-000000000900",
+  "revision": "9223372036854775807",
+  "applicationId": 1095126595,
+  "schemaVersion": 8,
+  "currency": "EUR",
+  "filter": {
+    "mode": "months",
+    "fromMonth": "2026-01-01",
+    "throughMonth": "2026-03-01"
+  },
+  "dictionary": "diccionario.json",
+  "files": [
+    {
+      "path": "LEEME.md",
+      "mediaType": "text/markdown",
+      "rowCount": null,
+      "sizeBytes": "1370",
+      "sha256": "1fa017a4ba9b61e8f224fb33728006754848d4d2949eae42210411df41fa3e7c"
+    },
+    {
+      "path": "categorias.csv",
+      "mediaType": "text/csv",
+      "rowCount": "5",
+      "sizeBytes": "1552",
+      "sha256": "0e642520b1870ffa3596f49c8d0bc7dcf64c5559018c6ba3cdc1f55aca8c018a"
+    },
+    {
+      "path": "cuentas.csv",
+      "mediaType": "text/csv",
+      "rowCount": "4",
+      "sizeBytes": "607",
+      "sha256": "4615d256a10baa382c40c73a8f1c843037c4f087175c752e96bf12965827ca4f"
+    },
+    {
+      "path": "diccionario.json",
+      "mediaType": "application/json",
+      "rowCount": null,
+      "sizeBytes": "17373",
+      "sha256": "d1cc36c7bf0d23e0c9fb5d203436befda51e324f7edb7ce78d8a38393b33eb95"
+    },
+    {
+      "path": "fotos.csv",
+      "mediaType": "text/csv",
+      "rowCount": "3",
+      "sizeBytes": "489",
+      "sha256": "dab38c39b47c9fa2b1657256f953dd1e5b03103b2b9eee48dec3b0cdc98442ed"
+    },
+    {
+      "path": "liquidez_cuentas.csv",
+      "mediaType": "text/csv",
+      "rowCount": "4",
+      "sizeBytes": "720",
+      "sha256": "73bdfdc361d07354c8cdaddf467b6933f0b314c7419f942dba44b3df590f2b15"
+    },
+    {
+      "path": "movimientos.csv",
+      "mediaType": "text/csv",
+      "rowCount": "3",
+      "sizeBytes": "1013",
+      "sha256": "ef8986a65d0b3cd2ba3fad8147ed77fa4d80b37387ce278d7f93932442954120"
+    },
+    {
+      "path": "presupuestos.csv",
+      "mediaType": "text/csv",
+      "rowCount": "2",
+      "sizeBytes": "579",
+      "sha256": "e306015d64435675374d656f2968d3f92919bd722474468b4964afd997e64bb2"
+    },
+    {
+      "path": "valores_fotos.csv",
+      "mediaType": "text/csv",
+      "rowCount": "4",
+      "sizeBytes": "795",
+      "sha256": "6073ffe2c0eaeb9366fec85fff943b602109c01e75592d0700662a92bb346e74"
+    }
+  ],
+  "databaseTables": []
+}

@@ -1,0 +1,4 @@
+# Los hashes del manifiesto describen bytes exactos, incluidos CR/LF interiores.
+diccionario-v1.json -text
+ejemplos/datos/** -text
+ejemplos/datos/*.csv whitespace=cr-at-eol

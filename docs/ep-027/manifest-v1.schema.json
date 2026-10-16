@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Manifiestos públicos Autofinance EP-027 v1",
+  "description": "Aplicar también las restricciones semánticas de contrato-exportacion-v1.md: rango int64, fechas válidas, inventario, hashes, unicidad por path y conteos.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "formatVersion",
+    "exportId",
+    "createdAtUtc",
+    "datasetId",
+    "revision",
+    "applicationId",
+    "schemaVersion",
+    "currency",
+    "filter",
+    "dictionary",
+    "files",
+    "databaseTables"
+  ],
+  "properties": {
+    "kind": {
+      "enum": [
+        "autofinance.dataExport",
+        "autofinance.portableBackup"
+      ]
+    },
+    "formatVersion": {
+      "const": 1
+    },
+    "exportId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "createdAtUtc": {
+      "type": "string",
+      "pattern": "^(?!0000)[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "datasetId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,18})$"
+    },
+    "applicationId": {
+      "const": 1095126595
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "currency": {
+      "const": "EUR"
+    },
+    "filter": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "fromMonth",
+            "throughMonth"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "all",
+                "months"
+              ]
+            },
+            "fromMonth": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-01$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "throughMonth": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-01$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "dictionary": {
+      "enum": [
+        "diccionario.json",
+        null
+      ]
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "mediaType",
+          "rowCount",
+          "sizeBytes",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "enum": [
+              "movimientos.csv",
+              "presupuestos.csv",
+              "fotos.csv",
+              "valores_fotos.csv",
+              "cuentas.csv",
+              "categorias.csv",
+              "liquidez_cuentas.csv",
+              "diccionario.json",
+              "LEEME.md",
+              "autofinance.sqlite"
+            ]
+          },
+          "mediaType": {
+            "enum": [
+              "text/csv",
+              "application/json",
+              "text/markdown",
+              "application/vnd.sqlite3"
+            ]
+          },
+          "rowCount": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,18})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sizeBytes": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "minItems": 2,
+      "maxItems": 9,
+      "uniqueItems": true
+    },
+    "databaseTables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "rowCount"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "rowCount": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$"
+          }
+        }
+      },
+      "uniqueItems": true
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "kind": {
+          "const": "autofinance.dataExport"
+        },
+        "dictionary": {
+          "const": "diccionario.json"
+        },
+        "filter": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "fromMonth",
+            "throughMonth"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "all",
+                "months"
+              ]
+            },
+            "fromMonth": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-01$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "throughMonth": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-01$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "oneOf": [
+            {
+              "properties": {
+                "mode": {
+                  "const": "all"
+                },
+                "fromMonth": {
+                  "type": "null"
+                },
+                "throughMonth": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "mode": {
+                  "const": "months"
+                },
+                "fromMonth": {
+                  "type": "string",
+                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-01$"
+                },
+                "throughMonth": {
+                  "type": "string",
+                  "pattern": "^(?!0000)[0-9]{4}-(0[1-9]|1[0-2])-01$"
+                }
+              }
+            }
+          ]
+        },
+        "files": {
+          "minItems": 9,
+          "maxItems": 9
+        },
+        "databaseTables": {
+          "maxItems": 0
+        }
+      }
+    },
+    {
+      "properties": {
+        "kind": {
+          "const": "autofinance.portableBackup"
+        },
+        "dictionary": {
+          "type": "null"
+        },
+        "filter": {
+          "type": "null"
+        },
+        "files": {
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "databaseTables": {
+          "minItems": 1
+        }
+      }
+    }
+  ]
+}
