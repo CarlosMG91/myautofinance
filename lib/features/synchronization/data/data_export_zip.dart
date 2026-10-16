@@ -21,6 +21,8 @@ final class ExportZipFile {
         ? 'text/csv'
         : path.endsWith('.json')
         ? 'application/json'
+        : path.endsWith('.sqlite')
+        ? 'application/vnd.sqlite3'
         : 'text/markdown',
     'rowCount': rows?.toString(),
     'sizeBytes': '$size',
@@ -61,7 +63,9 @@ Future<void> createAndVerifyExportZip({
   final centralHeaders = <List<int>>[];
   var offset = 0;
   for (final file in files) {
-    if (!RegExp(r'^[A-Za-z_]+\.(csv|json|md)$').hasMatch(file.path)) _invalid();
+    if (!RegExp(r'^[A-Za-z_]+\.(csv|json|md|sqlite)$').hasMatch(file.path)) {
+      _invalid();
+    }
     final name = utf8.encode(file.path);
     final local = _Bytes()
       ..u32(0x04034b50)
@@ -117,12 +121,16 @@ Future<void> createAndVerifyExportZip({
     for (var i = 0; i < files.length; i++) {
       cancellation.check();
       await output.writeFrom(localHeaders[i]);
+      var remaining = files[i].size;
       await for (final bytes in File(
         '${stage.path}/${files[i].path}',
       ).openRead()) {
         cancellation.check();
+        if (bytes.length > remaining) _invalid();
         await output.writeFrom(bytes);
+        remaining -= bytes.length;
       }
+      if (remaining != 0) _invalid();
     }
     for (final header in centralHeaders) {
       await output.writeFrom(header);
