@@ -1,0 +1,590 @@
+// Copia exacta de docs/ep-027/diccionario-v1.json; verificada por pruebas.
+const exportDictionaryV1 = r'''{
+  "kind": "autofinance.dataDictionary",
+  "formatVersion": 1,
+  "currency": "EUR",
+  "csv": {
+    "encoding": "UTF-8",
+    "bom": false,
+    "delimiter": ";",
+    "recordTerminator": "CRLF",
+    "quote": "\"",
+    "quoteAllNonNull": true,
+    "null": "unquoted empty field",
+    "emptyString": "quoted empty field",
+    "preserveText": true
+  },
+  "types": {
+    "uuid": "Hexadecimal minúsculo 8-4-4-4-12, sin imponer versión a UUID persistidos.",
+    "utc": "YYYY-MM-DDTHH:mm:ss.SSSZ; UTC.",
+    "date": "YYYY-MM-DD, fecha gregoriana real, años 0001–9999.",
+    "month": "YYYY-MM-01, años 0001–9999.",
+    "text": "Texto literal sin recortar, evaluar fórmulas ni normalizar Unicode.",
+    "eur": "Decimal EUR de INTEGER int64 de céntimos; -?(0|[1-9][0-9]*)\\.[0-9]{2}; sin -0.00; movimientos no cero.",
+    "eurNonNegative": "Igual a eur, >=0; deuda positiva, cero explícito válido.",
+    "counter": "Cadena decimal canónica 0..9223372036854775807, ordinal_origen >=2.",
+    "boolean": "0 o 1.",
+    "depth": "1, 2 o 3.",
+    "classification": [
+      "sin_categoria",
+      "categorizado"
+    ],
+    "photoStatus": [
+      "absent",
+      "incomplete",
+      "complete"
+    ],
+    "accountKind": [
+      "account",
+      "portfolio",
+      "debt"
+    ],
+    "liquidity": [
+      "liquid",
+      "medium",
+      "illiquid"
+    ],
+    "sourceKind": [
+      "historical_csv",
+      "bank_xls"
+    ],
+    "uuidArray": "Array JSON compacto de UUID, entrecomillado y escapado después como CSV.",
+    "textArray": "Array JSON compacto de textos, entrecomillado y escapado después como CSV."
+  },
+  "context": "Todos los catálogos y periodos sin filtro, incluidos archivados/bajas y contexto fuera del rango.",
+  "files": [
+    {
+      "path": "movimientos.csv",
+      "sourceTable": "movements",
+      "orderBy": [
+        "fecha_valor",
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "cuenta_id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "account_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "fecha_valor",
+          "type": "date",
+          "nullable": false,
+          "source": "value_date",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "concepto",
+          "type": "text",
+          "nullable": false,
+          "source": "concept",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "importe_eur",
+          "type": "eur",
+          "nullable": false,
+          "source": "amount_cents",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "categoria_id",
+          "type": "uuid",
+          "nullable": true,
+          "source": "category_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "clasificacion",
+          "type": "classification",
+          "nullable": false,
+          "source": "derived",
+          "description": "sin_categoria cuando category_id es NULL; categorizado en otro caso."
+        },
+        {
+          "name": "discrecionalidad",
+          "type": "text",
+          "nullable": true,
+          "source": "discretion",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "fila_importacion_id",
+          "type": "uuid",
+          "nullable": true,
+          "source": "import_row_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "lote_id",
+          "type": "uuid",
+          "nullable": true,
+          "source": "import_rows.batch_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "ordinal_origen",
+          "type": "counter",
+          "nullable": true,
+          "source": "import_rows.source_ordinal",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "tipo_origen",
+          "type": "sourceKind",
+          "nullable": true,
+          "source": "import_batches.source_kind",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "creado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "created_at",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "actualizado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "updated_at",
+          "description": "Valor persistido sin transformación semántica."
+        }
+      ]
+    },
+    {
+      "path": "presupuestos.csv",
+      "sourceTable": "budgets",
+      "orderBy": [
+        "mes",
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "mes",
+          "type": "month",
+          "nullable": false,
+          "source": "month",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "categoria_id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "category_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "importe_eur",
+          "type": "eur",
+          "nullable": false,
+          "source": "amount_cents",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "concepto",
+          "type": "text",
+          "nullable": true,
+          "source": "concept",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "discrecionalidad",
+          "type": "text",
+          "nullable": true,
+          "source": "discretion",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "fila_importacion_id",
+          "type": "uuid",
+          "nullable": true,
+          "source": "import_row_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "lote_id",
+          "type": "uuid",
+          "nullable": true,
+          "source": "import_rows.batch_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "ordinal_origen",
+          "type": "counter",
+          "nullable": true,
+          "source": "import_rows.source_ordinal",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "tipo_origen",
+          "type": "sourceKind",
+          "nullable": true,
+          "source": "import_batches.source_kind",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "creado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "created_at",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "actualizado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "updated_at",
+          "description": "Valor persistido sin transformación semántica."
+        }
+      ]
+    },
+    {
+      "path": "fotos.csv",
+      "sourceTable": "wealth_snapshots",
+      "orderBy": [
+        "mes",
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "mes",
+          "type": "month",
+          "nullable": false,
+          "source": "month",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "estado",
+          "type": "photoStatus",
+          "nullable": false,
+          "source": "derived",
+          "description": "absent si no hay valores, incomplete si hay pendientes, complete en otro caso."
+        },
+        {
+          "name": "cuentas_esperadas",
+          "type": "counter",
+          "nullable": false,
+          "source": "derived",
+          "description": "Número de cuentas vigentes de todos los tipos en el mes."
+        },
+        {
+          "name": "valores_registrados",
+          "type": "counter",
+          "nullable": false,
+          "source": "derived",
+          "description": "Número de wealth_values de esta cabecera."
+        },
+        {
+          "name": "cuentas_pendientes",
+          "type": "counter",
+          "nullable": false,
+          "source": "derived",
+          "description": "Cuentas esperadas menos cuentas con valor; cero no es ausencia."
+        },
+        {
+          "name": "creado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "created_at",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "actualizado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "updated_at",
+          "description": "Valor persistido sin transformación semántica."
+        }
+      ]
+    },
+    {
+      "path": "valores_fotos.csv",
+      "sourceTable": "wealth_values",
+      "orderBy": [
+        "foto_id",
+        "cuenta_id",
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "foto_id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "snapshot_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "cuenta_id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "account_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "importe_eur",
+          "type": "eurNonNegative",
+          "nullable": false,
+          "source": "amount_cents",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "creado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "created_at",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "actualizado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "updated_at",
+          "description": "Valor persistido sin transformación semántica."
+        }
+      ]
+    },
+    {
+      "path": "cuentas.csv",
+      "sourceTable": "accounts",
+      "orderBy": [
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "nombre",
+          "type": "text",
+          "nullable": false,
+          "source": "name",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "tipo",
+          "type": "accountKind",
+          "nullable": false,
+          "source": "kind",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "alta_mes",
+          "type": "month",
+          "nullable": false,
+          "source": "active_from",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "baja_mes",
+          "type": "month",
+          "nullable": true,
+          "source": "active_through",
+          "description": "Último mes vigente inclusivo; NULL abierto."
+        },
+        {
+          "name": "creado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "created_at",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "actualizado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "updated_at",
+          "description": "Valor persistido sin transformación semántica."
+        }
+      ]
+    },
+    {
+      "path": "categorias.csv",
+      "sourceTable": "categories",
+      "orderBy": [
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "padre_id",
+          "type": "uuid",
+          "nullable": true,
+          "source": "parent_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "nombre",
+          "type": "text",
+          "nullable": false,
+          "source": "name",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "ingreso_raiz",
+          "type": "boolean",
+          "nullable": true,
+          "source": "is_income",
+          "description": "1/0 solo en raíz; NULL en descendientes."
+        },
+        {
+          "name": "archivada",
+          "type": "boolean",
+          "nullable": false,
+          "source": "archived",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "raiz_id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "derived",
+          "description": "UUID del antecesor raíz o el propio."
+        },
+        {
+          "name": "nivel",
+          "type": "depth",
+          "nullable": false,
+          "source": "derived",
+          "description": "Profundidad 1, 2 o 3."
+        },
+        {
+          "name": "ingreso_efectivo",
+          "type": "boolean",
+          "nullable": false,
+          "source": "derived",
+          "description": "is_income de la raíz, sin deducir del signo."
+        },
+        {
+          "name": "ruta_ids",
+          "type": "uuidArray",
+          "nullable": false,
+          "source": "derived",
+          "description": "Array JSON ordenado de UUID de raíz a nodo."
+        },
+        {
+          "name": "ruta_nombres",
+          "type": "textArray",
+          "nullable": false,
+          "source": "derived",
+          "description": "Array JSON ordenado de nombres de raíz a nodo; sin concatenar separadores."
+        },
+        {
+          "name": "creado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "created_at",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "actualizado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "updated_at",
+          "description": "Valor persistido sin transformación semántica."
+        }
+      ]
+    },
+    {
+      "path": "liquidez_cuentas.csv",
+      "sourceTable": "account_liquidity_periods",
+      "orderBy": [
+        "cuenta_id",
+        "desde_mes",
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "cuenta_id",
+          "type": "uuid",
+          "nullable": false,
+          "source": "account_id",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "desde_mes",
+          "type": "month",
+          "nullable": false,
+          "source": "from_month",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "hasta_mes",
+          "type": "month",
+          "nullable": true,
+          "source": "until_month",
+          "description": "Límite exclusivo; NULL abierto."
+        },
+        {
+          "name": "liquidez",
+          "type": "liquidity",
+          "nullable": false,
+          "source": "liquidity",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "creado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "created_at",
+          "description": "Valor persistido sin transformación semántica."
+        },
+        {
+          "name": "actualizado_utc",
+          "type": "utc",
+          "nullable": false,
+          "source": "updated_at",
+          "description": "Valor persistido sin transformación semántica."
+        }
+      ]
+    }
+  ]
+}
+''';
