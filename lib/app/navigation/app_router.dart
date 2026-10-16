@@ -1,3 +1,5 @@
+import '../../features/diagnostics/diagnostics.dart';
+import 'diagnostic_route.dart';
 import 'movement_list_route.dart';
 import 'pending_movement_route.dart';
 import '../../features/movements/presentation/pending_movement_controller.dart';
@@ -64,6 +66,9 @@ abstract final class AppRouter {
     MonthlyStatusLoader? monthlyStatus,
     AnnualActualLoader? annualActual,
     IndicatorLoader? indicators,
+    DiagnosticExecutor? diagnostics,
+    Stream<int>? diagnosticChanges,
+    DiagnosticReferenceExists? diagnosticReferences,
     ImportServicesLoader? imports,
     LocalCsvSelector? csvSelector,
     bool allowTestImports = false,
@@ -138,12 +143,26 @@ abstract final class AppRouter {
               },
         management: (origin, refresh) => const SizedBox.shrink(),
       );
+    } else if (uri.path == AppRoutes.diagnostics) {
+      page = DiagnosticRoute(
+        settings: destinationSettings,
+        executor: diagnostics,
+        session: navigationSession,
+        changes: diagnosticChanges,
+        exists: diagnosticReferences,
+        selectedDestination:
+            settings.arguments is _BackupOrigin &&
+                Uri.tryParse((settings.arguments as _BackupOrigin).route)
+                        ?.path ==
+                    AppRoutes.management
+            ? SessionDestination.management
+            : null,
+      );
     } else if (const {
       AppRoutes.start,
       AppRoutes.analysis,
       AppRoutes.more,
       AppRoutes.management,
-      AppRoutes.diagnostics,
     }.contains(uri.path)) {
       page = _ShellEntry(
         destination: SessionDestination.fromPath(uri.path)!,
@@ -1158,17 +1177,10 @@ class _ShellEntryState extends State<_ShellEntry> {
           .pushNamed(SessionLocation.encode(next), arguments: next);
     }
 
-    final argument = ModalRoute.of(context)?.settings.arguments;
-    final selected =
-        destination == SessionDestination.diagnostics &&
-            argument is _BackupOrigin &&
-            Uri.tryParse(argument.route)?.path == AppRoutes.management
-        ? SessionDestination.management
-        : destination;
     return PrimaryNavigation(
       session: _session,
       title: PrimaryNavigation.labels[destination]!,
-      selectedDestination: selected,
+      selectedDestination: destination,
       detailAction: destination == SessionDestination.home
           ? AfAction(
               label: 'Ver detalle',
@@ -1237,10 +1249,6 @@ class _ShellEntryState extends State<_ShellEntry> {
           ],
           if (destination == SessionDestination.management)
             ...widget.management.links(context),
-          if (destination == SessionDestination.diagnostics)
-            const Text(
-              'Diagnóstico no disponible: pendiente de la interfaz de EP-025. No se ejecuta automáticamente.',
-            ),
         ],
       ),
     );

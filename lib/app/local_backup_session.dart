@@ -1,3 +1,7 @@
+import 'diagnostic_factory.dart';
+import 'navigation/diagnostic_route.dart' show DiagnosticReferenceExists;
+import '../features/diagnostics/diagnostics.dart';
+import 'data/sqlite/diagnostic_reference_reader.dart';
 import 'movement_list_factory.dart';
 import 'pending_movement_factory.dart';
 import '../features/movements/presentation/pending_movement_controller.dart';
@@ -45,6 +49,11 @@ class LocalBackupSession {
     controller.addListener(categoryInvalidation.invalidate);
   }
 
+  late final DiagnosticExecutor diagnostics = createDiagnosticExecutor(
+    store: store,
+  );
+  late final DiagnosticReferenceExists diagnosticReferences =
+      DiagnosticReferenceReader(store).exists;
   final LocalDatabaseStore store;
   late final DriveController drive = createDriveUi(
     store: store,

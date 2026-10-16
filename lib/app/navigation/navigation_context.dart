@@ -10,7 +10,7 @@ enum SessionDestination {
   analysis(AppRoutes.analysis, PeriodView.annual),
   more(AppRoutes.more, PeriodView.monthly),
   management(AppRoutes.management, PeriodView.monthly),
-  diagnostics(AppRoutes.diagnostics, PeriodView.annual),
+  diagnostics(AppRoutes.diagnostics, PeriodView.monthly),
   status(AppRoutes.monthlyStatus, PeriodView.monthly),
   wealth(AppRoutes.wealth, PeriodView.monthly),
   budget(AppRoutes.budget, PeriodView.annual),

@@ -1,3 +1,5 @@
+import '../features/diagnostics/diagnostics.dart';
+import 'navigation/diagnostic_route.dart';
 import '../features/movements/presentation/movement_list_controller.dart';
 import '../features/movements/presentation/pending_movement_controller.dart';
 import '../features/importing/presentation/import_controller.dart';
@@ -44,6 +46,9 @@ class AutofinanceApp extends StatefulWidget {
     this.monthlyStatus,
     this.annualActual,
     this.indicators,
+    this.diagnostics,
+    this.diagnosticChanges,
+    this.diagnosticReferences,
     this.imports,
     this.csvSelector,
     this.navigationSession,
@@ -65,6 +70,9 @@ class AutofinanceApp extends StatefulWidget {
   final MonthlyStatusLoader? monthlyStatus;
   final AnnualActualLoader? annualActual;
   final IndicatorLoader? indicators;
+  final DiagnosticExecutor? diagnostics;
+  final Stream<int>? diagnosticChanges;
+  final DiagnosticReferenceExists? diagnosticReferences;
   final ImportServicesLoader? imports;
   final LocalCsvSelector? csvSelector;
   final NavigationSession? navigationSession;
@@ -154,6 +162,13 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
             annualActual:
                 widget.annualActual ?? widget.localSession?.annualActual,
             indicators: widget.indicators ?? widget.localSession?.indicators,
+            diagnostics: widget.diagnostics ?? widget.localSession?.diagnostics,
+            diagnosticChanges:
+                widget.diagnosticChanges ??
+                widget.localSession?.categoryInvalidation.changes,
+            diagnosticReferences:
+                widget.diagnosticReferences ??
+                widget.localSession?.diagnosticReferences,
             imports: widget.imports ?? widget.localSession?.imports,
             csvSelector: widget.csvSelector,
             allowTestImports: widget.config.environment == AppEnvironment.test,
@@ -176,6 +191,13 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
           annualActual:
               widget.annualActual ?? widget.localSession?.annualActual,
           indicators: widget.indicators ?? widget.localSession?.indicators,
+          diagnostics: widget.diagnostics ?? widget.localSession?.diagnostics,
+          diagnosticChanges:
+              widget.diagnosticChanges ??
+              widget.localSession?.categoryInvalidation.changes,
+          diagnosticReferences:
+              widget.diagnosticReferences ??
+              widget.localSession?.diagnosticReferences,
           imports: widget.imports ?? widget.localSession?.imports,
           csvSelector: widget.csvSelector,
           allowTestImports: widget.config.environment == AppEnvironment.test,
