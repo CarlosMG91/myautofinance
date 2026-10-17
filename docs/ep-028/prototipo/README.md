@@ -104,3 +104,35 @@ copia este HTML sintético a la ruta de mockups del board existente.
 
 No hay aprobación humana registrada en esta entrega. Debe quedar asociada a
 esta versión/URL antes de completar el ticket o implementar el asistente.
+
+### Calidad general del checkout
+
+Se ejecutaron `flutter --version` y `scripts/check-quality.ps1` con la
+toolchain fijada. El primer intento no pudo consultar `pub.dev` por la
+restricción de red; se repitió con el acceso autorizado, sin actualizar SDK
+ni `pubspec.lock`. Resolución de dependencias correcta, formato de 505 archivos
+sin cambios y análisis sin incidencias.
+
+La suite general finalizó con **2.008 pruebas superadas y cinco fallos**:
+
+- `test/budget/budget_lifecycle_test.dart`, recorrido Android: timeout de 45 s.
+- `test/movements/pending_lifecycle_test.dart`, Windows y Android: `No element`
+  al buscar un control en `pending_lifecycle_journey.dart:144`.
+- `test/synchronization/local_recovery_journey_test.dart`, fallo de disco tras
+  instalar: canal de isolate cerrado durante rollback.
+- Ese mismo archivo, dos copias manuales/restauración/recuperación: discrepancia
+  en la comparación del estado esperado.
+
+El recorrido de presupuesto Android pasó en la repetición aislada:
+`flutter test --no-pub --concurrency=1 test/budget/budget_lifecycle_test.dart
+--plain-name 'EP-011 recorrido SQLite de archivo: android'` (una prueba, 30 s).
+Esto no convierte la ejecución general en correcta. No se modificaron esos
+módulos ni se establece una causa para los fallos en este ticket; el checkout
+contiene cambios concurrentes. No se repitieron los otros cuatro fallos.
+
+El script se detuvo tras la suite fallida, por lo que no ejecutó su bloque
+posterior de arranque por `APP_ENV`. No se realizaron builds Windows/Android:
+esta entrega solo añade el prototipo HTML, su prueba de estados y este informe.
+Logs locales ignorados: `.tools/ma-tsk-231-quality.log`,
+`.tools/ma-tsk-231-quality-unrestricted.log` y
+`.tools/ma-tsk-231-budget-retry.log`.
