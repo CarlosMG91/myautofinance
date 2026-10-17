@@ -318,6 +318,107 @@ no invierten signo como el CSV histórico EP-013. Los saldos/fotos son manuales
 del día 1; no se calculan desde movimientos. Sin foto completa hay «sin dato»;
 ausencia no es cero. Las deudas conservan magnitud positiva en las fotos.
 
+Consultas portables de referencia (SQLite estándar; todos los importes son
+céntimos enteros). El esquema real y las relaciones están en sqlite_schema,
+table_info y foreign_key_list de ESTA base; user_version del manifiesto es la
+versión que debe contrastarse. No se convierta amount_cents a REAL.
+
+Movimientos reales y presupuestos son tablas distintas. El presupuesto conserva
+su signo interno y puede ser cero; no se invierte como CSV histórico EP-013.
+Categoría real NULL significa sin clasificar. Ingreso se lee de la raíz, no del
+signo:
+
+SELECT m.id,m.value_date,m.concept,m.amount_cents,m.category_id,c.name,a.name
+FROM movements m JOIN accounts a ON a.id=m.account_id
+LEFT JOIN categories c ON c.id=m.category_id ORDER BY m.value_date,m.id;
+
+WITH RECURSIVE roots(id,root_id,is_income) AS (
+ SELECT id,id,is_income FROM categories WHERE parent_id IS NULL
+ UNION ALL SELECT c.id,r.root_id,r.is_income FROM categories c JOIN roots r ON c.parent_id=r.id
+) SELECT b.month,b.amount_cents,c.name,root.name,r.is_income
+FROM budgets b JOIN categories c ON c.id=b.category_id JOIN roots r ON r.id=c.id
+JOIN categories root ON root.id=r.root_id ORDER BY b.month,b.id;
+
+Categorías y antecesores, sin sumar una misma partida varias veces:
+
+WITH RECURSIVE tree(id,parent_id,name,is_income,depth,path) AS (
+ SELECT id,parent_id,name,is_income,1,name FROM categories WHERE parent_id IS NULL
+ UNION ALL SELECT c.id,c.parent_id,c.name,t.is_income,t.depth+1,t.path||' / '||c.name
+ FROM categories c JOIN tree t ON c.parent_id=t.id
+) SELECT id,parent_id,path,depth,is_income FROM tree ORDER BY path,id;
+
+Foto del día 1: no se deriva de movimientos ni se arrastra al mes siguiente.
+Una cabecera sin valores es absent; valores faltantes para cuentas vigentes es
+incomplete; todos los valores esperados, incluso cero, es complete. Un mes sin
+cabecera no es cero. La consulta incluye cuentas esperadas, conteo y estado:
+
+WITH expected AS (
+ SELECT s.id snapshot_id,s.month,a.id account_id
+ FROM wealth_snapshots s JOIN accounts a ON a.active_from<=s.month
+ AND (a.active_through IS NULL OR a.active_through>=s.month)
+), status AS (
+ SELECT s.id,s.month,count(e.account_id) expected,count(v.id) registered,
+ CASE WHEN count(v.id)=0 THEN 'absent'
+ WHEN count(v.id)<count(e.account_id) THEN 'incomplete' ELSE 'complete' END state
+ FROM wealth_snapshots s LEFT JOIN expected e ON e.snapshot_id=s.id
+ LEFT JOIN wealth_values v ON v.snapshot_id=s.id AND v.account_id=e.account_id
+ GROUP BY s.id,s.month
+) SELECT * FROM status ORDER BY month;
+
+Valores y liquidez histórica; desde inclusivo, hasta exclusivo y NULL abierto:
+
+SELECT s.month,a.name,a.kind,p.liquidity,v.amount_cents
+FROM wealth_snapshots s JOIN wealth_values v ON v.snapshot_id=s.id
+JOIN accounts a ON a.id=v.account_id
+LEFT JOIN account_liquidity_periods p ON p.account_id=a.id
+AND p.from_month<=s.month AND (p.until_month IS NULL OR s.month<p.until_month)
+ORDER BY s.month,a.id;
+
+-- Cuentas vigentes pendientes en una foto: una fila ausente no es importe cero.
+SELECT s.month,a.id,a.name,a.kind FROM wealth_snapshots s
+JOIN accounts a ON a.active_from<=s.month
+AND (a.active_through IS NULL OR a.active_through>=s.month)
+LEFT JOIN wealth_values v ON v.snapshot_id=s.id AND v.account_id=a.id
+WHERE v.id IS NULL ORDER BY s.month,a.id;
+
+-- Periodo histórico de liquidez: from_month inclusivo, until_month exclusivo.
+SELECT a.name,p.from_month,p.until_month,p.liquidity
+FROM account_liquidity_periods p JOIN accounts a ON a.id=p.account_id
+ORDER BY a.id,p.from_month,p.id;
+
+Para reproducir EP-001 sobre la base creada con esos casos, esta consulta debe
+devolver dos filas «Café» distintas (identificadas por id), que suman -2000
+céntimos. Los resultados esperados del caso base son real enero 122975,
+real anual 232965, presupuesto anual 1320000, activos líquidos enero 900000 y
+patrimonio neto enero 1400000 céntimos. Febrero sin foto y una foto parcial son
+«sin dato»; con la foto completa de la variante, activos líquidos 620000,
+activos totales 1670000, deuda 480000 y patrimonio neto 1190000 céntimos.
+Son resultados de la fixture EP-001, no una afirmación sobre cualquier copia.
+
+SELECT m.id,m.value_date,m.amount_cents,m.concept,c.name
+FROM movements m LEFT JOIN categories c ON c.id=m.category_id
+WHERE m.value_date>='2026-01-01' AND m.value_date<'2026-02-01'
+AND m.concept='Café' ORDER BY m.value_date,m.id;
+
+-- En los casos base EP-001 hay dos filas Café, con id distinto, suma -2000.
+SELECT sum(amount_cents) real_enero_cents FROM movements
+WHERE value_date>='2026-01-01' AND value_date<'2026-02-01';
+SELECT sum(amount_cents) real_2026_cents FROM movements
+WHERE value_date>='2026-01-01' AND value_date<'2027-01-01';
+SELECT sum(amount_cents) presupuesto_2026_cents FROM budgets
+WHERE month>='2026-01-01' AND month<'2027-01-01';
+
+SELECT sum(CASE WHEN a.kind<>'debt' AND p.liquidity='liquid'
+                THEN v.amount_cents ELSE 0 END) activos_liquidos_cents,
+       sum(CASE WHEN a.kind<>'debt' THEN v.amount_cents ELSE 0 END)
+        -sum(CASE WHEN a.kind='debt' THEN v.amount_cents ELSE 0 END)
+        patrimonio_neto_cents
+FROM wealth_snapshots s JOIN wealth_values v ON v.snapshot_id=s.id
+JOIN accounts a ON a.id=v.account_id
+LEFT JOIN account_liquidity_periods p ON p.account_id=a.id
+AND p.from_month<=s.month AND (p.until_month IS NULL OR s.month<p.until_month)
+WHERE s.month='2026-01-01';
+
 Esta recuperación no sustituye una instalación ni restaura su estado o Drive.
 No copie la imagen sobre la base activa, no la registre como copia privada,
 no la fusione ni reconstruya desde CSV. El guardado es manual, sin envío Drive.
