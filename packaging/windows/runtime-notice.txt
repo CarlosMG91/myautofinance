@@ -1,0 +1,22 @@
+Autofinance - Microsoft Visual C++ app-local runtime
+
+Copyright Microsoft Corporation. All rights reserved.
+These files remain unmodified Microsoft redistributable binaries.
+Redistribution is subject to the Microsoft Visual Studio 2022 license terms
+included alongside this notice and a valid license for the build toolset.
+Distributable list and provenance:
+https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution
+
+No runtime is copied from System32 or installed globally. Windows 10/11
+provides UCRT as an operating-system component. Private runtime servicing is
+the distributor's responsibility: rebuild and redistribute after reviewing
+Microsoft security updates. A new runtime pin requires a new validation.
+
+Flutter and package notices are included in flutter.txt and
+data/flutter_assets/NOTICES.Z (Flutter generated compressed license registry).
+The Inno Setup license is included separately; Inno is a build tool and is
+not required on the destination PC.
+
+SHA256 manifests detect byte changes. A hash does not establish authorship,
+a trusted publisher or Windows/SmartScreen trust. No Windows protections
+are changed by the payload preparation process.

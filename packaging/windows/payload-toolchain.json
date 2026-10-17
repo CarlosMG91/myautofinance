@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "visualStudioMajor": 17,
+  "msvc": "14.44.35207",
+  "windowsSdk": "10.0.26100.0",
+  "runtimeFileVersion": "14.44.35211.0",
+  "runtimeDirectory": "Microsoft.VC143.CRT",
+  "runtimeFiles": [
+    "concrt140.dll",
+    "msvcp140.dll",
+    "msvcp140_1.dll",
+    "msvcp140_2.dll",
+    "msvcp140_atomic_wait.dll",
+    "msvcp140_codecvt_ids.dll",
+    "vccorlib140.dll",
+    "vcruntime140.dll",
+    "vcruntime140_1.dll"
+  ],
+  "runtimeSource": "https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution",
+  "runtimeAcquisition": "Visual Studio Installer: Visual Studio 2022 17.14, MSVC v143, redistributables from VC/Redist/MSVC/<version>/x64/Microsoft.VC143.CRT; never System32",
+  "inno": {
+    "version": "6.5.4",
+    "url": "https://github.com/jrsoftware/issrc/releases/download/is-6_5_4/innosetup-6.5.4.exe",
+    "sha256": "fa73bf47a4da250d185d07561c2bfda387e5e20db77e4570004cf6a133cc10b1",
+    "checksumSource": "https://raw.githubusercontent.com/microsoft/winget-pkgs/master/manifests/j/JRSoftware/InnoSetup/6.5.4/JRSoftware.InnoSetup.installer.yaml"
+  }
+}

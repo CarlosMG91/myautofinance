@@ -1,5 +1,23 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+# Private production payload only: select the audited compiler/SDK before project().
+# Ordinary EP-003 test/development builds keep their existing toolchain behavior.
+if(DEFINED ENV{AUTOFINANCE_PRODUCTION_PAYLOAD})
+  if(CMAKE_VERSION VERSION_LESS "3.19")
+    message(FATAL_ERROR "Private payload requires CMake JSON support (3.19+)")
+  endif()
+  if(NOT "$ENV{AUTOFINANCE_PRODUCTION_PAYLOAD}" STREQUAL "1" OR
+     NOT CMAKE_GENERATOR STREQUAL "Visual Studio 17 2022")
+    message(FATAL_ERROR "Private payload requires Visual Studio 2022")
+  endif()
+  file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/windows/payload-toolchain.json" PAYLOAD_TOOLCHAIN)
+  string(JSON PAYLOAD_MSVC GET "${PAYLOAD_TOOLCHAIN}" msvc)
+  string(JSON PAYLOAD_SDK GET "${PAYLOAD_TOOLCHAIN}" windowsSdk)
+  if(NOT CMAKE_GENERATOR_TOOLSET STREQUAL "version=${PAYLOAD_MSVC}")
+    message(FATAL_ERROR "Private payload requires the pinned CMAKE_GENERATOR_TOOLSET")
+  endif()
+  set(CMAKE_SYSTEM_VERSION "${PAYLOAD_SDK}" CACHE STRING "Pinned production Windows SDK" FORCE)
+endif()
 project(myautofinance LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
@@ -89,9 +107,15 @@ endif()
 
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
+# flutter test leaves host-absolute paths in this test-only descriptor. The
+# desktop runtime uses the AOT native-asset mapping, not native_assets.json.
+# Keep all real native libraries/assets in the official installation output.
+if(DEFINED ENV{AUTOFINANCE_PRODUCTION_PAYLOAD})
+  set(NATIVE_ASSET_INSTALL_EXCLUDES PATTERN "native_assets.json" EXCLUDE)
+endif()
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
-   COMPONENT Runtime)
+   COMPONENT Runtime ${NATIVE_ASSET_INSTALL_EXCLUDES})
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.
