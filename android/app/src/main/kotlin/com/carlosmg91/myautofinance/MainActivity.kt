@@ -8,13 +8,17 @@ import android.content.Intent
 
 class MainActivity : FlutterActivity() {
     private var localCsv: LocalCsvChannel? = null
+    private var exportSave: ExportSaveChannel? = null
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (exportSave?.onActivityResult(requestCode, resultCode, data) == true) return
         if (localCsv?.onActivityResult(requestCode, resultCode, data) == true) return
         super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        exportSave?.dispose()
+        exportSave = null
         localCsv?.dispose()
         localCsv = null
         super.cleanUpFlutterEngine(flutterEngine)
@@ -23,6 +27,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         localCsv = LocalCsvChannel(this, flutterEngine.dartExecutor.binaryMessenger)
+        exportSave = ExportSaveChannel(this, flutterEngine.dartExecutor.binaryMessenger)
         val store = DriveSessionStore(this)
         val channel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

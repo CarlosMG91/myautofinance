@@ -1,0 +1,38 @@
+﻿{
+    "ticket":  "MA-TSK-222",
+    "date":  "2026-10-17",
+    "syntheticDataOnly":  true,
+    "flutter":  "3.47.0",
+    "dart":  "3.13.0",
+    "zip":  {
+                "sizeBytes":  4194420,
+                "sha256":  "26cccce0e31e0ac70a4bfa0f8f7e04b5b12a26d39581d62971cd8c5538708cac",
+                "entry":  "prueba.md",
+                "entryBytes":  4194304
+            },
+    "windows":  {
+                    "nativeIntegration":  "passed",
+                    "locationKind":  "filesystem",
+                    "cancelled":  true,
+                    "invalidSource":  true,
+                    "sourceLost":  "invalidSource",
+                    "incompleteMayRemain":  false,
+                    "independentReader":  ".NET ZipArchive + SHA-256 + contenido sintético completo",
+                    "incompleteDestinationAbsent":  true,
+                    "repeatedNameResult":  "conflict; SHA-256 anterior conservado"
+                },
+    "android":  {
+                    "nativeIntegration":  "passed",
+                    "api":  37,
+                    "javaBuild":  17,
+                    "locationKind":  "contentUri",
+                    "provider":  "com.android.providers.downloads.documents",
+                    "cancelled":  true,
+                    "invalidSource":  true,
+                    "sourceLost":  "unavailable",
+                    "incompleteMayRemain":  false,
+                    "independentReader":  "ADB pull sin root + .NET ZipArchive + SHA-256 idéntico a Windows",
+                    "incompleteDestinationAbsent":  true,
+                    "repeatedNameResult":  "dos URI distintas; sufijo (1); ambos SHA-256 conservados"
+                }
+}

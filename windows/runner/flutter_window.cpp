@@ -25,6 +25,8 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  export_save_channel_ = std::make_unique<ExportSaveChannel>(
+      flutter_controller_->engine()->messenger(), GetHandle());
   local_csv_channel_ = std::make_unique<LocalCsvChannel>(
       flutter_controller_->engine()->messenger(), GetHandle());
   drive_channel_ = std::make_unique<WindowsDriveChannel>(
@@ -44,6 +46,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  export_save_channel_ = nullptr;
   local_csv_channel_ = nullptr;
   drive_channel_ = nullptr;
   if (flutter_controller_) {
@@ -57,6 +60,7 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  if (export_save_channel_ && export_save_channel_->HandleMessage(message)) return 0;
   if (local_csv_channel_ && local_csv_channel_->HandleMessage(message)) return 0;
   // Give Flutter, including plugins, an opportunity to handle window messages.
   if (flutter_controller_) {

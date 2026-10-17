@@ -9,6 +9,7 @@
 #include "win32_window.h"
 #include "windows_drive_channel.h"
 #include "local_csv_channel.h"
+#include "export_save_channel.h"
 
 // A window that does nothing but host a Flutter view.
 class FlutterWindow : public Win32Window {
@@ -32,6 +33,7 @@ class FlutterWindow : public Win32Window {
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
   std::unique_ptr<WindowsDriveChannel> drive_channel_;
   std::unique_ptr<LocalCsvChannel> local_csv_channel_;
+  std::unique_ptr<ExportSaveChannel> export_save_channel_;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_
