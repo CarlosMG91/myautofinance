@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(runner LANGUAGES CXX)
+add_subdirectory("../maintenance" "${CMAKE_CURRENT_BINARY_DIR}/maintenance")
 
 # Define the application target. To change its name, change BINARY_NAME in the
 # top-level CMakeLists.txt, not the value here, or `flutter run` will no longer
@@ -36,6 +37,7 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 # Add dependency libraries and include directories. Add any application-specific
 # dependencies here.
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
+target_link_libraries(${BINARY_NAME} PRIVATE autofinance_maintenance)
 target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib")
 target_link_libraries(${BINARY_NAME} PRIVATE "advapi32.lib" "bcrypt.lib" "shell32.lib" "ole32.lib")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")

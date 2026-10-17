@@ -4,9 +4,23 @@
 
 #include "flutter_window.h"
 #include "utils.h"
+#include "windows_session_store.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
+  // No plugin, store, migration, sync state or credential is opened until the
+  // executable identity/support contract and maintenance exclusion are checked.
+  std::unique_ptr<autofinance::maintenance::Lease> installation_lease;
+  try {
+    installation_lease = autofinance::maintenance::AcquireApplicationLease();
+  } catch (...) {
+    MessageBoxW(nullptr,
+        L"No se puede abrir Autofinance. Hay mantenimiento o un traspaso pendiente, "
+        L"o no se pudo validar la identidad de instalación. Reintente desde el "
+        L"instalador. No se han abierto los datos. Código: INSTALL-001.",
+        L"Autofinance", MB_OK | MB_ICONWARNING);
+    return EXIT_FAILURE;
+  }
   // Attach to console when present (e.g., 'flutter run') or create a
   // new console when running with a debugger.
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
