@@ -19,6 +19,8 @@ android/app/release/
 .pub-cache/
 .pub/
 build/
+# Entrega privada EP-028: EXE, manifiestos, payload y licencias generados.
+/dist-private/
 *.iml
 .idea/
 .metadata.local
