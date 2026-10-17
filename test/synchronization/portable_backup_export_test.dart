@@ -135,6 +135,10 @@ void main() {
         ]),
       );
       expect(manifest['kind'], 'autofinance.portableBackup');
+      expect(
+        DateTime.parse(manifest['createdAtUtc'] as String),
+        result.createdAtUtc,
+      );
       expect(manifest['formatVersion'], 1);
       expect(manifest['datasetId'], result.state.datasetId);
       expect(manifest['revision'], '9223372036854775807');

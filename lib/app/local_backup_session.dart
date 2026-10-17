@@ -1,3 +1,5 @@
+import 'export_factory.dart';
+import '../features/synchronization/presentation/export_controller.dart';
 import 'diagnostic_factory.dart';
 import 'navigation/diagnostic_route.dart' show DiagnosticReferenceExists;
 import '../features/diagnostics/diagnostics.dart';
@@ -54,6 +56,8 @@ class LocalBackupSession {
   );
   late final DiagnosticReferenceExists diagnosticReferences =
       DiagnosticReferenceReader(store).exists;
+  ExportController exports() => createExportController(store);
+
   final LocalDatabaseStore store;
   late final DriveController drive = createDriveUi(
     store: store,

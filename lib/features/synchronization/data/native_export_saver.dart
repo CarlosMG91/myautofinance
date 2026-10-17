@@ -23,7 +23,16 @@ final class NativeExportSaver implements ExportSaver {
       if (value is Map && value['status'] == 'saved') {
         final location = value['location'];
         if (location == null || (location is String && location.isNotEmpty)) {
-          return ExportSaved(location: location as String?);
+          final name = value['displayName'];
+          final path = location as String?;
+          return ExportSaved(
+            location: path,
+            displayName: name is String && name.isNotEmpty
+                ? name
+                : path != null && !path.startsWith('content:')
+                ? path.split(RegExp(r'[/\\]')).last
+                : null,
+          );
         }
       }
       return const ExportSaveFailed(ExportSaveFailureCode.writeFailed);

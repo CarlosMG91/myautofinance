@@ -24,10 +24,13 @@ sealed class ExportSaveResult {
 }
 
 final class ExportSaved extends ExportSaveResult {
-  const ExportSaved({this.location});
+  const ExportSaved({this.location, this.displayName});
 
   /// Ruta Windows o URI Android, nunca una ruta ficticia para un proveedor.
   final String? location;
+
+  /// Nombre final facilitado por el sistema/proveedor, si está disponible.
+  final String? displayName;
 }
 
 final class ExportSaveCancelled extends ExportSaveResult {

@@ -110,8 +110,15 @@ class ExportSaveChannel(private val activity: Activity, messenger: BinaryMesseng
                     descriptor.checkError()
                 } // también propaga errores de cierre antes del éxito
             }
+            // El proveedor puede haber cambiado el nombre sugerido. Es opcional:
+            // no convertir una consulta de metadatos denegada en fallo de escritura.
+            val displayName = try {
+                resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                    if (it.moveToFirst() && !it.isNull(0)) it.getString(0) else null
+                }
+            } catch (_: Exception) { null }
             activity.runOnUiThread {
-                pending?.success(mapOf("status" to "saved", "location" to uri.toString()))
+                pending?.success(mapOf("status" to "saved", "location" to uri.toString(), "displayName" to displayName))
                 pending = null
                 source = null
             }

@@ -129,6 +129,10 @@ void main() {
         ]),
       );
       expect(manifest['kind'], 'autofinance.dataExport');
+      expect(
+        DateTime.parse(manifest['createdAtUtc'] as String),
+        result.createdAtUtc,
+      );
       expect(manifest['revision'], '9223372036854775807');
       expect(manifest['datasetId'], tables['database_state'][0]['dataset_id']);
       expect(manifest['schemaVersion'], localSchemaVersion);

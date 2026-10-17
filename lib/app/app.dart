@@ -18,6 +18,7 @@ import '../core/config/app_config.dart';
 import 'regional.dart';
 import '../features/synchronization/presentation/drive_controller.dart';
 
+import '../features/synchronization/presentation/export_controller.dart';
 import 'modules.dart';
 import 'navigation/app_router.dart';
 import 'navigation/app_routes.dart';
@@ -36,6 +37,7 @@ class AutofinanceApp extends StatefulWidget {
     this.config = const AppConfig(environment: AppEnvironment.production),
     this.localSession,
     this.localBackups,
+    this.exports,
     this.drive,
     this.categories,
     this.wealth,
@@ -60,6 +62,7 @@ class AutofinanceApp extends StatefulWidget {
 
   /// Permite probar navegación sin abrir archivos ni servicios nativos.
   final LocalBackupController? localBackups;
+  final ExportController Function()? exports;
   final DriveController? drive;
   final CategoryManagementLoader? categories;
   final WealthManagementLoader? wealth;
@@ -148,6 +151,7 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
               arguments: _navigation.context,
             ),
             localBackups: backups,
+            exports: widget.exports ?? widget.localSession?.exports,
             drive: driveController,
             categories: categoryLoader,
             wealth: wealthLoader,
@@ -178,6 +182,7 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
         onGenerateRoute: (settings) => AppRouter.generateRoute(
           settings,
           localBackups: backups,
+          exports: widget.exports ?? widget.localSession?.exports,
           drive: driveController,
           categories: categoryLoader,
           wealth: wealthLoader,

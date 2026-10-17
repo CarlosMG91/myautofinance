@@ -19,6 +19,33 @@ void main() {
       destination['id'] as String: destination,
   };
   final navigation = catalog['navigation'] as Map<String, dynamic>;
+  // EP-027 añade el suplemento aprobado sin reescribir el catálogo EP-026.
+  final exportCatalog = jsonDecode(
+    File('docs/ep-027/catalogo-navegacion.json').readAsStringSync(),
+  ) as Map<String, dynamic>;
+  final exportDestinations = (exportCatalog['destinations'] as List)
+      .cast<Map<String, dynamic>>();
+
+  test(
+    'Suplemento EP-027 conserva Gestión, módulos y ámbito independiente',
+    () {
+      expect(exportCatalog['approvalTicket'], 'MA-TSK-223');
+      expect(exportDestinations.map((d) => d['path']), [
+        AppRoutes.exportData,
+        AppRoutes.exportComplete,
+      ]);
+      expect(exportDestinations.map((d) => d['period']), [
+        'independent-inclusive-months',
+        'all-history',
+      ]);
+      for (final destination in exportDestinations) {
+        expect(destination['parent'], 'management');
+        expect(destination['module'], ModuleId.synchronization.name);
+        expect(destination['owner'], 'MA-TSK-224');
+        expect(destination['surfaces'], ['windows', 'android']);
+      }
+    },
+  );
 
   Map<String, int> distances(String surface, {bool includeUtilities = true}) {
     final config = navigation[surface] as Map<String, dynamic>;
@@ -195,7 +222,10 @@ void main() {
     final paths = RegExp(r"static const \w+ = '([^']+)';")
         .allMatches(source)
         .map((match) => match.group(1)!);
-    final plannedPaths = destinations.map((d) => d['path'] as String).toSet();
+    final plannedPaths = [
+      ...destinations,
+      ...exportDestinations,
+    ].map((d) => d['path'] as String).toSet();
     final systemPaths = (catalog['systemRoutes'] as List)
         .map((d) => d['path'] as String)
         .toSet();

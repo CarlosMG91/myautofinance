@@ -162,7 +162,16 @@ final class PortableSqliteBackupExporter implements PortableBackupExporter {
       await _removeSnapshot(snapshot);
       snapshot = null;
       cancellation.check();
-      final result = _Prepared(stage, zip.path, image.database.state, exportId);
+      final result = _Prepared(
+        stage,
+        zip.path,
+        image.database.state,
+        exportId,
+        DateTime.fromMillisecondsSinceEpoch(
+          capturedAt.millisecondsSinceEpoch,
+          isUtc: true,
+        ),
+      );
       stage = null;
       return result;
     } on DataExportFailure {
@@ -226,7 +235,15 @@ Future<void> _removeStage(Directory directory) async {
 }
 
 final class _Prepared implements PreparedDataExport {
-  _Prepared(this.directory, this.zipPath, this.state, this.exportId);
+  _Prepared(
+    this.directory,
+    this.zipPath,
+    this.state,
+    this.exportId,
+    this.createdAtUtc,
+  );
+  @override
+  final DateTime createdAtUtc;
   final Directory directory;
   bool _disposed = false;
   @override

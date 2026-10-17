@@ -73,6 +73,43 @@ void main() {
     );
     expect((await saver.save(request) as ExportSaved).location, isNull);
   });
+  test(
+    'Nombre final del proveedor y ruta Windows sin confundir nombre sugerido',
+    () async {
+      final saver = NativeExportSaver(channel: channel);
+      messenger.setMockMethodCallHandler(
+        channel,
+        (_) async => {
+          'status': 'saved',
+          'location': 'content://synthetic/document/7',
+          'displayName': 'elegido (1).zip',
+        },
+      );
+      expect(
+        (await saver.save(request) as ExportSaved).displayName,
+        'elegido (1).zip',
+      );
+      messenger.setMockMethodCallHandler(
+        channel,
+        (_) async => {
+          'status': 'saved',
+          'location': r'C:\synthetic\elegido.zip',
+        },
+      );
+      expect(
+        (await saver.save(request) as ExportSaved).displayName,
+        'elegido.zip',
+      );
+      messenger.setMockMethodCallHandler(
+        channel,
+        (_) async => {
+          'status': 'saved',
+          'location': 'content://synthetic/document/7',
+        },
+      );
+      expect((await saver.save(request) as ExportSaved).displayName, isNull);
+    },
+  );
   for (final code in ExportSaveFailureCode.values) {
     test('Fallo claro ${code.name} y posible incompleto', () async {
       messenger.setMockMethodCallHandler(channel, (_) async {

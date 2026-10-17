@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "extends": "../ep-026/catalogo-navegacion.json",
+  "approvalTicket": "MA-TSK-223",
+  "approvalEvidence": "integracion-app.md",
+  "destinations": [
+    {
+      "id": "exportData",
+      "path": "/gestion/exportar-datos",
+      "label": "Exportar datos",
+      "parent": "management",
+      "module": "synchronization",
+      "owner": "MA-TSK-224",
+      "period": "independent-inclusive-months",
+      "surfaces": ["windows", "android"]
+    },
+    {
+      "id": "exportComplete",
+      "path": "/gestion/exportar-copia",
+      "label": "Exportar copia completa",
+      "parent": "management",
+      "module": "synchronization",
+      "owner": "MA-TSK-224",
+      "period": "all-history",
+      "surfaces": ["windows", "android"]
+    }
+  ]
+}

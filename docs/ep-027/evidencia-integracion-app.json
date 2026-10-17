@@ -1,0 +1,52 @@
+{
+  "ticket": "MA-TSK-224",
+  "date": "2026-10-17",
+  "syntheticDataOnly": true,
+  "fixture": "test/support/recovery_reference.dart (casos EP-001)",
+  "targetedTestsPassed": 59,
+  "navigationContractTestsPassedAfterSupplement": 8,
+  "strictAnalysis": "passed",
+  "bootstrapEnvironmentsPassed": ["development", "test", "production", "invalid-synthetic"],
+  "generalSuite": {
+    "passed": 2007,
+    "failed": 5,
+    "navigationFailure": "fixed by EP-027 route supplement; all 8 contract tests passed on repeat",
+    "recoveryFailures": "both passed on serial repeat; all 8 local recovery tests passed",
+    "unresolved": ["pending_lifecycle Windows", "pending_lifecycle Android"],
+    "fullSuiteRepeatedAfterSupplement": false
+  },
+  "productBuilds": {"windowsRelease": "passed", "androidDebug": "passed", "appEnvironment": "test"},
+  "nativeFlow": {
+    "windows": "passed on repeat without native accessibility probing",
+    "android": "passed on emulator with Downloads provider",
+    "checks": ["cancelled picker", "preserved month selection", "CSV January", "complete SQLite", "guide", "return to origin", "financial revision unchanged"],
+    "revision": 19,
+    "firstWindowsRun": "native AXTree errors during accessibility probing; runner service disappeared"
+  },
+  "independentReading": {
+    "tools": ["Python zipfile", "Python csv", "Python hashlib", "Python sqlite3"],
+    "checks": ["ZIP CRC", "exact inventory", "sizeBytes", "SHA-256", "read-only SQLite", "integrity_check", "foreign_key_check", "manifest revision"],
+    "windows": {
+      "dataZipBytes": 31350,
+      "dataZipSha256": "ad7b4e793eadeb5b4850629d70f9233d21a91b460640c33d6bc7f7f858e8b6f9",
+      "completeZipBytes": 210531,
+      "completeZipSha256": "86772989582defabb70b8e7c159597c329af6429fb17d5566006622588300053"
+    },
+    "android": {
+      "dataZipBytes": 31350,
+      "dataZipSha256": "4462b1c79ce6bef1f3684d368f7d2f9d40829958f8063eaef4c8cc1db362e162",
+      "completeZipBytes": 210531,
+      "completeZipSha256": "87debd06d4aada348280379e2fc8f2734a964f6ef229c2ad516e2e629f06b5b0",
+      "transfer": "ADB pull without root, after confirmed close"
+    },
+    "dataFiles": 10,
+    "dataMovementRowsJanuary": 6,
+    "exactAmountCheckedEur": "-350.25",
+    "completeFiles": 3,
+    "completeMovementRows": 10,
+    "completeMovementRowsFebruary": 4,
+    "completeBudgetRows": 48
+  },
+  "widgetAccessibility": {"widthPixels": 320, "textScale": 2, "androidTapTargets": "passed"},
+  "limits": ["no physical Android device", "no remote document provider", "no manual screen-reader acceptance", "T07 and T08 retain their scope"]
+}

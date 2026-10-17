@@ -71,6 +71,9 @@ abstract interface class PreparedDataExport {
   DatasetState get state;
   String get exportId;
 
+  /// Fecha real de la captura que figura en el manifiesto del ZIP.
+  DateTime get createdAtUtc;
+
   /// El consumidor debe liberarlo tras guardar o cancelar el destino nativo.
   Future<void> dispose();
 }

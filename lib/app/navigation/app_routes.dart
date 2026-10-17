@@ -15,6 +15,8 @@ abstract final class AppRoutes {
   static const analysis = '/analisis';
   static const more = '/mas';
   static const management = '/gestion';
+  static const exportData = '/gestion/exportar-datos';
+  static const exportComplete = '/gestion/exportar-copia';
   static const diagnostics = '/diagnostico';
   static const budgetDetail = '/presupuesto/detalle';
   static const movementDetail = '/movimientos/detalle';

@@ -1,5 +1,7 @@
 import '../../features/diagnostics/diagnostics.dart';
 import 'diagnostic_route.dart';
+import '../../features/synchronization/presentation/export_controller.dart';
+import '../../features/synchronization/presentation/export_screen.dart';
 import 'movement_list_route.dart';
 import 'pending_movement_route.dart';
 import '../../features/movements/presentation/pending_movement_controller.dart';
@@ -56,6 +58,7 @@ abstract final class AppRouter {
   static Route<Object?> generateRoute(
     RouteSettings settings, {
     LocalBackupController? localBackups,
+    ExportController Function()? exports,
     DriveController? drive,
     CategoryManagementLoader? categories,
     WealthManagementLoader? wealth,
@@ -174,6 +177,7 @@ abstract final class AppRouter {
           importsAvailable: imports != null,
           driveAvailable: drive != null,
           backupsAvailable: localBackups != null,
+          exportsAvailable: exports != null,
           origin: navigationSession == null
               ? null
               : () => SessionLocation.encode(navigationSession.context),
@@ -292,6 +296,24 @@ abstract final class AppRouter {
               message: 'No se ha inicializado el almacenamiento local.',
             )
           : _CategoryRoute(settings: settings, loadManagement: categories);
+    } else if (uri.path == AppRoutes.exportData ||
+        uri.path == AppRoutes.exportComplete) {
+      final origin = settings.arguments is _BackupOrigin
+          ? settings.arguments! as _BackupOrigin
+          : const _BackupOrigin(AppRoutes.management);
+      page = exports == null
+          ? const _TechnicalPlaceholder(
+              title: 'Exportación no disponible',
+              message: 'No se ha inicializado el almacenamiento local.',
+            )
+          : _ExportRoute(
+              create: exports,
+              initialMode: uri.path == AppRoutes.exportComplete
+                  ? ExportMode.complete
+                  : ExportMode.data,
+              origin: origin,
+              session: navigationSession,
+            );
     } else if (uri.path == AppRoutes.drive && drive != null) {
       page = _BackupRoute(settings: settings, drive: drive);
     } else if (uri.path == AppRoutes.localBackups ||
@@ -862,6 +884,54 @@ class _BackupRoute extends StatelessWidget {
   );
 }
 
+class _ExportRoute extends StatefulWidget {
+  const _ExportRoute({
+    required this.create,
+    required this.initialMode,
+    required this.origin,
+    this.session,
+  });
+  final ExportController Function() create;
+  final ExportMode initialMode;
+  final _BackupOrigin origin;
+  final NavigationSession? session;
+  @override
+  State<_ExportRoute> createState() => _ExportRouteState();
+}
+
+class _ExportRouteState extends State<_ExportRoute> {
+  late final controller = widget.create()..mode = widget.initialMode;
+  @override
+  Widget build(BuildContext context) {
+    void back() {
+      final navigator = Navigator.of(context);
+      if (navigator.canPop()) {
+        navigator.pop();
+      } else {
+        navigator.pushReplacementNamed(widget.origin.route);
+      }
+    }
+
+    return ExportScreen(
+      controller: controller,
+      onReturn: back,
+      shell: widget.session == null
+          ? null
+          : (body, canLeave, onBack) => PrimaryNavigation(
+              session: widget.session!,
+              title: 'Exportación y portabilidad',
+              selectedDestination: SessionDestination.management,
+              beforeNavigate: canLeave,
+              onBack: onBack,
+              backLabel: 'Volver a ${widget.origin.label}',
+              periodControl: const Text('Ámbito propio de exportación'),
+              contextTrail: Text('Origen: ${widget.origin.label}'),
+              child: body,
+            ),
+    );
+  }
+}
+
 class _TechnicalPlaceholder extends StatelessWidget {
   const _TechnicalPlaceholder({
     required this.title,
@@ -991,6 +1061,7 @@ class _ManagementMenu extends StatelessWidget {
     this.importsAvailable = true,
     this.driveAvailable = true,
     this.backupsAvailable = true,
+    this.exportsAvailable = false,
     this.onOpen,
     this.origin,
     this.onReturned,
@@ -998,6 +1069,7 @@ class _ManagementMenu extends StatelessWidget {
   });
   final bool categoriesAvailable, wealthAvailable, pendingAvailable;
   final bool importsAvailable, driveAvailable, backupsAvailable;
+  final bool exportsAvailable;
   final Future<void> Function(String path)? onOpen;
   final String Function()? origin;
   final Future<void> Function()? onReturned;
@@ -1066,6 +1138,20 @@ class _ManagementMenu extends StatelessWidget {
       label: 'Copias locales',
       path: AppRoutes.localBackups,
       enabled: backupsAvailable,
+      icon: AfIcons.download,
+    ),
+    (
+      id: 'exportData',
+      label: 'Exportar datos',
+      path: AppRoutes.exportData,
+      enabled: exportsAvailable,
+      icon: AfIcons.download,
+    ),
+    (
+      id: 'exportComplete',
+      label: 'Exportar copia completa',
+      path: AppRoutes.exportComplete,
+      enabled: exportsAvailable,
       icon: AfIcons.download,
     ),
     (
