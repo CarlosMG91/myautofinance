@@ -19,8 +19,16 @@ foreach ($path in @($destination, $support, $uninstallKey, $driveKey)) {
 }
 function Hash([string]$Path) { (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() }
 function RunInstaller([string]$Exe, [bool]$Success) {
-    $p = Start-Process -FilePath $Exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/LANG=spanish') -WindowStyle Hidden -Wait -PassThru
-    if (($Success -and $p.ExitCode -ne 0) -or (-not $Success -and $p.ExitCode -eq 0)) { throw 'Resultado de instalacion sintetica inesperado.' }
+    $log = Join-Path $taskRoot ('.tools/installer-fixture-' + [Guid]::NewGuid().ToString('N') + '.log')
+    $p = Start-Process -FilePath $Exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/LANG=spanish', ('/LOG="' + $log + '"')) -WindowStyle Hidden -Wait -PassThru
+    if (($Success -and $p.ExitCode -ne 0) -or (-not $Success -and $p.ExitCode -eq 0)) {
+        # Only diagnostic error lines from a synthetic, session-free fixture.
+        # Raw Inno logs are not artifacts; strip absolute paths before printing.
+        if (Test-Path -LiteralPath $log) {
+            Get-Content -LiteralPath $log | Where-Object { $_ -match 'Exception|Error|INSTALL-|failed|cannot' } | ForEach-Object { $_ -replace '[A-Za-z]:\\[^\r\n]*', '<path omitted>' } | Write-Output
+        }
+        throw ('Resultado de instalacion sintetica inesperado: ' + $p.ExitCode)
+    }
 }
 function AssertInstalled([string]$Version, [string]$Source) {
     if ((Get-ItemProperty -LiteralPath $uninstallKey).DisplayVersion -cne $Version -or
