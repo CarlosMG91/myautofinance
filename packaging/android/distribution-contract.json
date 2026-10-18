@@ -1,0 +1,34 @@
+{
+  "contractVersion": 1,
+  "applicationId": "com.carlosmg91.myautofinance",
+  "format": "universal-apk",
+  "buildMode": "release",
+  "appEnvironment": "production",
+  "versionSource": "pubspec.yaml",
+  "minimumSdk": 24,
+  "compileSdk": 36,
+  "targetSdk": 36,
+  "ndk": "28.2.13676358",
+  "requiredAbis": ["arm64-v8a", "x86_64"],
+  "supportedAbis": ["armeabi-v7a", "arm64-v8a", "x86_64"],
+  "update": {
+    "samePackage": true,
+    "sameCertificate": true,
+    "increasingVersionCode": true,
+    "uninstallOrClearData": false
+  },
+  "delivery": {
+    "localOnly": true,
+    "defaultOutput": "dist-private/android",
+    "publicArtifacts": false,
+    "completeRequires": ["android-oauth-real", "native-update-preservation", "arm64-phone", "openbank-MA-TSK-131", "MA-TSK-245"]
+  },
+  "backupPolicy": {
+    "automaticCloudBackup": false,
+    "automaticDeviceTransfer": false,
+    "manualDriveOnly": true,
+    "restoreSecretsFromOtherDevice": false,
+    "oemGuarantee": false,
+    "implementationOwner": "MA-TSK-242"
+  }
+}

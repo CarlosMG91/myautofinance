@@ -21,6 +21,9 @@ android/app/release/
 build/
 # Entrega privada EP-028: EXE, manifiestos, payload y licencias generados.
 /dist-private/
+# EP-029: ningun APK/AAB de entrega debe entrar en el repositorio publico.
+*.apk
+*.aab
 *.iml
 .idea/
 .metadata.local
