@@ -31,6 +31,11 @@ android/local.properties
 android/key.properties
 *.jks
 *.keystore
+*.p12
+*.pfx
+*.dpapi
+*.signing-backup
+*signing-recovery.key
 windows/flutter/ephemeral/
 android/.gradle/
 android/captures/
