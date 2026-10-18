@@ -113,6 +113,10 @@ desechable; rechaza ejecución local y self-hosted. Verifica que no exista desti
 soporte, registro de desinstalación ni marcadores Drive antes de escribir. La
 aislación es el perfil/VM efímero del job, no redefinir APPDATA: las APIs nativas
 de carpetas conocidas, HKCU y Credential Manager no se aíslan con esa variable.
+El fixture usa un TEMP/TMP nuevo de ruta canónica dentro de `.tools`, evitando
+alias 8.3 del runner que el contrato de identidad nativo rechaza; restaura esas
+variables al terminar. Esto no modifica las carpetas conocidas ni la identidad
+del usuario y no prueba la aceptación de rutas de producción T08.
 
 Prueba instalación silenciosa, reparación, actualización, rechazo del downgrade,
 inventario instalado completo, acceso en Inicio, desinstalación y conservación de

@@ -43,7 +43,15 @@ function AssertInstalled([string]$Version, [string]$Source) {
     }
 }
 Push-Location $taskRoot
+$priorTemp = $env:TEMP
+$priorTmp = $env:TMP
 try {
+    # The native identity contract rejects 8.3 aliases. Hosted profiles may use
+    # RUNNER~1 in TEMP; give this fixture a fresh canonical temporary namespace.
+    $fixtureTemp = Join-Path $taskRoot '.tools/installer-fixture-temp'
+    New-Item -ItemType Directory -Path $fixtureTemp | Out-Null
+    $env:TEMP = $fixtureTemp
+    $env:TMP = $fixtureTemp
     & ./scripts/check-windows-installer.ps1 -CMake $CMake -InnoDirectory $InnoDirectory
     $bridge = Join-Path $taskRoot '.tools/ma-tsk-232-native/Release/autofinance_setup_bridge.dll'
     $build = Join-Path $taskRoot '.tools/ma-tsk-233-fixture-native'
@@ -87,4 +95,4 @@ try {
     [IO.File]::WriteAllText((Join-Path $reportRoot 'report.json'), (($report | ConvertTo-Json) + "`n"), (New-Object Text.UTF8Encoding($false)))
     Write-Output 'Fixture instalado/verificado/retirado en perfil hospedado desechable. Informe sanitizado; no es aceptacion del paquete real.'
 }
-finally { Pop-Location }
+finally { $env:TEMP = $priorTemp; $env:TMP = $priorTmp; Pop-Location }
