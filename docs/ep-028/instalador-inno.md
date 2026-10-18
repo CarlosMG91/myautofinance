@@ -187,6 +187,9 @@ reconexión intencional con una identidad nueva.
 
 ## Verificación reproducible
 
+La generación conjunta de producción, el manifiesto privado y el workflow de
+fixture T06 se describen en [generacion-privada.md](generacion-privada.md).
+
 ```powershell
 ./scripts/check-windows-installer.ps1
 ./scripts/check-windows-maintenance.ps1

@@ -1,0 +1,43 @@
+name: Validar instalador privado con fixture sintetico
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixture:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pruebas negativas de entrega y payload
+        run: |
+          node --test scripts/tests/windows-payload.test.mjs scripts/tests/windows-installer.test.mjs scripts/tests/windows-delivery.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Fallo de contratos de empaquetado.' }
+      - name: Preparar Inno fijado y verificar SHA256 antes de ejecutarlo
+        run: |
+          $pin = (Get-Content packaging/windows/payload-toolchain.json -Raw | ConvertFrom-Json).inno
+          $installer = Join-Path $env:RUNNER_TEMP 'inno-pinned.exe'
+          Invoke-WebRequest -Uri $pin.url -OutFile $installer
+          ./scripts/prepare-inno-setup.ps1 -InstallerPath $installer
+      - name: Compilar, inspeccionar e instalar solo el fixture en perfil desechable
+        run: ./scripts/check-windows-installer-ci.ps1
+      - name: Conservar exclusivamente informe sanitizado
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-fixture-report-${{ github.sha }}
+          path: .tools/installer-ci-report/report.json
+          if-no-files-found: error
+          retention-days: 14

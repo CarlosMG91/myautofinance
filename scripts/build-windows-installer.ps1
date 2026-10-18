@@ -63,11 +63,14 @@ try {
     if ($finalStatus.Count -ne 0 -or (& git rev-parse HEAD).Trim() -cne $commit) { throw 'El checkout cambio; instalador no verificado.' }
     $exe = Join-Path $output ('Autofinance-' + $candidate.applicationVersion + '-windows-x64-private.exe')
     $observedSigning = (Get-AuthenticodeSignature -LiteralPath $exe).Status.ToString()
+    $peVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($exe)
+    $observedVersion = '{0}.{1}.{2}.{3}' -f $peVersion.FileMajorPart,$peVersion.FileMinorPart,$peVersion.FileBuildPart,$peVersion.FilePrivatePart
+    if ($observedVersion -cne $candidate.windowsVersion -or $observedSigning -cne 'NotSigned') { throw 'Version/firma del EXE distinta del contrato inicial sin firma.' }
     $result = [ordered]@{
         installerBuildVersion = 1; sourceCommit = $commit; sourceDirty = $false
         applicationVersion = $candidate.applicationVersion; windowsVersion = $candidate.windowsVersion
         appId = $contract.appId; builtAtUtc = [DateTime]::UtcNow.ToString('o')
-        installer = @{ path = [IO.Path]::GetFileName($exe); size = (Get-Item -LiteralPath $exe).Length; sha256 = (Hash $exe); signing = $observedSigning }
+        installer = @{ path = [IO.Path]::GetFileName($exe); size = (Get-Item -LiteralPath $exe).Length; sha256 = (Hash $exe); signing = $observedSigning; windowsVersion = $observedVersion }
         bridge = @{ architecture = 'x86-inprocess-host-for-inno6'; runtime = 'static'; sha256 = (Hash $bridge); compilerSha256 = (Hash $compiler); signing = (Get-AuthenticodeSignature -LiteralPath $bridge).Status.ToString() }
         inputs = @{ payloadManifestSha256 = (Hash $payloadManifest); ownershipManifestSha256 = (Hash (Join-Path $output '.autofinance-files')) }
         verification = @{ status = 'candidate'; cleanWindowsInstall = 'pending'; finalManifest = 'T06 pending'; e2e = 'T08 pending' }
