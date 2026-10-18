@@ -1,0 +1,12 @@
+LIBRARY autofinance_setup_bridge
+EXPORTS
+  AfInitialize=_AfInitialize@8
+  AfInfo=_AfInfo@12
+  AfSource=_AfSource@12
+  AfBegin=_AfBegin@4
+  AfStage=_AfStage@0
+  AfCommit=_AfCommit@0
+  AfAbort=_AfAbort@0
+  AfUninstallBegin=_AfUninstallBegin@4
+  AfUninstallClean=_AfUninstallClean@0
+  AfUninstallFinish=_AfUninstallFinish@0
