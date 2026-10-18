@@ -1,7 +1,77 @@
 # MA-TSK-130 · Integración Openbank pendiente del lector
 
-**Estado: bloqueado; recorrido productivo no implementado.** Comprobación del
-2026-10-08. Este registro no completa los criterios del ticket ni cierra EP-014.
+**Estado: bloqueado; recorrido productivo no implementado.** Última comprobación:
+2026-10-18. Este registro no completa los criterios del ticket ni cierra EP-014.
+
+## Reapertura: comprobación del 2026-10-18
+
+La reapertura autorizada del 2026-10-16 requiere conectar el lector/adaptador
+real, no volver a cerrar con evidencia del núcleo sintético. Se ha consultado
+`GET http://localhost:4310/api/data`, tablero **My autofinance**, con workspace
+coincidente. MA-TSK-130 figura `in-progress`; MA-TSK-124/125/126 figuran `done`,
+pero sus documentos y el código disponible siguen sin acreditar sus entregas.
+Los adjuntos de la épica y de esos tickets están vacíos; no se facilita una
+ruta privada concreta de muestra o implementación externa.
+
+La [caracterización](caracterizacion-openbank.md), revisada el 2026-10-18,
+continúa bloqueada por falta de muestra verificable. El
+[lector](lector-openbank.md) y el [adaptador](adaptacion-nucleo.md) declaran que
+no están implementados. En `lib/features/importing/data` solo están el lector
+y adaptador CSV, los dos selectores y SHA-256. La búsqueda de archivos
+versionados y no ignorados no encuentra XLS/XLSX/XLSB ni lector/adaptador
+Openbank. No acredita ausencia fuera del checkout o en archivos ignorados;
+no se ha leído ningún extracto ni inferido su estructura.
+
+Los puntos de integración comprobados son:
+
+- `lib/app/openbank_selector_factory.dart` conserva el selector entregado.
+- `lib/app/navigation/app_router.dart` mantiene `Importar Openbank` deshabilitado
+  (`enabled: false`); no existe una composición bancaria productiva.
+- `lib/app/navigation/import_route.dart` compone CSV e historial; el lanzamiento
+  con adaptador inyectado está reservado expresamente a pruebas.
+- `ImportController` dispone de selección CSV y revisión/confirmación común,
+  pero no de selección bancaria conectada. `createImportServices` aporta
+  previsualización, confirmación e historial SQLite para reutilizar.
+
+Se conservan MA-TSK-127/128 y todos sus artefactos. La implementación pendiente
+debe aplicar `lib/ui/autofinance_ui.dart` y la navegación vigente de
+[EP-026 v1 aprobada](../ep-026/prototipo/aprobacion.md), sin reabrir esa aprobación.
+No se habilita el recorrido con un adaptador simulado. Los criterios de lectura,
+cuenta explícita, revisión, persistencia y consulta posterior de Openbank siguen
+sin cumplirse y MA-TSK-131 continúa sin recibir esa entrega.
+
+Para retomar falta la muestra original anonimizada en una ruta privada accesible,
+completar MA-TSK-124 y disponer del lector/adaptador reales MA-TSK-125/126 en esta
+rama, con evidencia verificable. Se ha solicitado la ubicación de la muestra y
+de las entregas si existen fuera del checkout. Este registro no cambia estados
+en Epic Board ni constituye la entrega funcional del ticket.
+
+### Verificación de la reapertura
+
+- Flutter 3.47.0 / Dart 3.13.0 y `scripts/check-toolchain.ps1`: correctos.
+- 56 pruebas existentes aprobadas con `--no-pub --concurrency=1`: selectores
+  Openbank/CSV, controlador, contrato y arquitectura. Solo verifican esos
+  componentes y el núcleo común, no un lector/adaptador Openbank.
+- `node docs/ep-001/verificar-casos.mjs`: correcto; 48 presupuestos, 10 reales
+  y resultados financieros de referencia conservados.
+- `scripts/check-quality.ps1` se detiene en `flutter pub get --enforce-lockfile`
+  por un error de socket al consultar `pub.dev/api/packages/http/advisories`.
+  Resolución alternativa `flutter pub get --offline --enforce-lockfile`
+  correcta, sin cambios en `pubspec.lock`. Formato correcto: 505 archivos,
+  cero cambios; `flutter analyze --no-pub --fatal-infos --fatal-warnings`
+  sin incidencias. No se acredita suite general ni variantes de arranque en esta
+  revisión, pues el script no llega a ejecutarlas.
+- Enlaces relativos y `git diff --check`: correctos. Único archivo propio:
+  este registro. Los cambios concurrentes quedan fuera; los artefactos de
+  MA-TSK-127/128 conservan su contenido.
+- Logs locales ignorados: `.tools/ma-tsk-130-reapertura-2026-10-18-quality.log`,
+  `.tools/ma-tsk-130-reapertura-2026-10-18-offline.log` y
+  `.tools/ma-tsk-130-reapertura-2026-10-18-directed.log`.
+
+No hay cambios Dart o de plataforma; no se compilan Windows/Android ni se
+acredita recorrido nativo o accesibilidad Openbank con componentes inexistentes.
+
+## Registro histórico del 2026-10-08
 
 ## Requisitos contrastados
 
