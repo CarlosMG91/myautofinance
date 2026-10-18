@@ -1,6 +1,66 @@
 # MA-TSK-124 · Caracterización del extracto Openbank
 
 **Estado: bloqueado por falta de muestra verificable del usuario.**
+
+## Reapertura: comprobación del 2026-10-18
+
+La reapertura autorizada del 2026-10-16 exige una muestra verificable y una
+caracterización contrastada antes de volver a cerrar MA-TSK-124. Este registro
+no entrega la caracterización ni desbloquea MA-TSK-125 o MA-TSK-129.
+
+Se ha vuelto a consultar `http://localhost:4310/api/data`, tablero
+**My autofinance**, comprobando que su workspace corresponde a este checkout.
+Las listas de adjuntos de MA-EPIC-123 y MA-TSK-124 siguen vacías. La petición
+indica que los adjuntos son locales privados, pero no proporciona ninguna
+ruta concreta. El ticket figura administrativamente `in-progress` durante
+esta ejecución; eso no acredita que se haya resuelto el bloqueo.
+
+La consulta `git ls-files --cached --others --exclude-standard`, filtrada por
+nombres Openbank, adjuntos y extensiones XLS/XLSX/XLSB/ODS, no encuentra una
+muestra. Los resultados Openbank son documentación, prototipo y código del
+selector. Esta búsqueda no inspecciona carpetas privadas externas ni demuestra
+la ausencia de una muestra en ubicaciones ignoradas. No se han leído bytes de
+ningún extracto ni se ha deducido su formato por la extensión.
+
+**Falta exactamente:** una ruta local privada accesible al agente que contenga
+la muestra original anonimizada aportada por el usuario, conservando contenedor,
+estructura y tipos, y evidencia de que la anonimización no los ha alterado.
+Se ha solicitado esa ubicación. Se mantienen pendientes todos los apartados
+de caracterización y el mapeo con resultados por hoja/fila descritos más abajo.
+La muestra permanecerá fuera de Git; no se publica ningún extracto personal.
+
+No se modifican MA-TSK-127/128 ni sus artefactos. No se implementa un lector
+sin evidencia, ni se cambia el estado del ticket a entregado.
+
+### Comprobaciones de esta revisión
+
+- `node docs/ep-001/verificar-casos.mjs`: correcto; 48 presupuestos y 10 reales,
+  con los resultados financieros de referencia conservados.
+- Flutter 3.47.0 / Dart 3.13.0 y `scripts/check-toolchain.ps1`: correctos.
+- Enlaces relativos y `git diff --check`: correctos. Los artefactos de
+  MA-TSK-127/128 conservan su contenido.
+- `scripts/check-quality.ps1`: el primer intento se detuvo al consultar
+  `pub.dev` por restricciones de red. El reintento con acceso de red resolvió
+  las dependencias con `--enforce-lockfile`, sin modificar `pubspec.lock`.
+  Formato correcto (505 archivos, cero cambios) y análisis sin incidencias.
+  La suite termina con **2.005 pruebas aprobadas y ocho fallidas**:
+  un caso de `test/budget/budget_lifecycle_test.dart` (Windows), uno de
+  `test/drilldowns/report_drilldown_journey_test.dart` (Windows), dos de
+  `test/movements/pending_lifecycle_test.dart` (Windows/Android) y cuatro de
+  `test/synchronization/local_recovery_journey_test.dart` (dos manuales y
+  recuperación; fallo de disco tras instalar; cuarta fallida y retención;
+  candidata truncada). El primer fallo incluye timeout de 45 segundos y un
+  error de base ya cerrada, también descritos en el registro histórico.
+  No se acredita calidad global; el script se detiene antes de las variantes
+  de arranque con `APP_ENV`. Estos módulos no se modifican en este ticket.
+- Logs locales ignorados: `.tools/ma-tsk-124-reapertura-2026-10-18-quality.log`
+  y `.tools/ma-tsk-124-reapertura-2026-10-18-quality-network.log`.
+- La revisión solo añade este registro documental; no verifica lectura,
+  fechas, signos, localizaciones o resultados de Openbank. No hay cambios de
+  plataforma que requieran builds Windows/Android.
+
+## Registro histórico del 2026-10-08
+
 Este documento registra la evidencia disponible el 2026-10-08 y prepara la
 caracterización; no define un formato bancario aceptado ni completa el ticket.
 
