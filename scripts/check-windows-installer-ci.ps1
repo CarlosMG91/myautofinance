@@ -63,6 +63,8 @@ try {
     foreach ($revision in @('1', '2')) {
         $fixtureRoot = Join-Path $taskRoot ('.tools/ma-tsk-233-fixture-' + $revision)
         $exe = Join-Path $build ('v' + $revision + '/Release/myautofinance.exe')
+        & (Join-Path $build 'Release/verify_fixture.exe') $exe
+        if ($LASTEXITCODE -ne 0) { throw 'Recursos de identidad del fixture no validos.' }
         & node scripts/tests/package-installation-fixture.mjs $bridge $exe $fixtureRoot $revision
         if ($LASTEXITCODE -ne 0) { throw 'Entrada de fixture rechazada.' }
         & (Join-Path $InnoDirectory 'ISCC.exe') ('/DPackageInclude=' + (Join-Path $fixtureRoot 'output/package.iss.inc')) packaging/windows/autofinance.iss
