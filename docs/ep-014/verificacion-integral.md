@@ -1,5 +1,10 @@
 # MA-TSK-131 · Verificación parcial y protección patrimonial
 
+La comprobación de la reapertura del 2026-10-18 está en
+[verificación de reapertura y traspaso a MA-TSK-245](verificacion-reapertura-131.md).
+El informe siguiente se conserva como evidencia histórica del 2026-10-08;
+sus ejecuciones no se atribuyen a la reapertura.
+
 **Estado: bloqueado para Openbank; no completa MA-TSK-131 ni cierra EP-014.**
 Comprobación del 2026-10-08.
 
