@@ -97,6 +97,9 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Runner nativo sin dependencias adicionales; solo datos sintéticos.
+        testApplicationId = "com.carlosmg91.myautofinance.storageaudit"
+        testInstrumentationRunner = "com.carlosmg91.myautofinance.StorageAuditInstrumentation"
     }
 
     signingConfigs {

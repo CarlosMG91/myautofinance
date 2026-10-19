@@ -4,4 +4,19 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Solo fixtures de la variante debug. El sistema SAF puede conceder URI;
+         otras apps no acceden sin MANAGE_DOCUMENTS. Nunca en release. -->
+    <application>
+        <activity android:name=".StorageAuditActivity" android:exported="false" />
+        <provider
+            android:name=".SyntheticDocumentsProvider"
+            android:authorities="com.carlosmg91.myautofinance.storageaudit.documents"
+            android:permission="android.permission.MANAGE_DOCUMENTS"
+            android:exported="true"
+            android:grantUriPermissions="true">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
+    </application>
 </manifest>

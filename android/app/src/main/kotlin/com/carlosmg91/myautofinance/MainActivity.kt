@@ -9,6 +9,7 @@ import android.content.Intent
 class MainActivity : FlutterActivity() {
     private var localCsv: LocalCsvChannel? = null
     private var exportSave: ExportSaveChannel? = null
+    private var driveSession: MethodChannel? = null
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (exportSave?.onActivityResult(requestCode, resultCode, data) == true) return
@@ -17,6 +18,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        driveSession?.setMethodCallHandler(null)
+        driveSession = null
         exportSave?.dispose()
         exportSave = null
         localCsv?.dispose()
@@ -35,6 +38,7 @@ class MainActivity : FlutterActivity() {
             StandardMethodCodec.INSTANCE,
             flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()
         )
+        driveSession = channel
         channel.setMethodCallHandler { call, result ->
             try {
                 when (call.method) {

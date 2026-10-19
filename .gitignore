@@ -38,6 +38,7 @@ android/key.properties
 *signing-recovery.key
 windows/flutter/ephemeral/
 android/.gradle/
+android/.kotlin/
 android/captures/
 android/gradlew
 android/gradlew.bat
