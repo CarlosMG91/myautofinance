@@ -91,7 +91,7 @@ jobs:
       - name: Verificar generador privado con inputs y rechazos conocidos
         if: matrix.target == 'android'
         run: |
-          node --test scripts/tests/android-delivery.test.mjs scripts/tests/google-oauth-android.test.mjs
+          node --test scripts/tests/android-delivery.test.mjs scripts/tests/google-oauth-android.test.mjs scripts/tests/android-upgrade.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Fallaron los gates de entrega Android.' }
       - name: APK universal release fixture con firma efímera (APP_ENV=test)
         if: matrix.target == 'android'

@@ -1,0 +1,115 @@
+{
+  "ticket": "MA-TSK-243",
+  "status": "blocked-native-opening",
+  "createdUtc": "2026-10-19T05:52:24.597Z",
+  "sourceCommit": "d218446928e83eff5d65e73b230b21eae40776a7",
+  "evidenceSha256": "1d5e4110f0023bd4afaa6956db62587f52bde9fa94ddfa2fd8bd16686fc8d372",
+  "device": {
+    "avd": "Autofinance243",
+    "serial": "emulator-5580",
+    "api": 37,
+    "os": "Android 17",
+    "primaryCpuAbi": "x86_64",
+    "supportedAbis": [
+      "x86_64",
+      "arm64-v8a"
+    ],
+    "pageSize": 4096,
+    "fingerprint": "google/sdk_gphone64_x86_64/emu64xa:17/CE2A.260420.019/15611780:user/release-keys"
+  },
+  "builds": {
+    "N": {
+      "appEnvironment": "test",
+      "purpose": "ci-ephemeral-fixture",
+      "buildMode": "release",
+      "apk": {
+        "applicationId": "com.carlosmg91.myautofinance",
+        "splitName": null,
+        "versionCode": 24301,
+        "versionName": "0.1.0",
+        "minimumSdk": 24,
+        "compileSdk": 36,
+        "targetSdk": 36,
+        "abis": [
+          "arm64-v8a",
+          "armeabi-v7a",
+          "x86_64"
+        ],
+        "debuggable": false,
+        "debugCertificate": false,
+        "certificateSha256": "abe949c03734e7806097da41cb95251e9a428b673f193b19adadb50ce753db47",
+        "certificateSha1": "8d5b7024b7a9b7419bb08accd9d13550d189384d",
+        "apkSha256": "3aa0157b41648faba2421a57b2359a8f6f8fe76a0bd77ba0401c264bd01a0627",
+        "size": 53947243
+      },
+      "inputsSha256": "fe2685c36474550b3eca0ca15fc929e6dea3759690a05fa9a0cf6a9ff9caab5e",
+      "nativeLibraryCount": 12,
+      "checks": {
+        "apksigner": true,
+        "aapt2": true,
+        "zipalign16KB": true,
+        "elf16KB": true,
+        "payload": true,
+        "sourceStable": true
+      }
+    },
+    "N1": {
+      "appEnvironment": "test",
+      "purpose": "ci-ephemeral-fixture",
+      "buildMode": "release",
+      "apk": {
+        "applicationId": "com.carlosmg91.myautofinance",
+        "splitName": null,
+        "versionCode": 24302,
+        "versionName": "0.1.1",
+        "minimumSdk": 24,
+        "compileSdk": 36,
+        "targetSdk": 36,
+        "abis": [
+          "arm64-v8a",
+          "armeabi-v7a",
+          "x86_64"
+        ],
+        "debuggable": false,
+        "debugCertificate": false,
+        "certificateSha256": "abe949c03734e7806097da41cb95251e9a428b673f193b19adadb50ce753db47",
+        "certificateSha1": "8d5b7024b7a9b7419bb08accd9d13550d189384d",
+        "apkSha256": "226d52cc671db0daa4bc3d01b65783c60402a8fd28c545565238998f41295fba",
+        "size": 53947243
+      },
+      "inputsSha256": "f9050b65a72d279169ef30c7ce4ae61df6e18abad05f60b7f31d30f186f09fae",
+      "nativeLibraryCount": 12,
+      "checks": {
+        "apksigner": true,
+        "aapt2": true,
+        "zipalign16KB": true,
+        "elf16KB": true,
+        "payload": true,
+        "sourceStable": true
+      }
+    }
+  },
+  "native": {
+    "installedVersionName": "0.1.0",
+    "installedVersionCode": 24301,
+    "failedStep": "N-seed/store.open",
+    "error": "La base est� bloqueada por una restauraci�n o recuperaci�n pendiente.",
+    "datasetLoaded": false,
+    "upgradeAttempted": false,
+    "preservationVerified": false,
+    "keystoreUpgradeVerified": false,
+    "realGoogleLogin": false,
+    "completeDelivery": false
+  },
+  "pending": [
+    "native-opening-blocker",
+    "N-to-N1-preservation",
+    "native-downgrade-signature-SDK-ABI-rejections",
+    "native-process-and-restore-interruption",
+    "API24",
+    "API36",
+    "16KB-runtime",
+    "ARM64-phone-T09",
+    "production-Google-Openbank-T09"
+  ]
+}

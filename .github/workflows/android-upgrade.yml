@@ -1,0 +1,75 @@
+name: Actualización Android release sintética
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/android-upgrade.yml'
+      - 'scripts/android-upgrade.mjs'
+      - 'scripts/fixtures/android-upgrade/**'
+      - 'scripts/tests/android-upgrade.test.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    name: N a N+1 API ${{ matrix.api }} x86_64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [24, 36]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Leer toolchain fijado
+        id: versions
+        run: |
+          $config = Get-Content toolchain.json -Raw | ConvertFrom-Json
+          foreach ($key in @('flutter', 'channel', 'java', 'androidPlatform', 'androidBuildTools', 'androidNdk')) {
+            "$key=$($config.$key)" >> $env:GITHUB_OUTPUT
+          }
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ steps.versions.outputs.java }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.versions.outputs.flutter }}
+          channel: ${{ steps.versions.outputs.channel }}
+      - name: Preparar paquetes Android fijados
+        env:
+          SDK_PLATFORM: ${{ steps.versions.outputs.androidPlatform }}
+          SDK_BUILD_TOOLS: ${{ steps.versions.outputs.androidBuildTools }}
+          SDK_NDK: ${{ steps.versions.outputs.androidNdk }}
+        run: |
+          $manager = Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager'
+          & $manager "platforms;android-$env:SDK_PLATFORM" "build-tools;$env:SDK_BUILD_TOOLS" "ndk;$env:SDK_NDK" 'platform-tools'
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo preparar el SDK fijado.' }
+          flutter --version
+          ./scripts/check-toolchain.ps1
+          node --test scripts/tests/android-upgrade.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Falló el oráculo de preservación.' }
+      - name: Habilitar KVM
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Actualizar sin desinstalar en AVD desechable
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: google_apis
+          avd-name: Autofinance243
+          disable-animations: true
+          script: node scripts/android-upgrade.mjs --serial emulator-5554 --avd Autofinance243 --sdk "$ANDROID_HOME" --jdk "$JAVA_HOME"
+      # Only synthetic, APP_ENV=test, ephemeral fixture keys. No APK/key/artifact
+      # upload and no production signing or Google account in this workflow.
