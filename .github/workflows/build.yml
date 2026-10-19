@@ -88,6 +88,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Falló el contrato APK.' }
           node scripts/tests/android-signing-gradle.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Falló el contrato de firma Gradle.' }
+      - name: Verificar generador privado con inputs y rechazos conocidos
+        if: matrix.target == 'android'
+        run: |
+          node --test scripts/tests/android-delivery.test.mjs scripts/tests/google-oauth-android.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Fallaron los gates de entrega Android.' }
+      - name: APK universal release fixture con firma efímera (APP_ENV=test)
+        if: matrix.target == 'android'
+        run: |
+          node scripts/tests/build-android-delivery-fixture.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Falló build/inspección/ZIP/ELF16KB de fixture. No es distribución.' }
+        # Neither this release fixture nor dist-private is uploaded. Production keys are never used in CI.
       - name: Conservar compilación para inspección
         uses: actions/upload-artifact@v4
         with:
