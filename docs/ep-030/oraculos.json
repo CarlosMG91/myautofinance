@@ -1,0 +1,152 @@
+{
+  "ticket": "MA-TSK-248",
+  "currency": "EUR",
+  "amountUnit": "cent",
+  "source": "docs/ep-001/casos-referencia.md",
+  "files": {
+    "base.csv": "0b997f5c8092369aa47a08c8cca6d4c22050abca320880a173818d4e34576b62",
+    "categoria-pendiente.csv": "ec4f40491ba03e128ca41efc20dbce6da55f994612360dd4af41ecffee5fa17b",
+    "cuenta-sin-resolver.csv": "a3f824dea2ca6eb41697735d96aadd54a31485b004663a18a6d7362dcb6b7734",
+    "padre-incompatible.csv": "0e7045444dcf20eba73c06c23c39848baae165154164b5d1d3921cad7c3a2de7"
+  },
+  "base": {
+    "movements": 10,
+    "budgets": 48,
+    "januaryReal": 122975,
+    "januaryBudget": 110000,
+    "januaryDifference": 12975,
+    "annualReal": 232965,
+    "annualBudget": 1320000,
+    "januaryLiquidAssets": 900000,
+    "januaryNetWorth": 1400000,
+    "januaryCushionDisplay": "3,00 meses",
+    "cafeCount": 2
+  },
+  "variants": [
+    {
+      "id": "V01",
+      "initial": "base",
+      "operation": "Importar categoria-pendiente.csv y revisar sus dos movimientos sin categoría",
+      "januaryReal": 123375,
+      "januaryDifference": 13375,
+      "unclassified": 400,
+      "movements": 12
+    },
+    {
+      "id": "V02",
+      "initial": "base",
+      "operation": "Revisar cuenta-sin-resolver.csv sin asignar cuenta",
+      "confirmable": false,
+      "movements": 10,
+      "budgets": 48
+    },
+    {
+      "id": "V03",
+      "initial": "base",
+      "operation": "Consultar febrero sin foto",
+      "indicatorCode": "foto_ausente",
+      "netWorth": null
+    },
+    {
+      "id": "V04",
+      "initial": "base",
+      "operation": "Foto febrero: principal 620000 y deuda 480000; dejar ahorro/cartera pendientes",
+      "indicatorCode": "foto_incompleta",
+      "netWorth": null,
+      "pending": [
+        "Cuenta de ahorro",
+        "Cartera"
+      ]
+    },
+    {
+      "id": "V05",
+      "initial": "V04",
+      "operation": "Completar febrero: ahorro 0 y cartera 1050000",
+      "liquidAssets": 620000,
+      "assets": 1670000,
+      "debt": 480000,
+      "netWorth": 1190000,
+      "cushionDisplay": "2,07 meses"
+    },
+    {
+      "id": "V06",
+      "initial": "V05",
+      "operation": "Cartera líquida desde febrero; consultar enero y febrero",
+      "januaryLiquidAssets": 900000,
+      "februaryLiquidAssets": 1670000,
+      "februaryNetWorth": 1190000,
+      "februaryCushionDisplay": "5,57 meses"
+    },
+    {
+      "id": "V07",
+      "initial": "base",
+      "operation": "Importar padre-incompatible.csv con Vivienda resuelta",
+      "confirmable": false,
+      "budgets": 48,
+      "januaryBudget": 110000
+    },
+    {
+      "id": "V08",
+      "initial": "base",
+      "operation": "Calcular propuesta 2027 desde real 2026; no guardar",
+      "allocations": 60,
+      "january": {
+        "Ingresos": 310000,
+        "Vivienda": -100000,
+        "Alimentación": -36000,
+        "Ahorro": -50000,
+        "Ocio": -2000
+      },
+      "february": {
+        "Ingresos": 302000,
+        "Vivienda": -100000,
+        "Alimentación": -43000,
+        "Ahorro": -50000,
+        "Ocio": 0
+      },
+      "marchThroughDecemberEachRoot": 0,
+      "sourceBudgetUnchanged": true
+    },
+    {
+      "id": "V09",
+      "initial": "base",
+      "operation": "Consultar marzo 2026, diciembre 2026 y enero 2027 antes de guardar propuesta",
+      "marchReal": 0,
+      "marchBudget": 110000,
+      "decemberReal": 0,
+      "decemberBudget": 110000,
+      "january2027Real": 0,
+      "january2027BudgetRows": 0,
+      "indicatorCode": "foto_ausente"
+    },
+    {
+      "id": "V10",
+      "initial": "base",
+      "operation": "Eliminar solo salario marzo",
+      "indicatorCode": "ingresos_incompletos",
+      "pendingMonths": [
+        3
+      ]
+    },
+    {
+      "id": "V11",
+      "initial": "base",
+      "operation": "Fijar salario explícito cero en los doce meses",
+      "indicatorCode": "ingresos_nulos"
+    },
+    {
+      "id": "V12",
+      "initial": "base",
+      "operation": "Fijar ambas cuentas líquidas enero a cero conservando cartera y deuda",
+      "liquidAssets": 0,
+      "netWorth": 500000,
+      "cushionDisplay": "0,00 meses"
+    }
+  ],
+  "openbank": {
+    "status": "blocked",
+    "owner": "EP-014 MA-TSK-129",
+    "contract": "datos-sinteticos.md#enlace-openbank",
+    "fixtures": []
+  }
+}
