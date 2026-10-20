@@ -14,6 +14,7 @@ import 'package:myautofinance/features/importing/presentation/import_history_scr
 import 'package:myautofinance/features/importing/presentation/import_review_screen.dart';
 import 'package:myautofinance/features/movements/presentation/pending_movement_controller.dart';
 import 'package:myautofinance/features/movements/presentation/pending_movement_screen.dart';
+import 'package:myautofinance/ui/autofinance_ui.dart';
 
 import 'pending_reference_fixture.dart';
 import 'synthetic_import_adapter.dart';
@@ -141,7 +142,17 @@ Future<void> pendingLifecycleJourney(
     await mount();
     const origin = '${AppRoutes.actualSpending}?a=2020&m=02';
     await route(origin);
-    await tap(find.byType(PopupMenuButton<String>));
+    // EP-026 lleva Gestión al shell; Real anual ya no tiene menú emergente.
+    await tap(
+      find.byKey(
+        ValueKey(desktop ? 'destination-management' : 'destination-more'),
+      ),
+    );
+    if (!desktop) {
+      await tap(
+        find.byWidgetPredicate((w) => w is AfAction && w.label == 'Gestión'),
+      );
+    }
     await press('Pendientes de categorizar');
     count(5);
     expect(pending().query.from, isNull);
@@ -180,6 +191,13 @@ Future<void> pendingLifecycleJourney(
     );
     nav().pop();
     await settle();
+    expect(find.text('Pendientes de categorizar'), findsOneWidget);
+    nav().pop();
+    await settle();
+    if (!desktop) {
+      nav().pop();
+      await settle();
+    }
     expect(
       ModalRoute.of(tester.element(find.text('Real anual')))!.settings.name,
       origin,
