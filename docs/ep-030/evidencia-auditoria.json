@@ -1,0 +1,413 @@
+{
+  "ticket": "MA-TSK-247",
+  "recordedUtc": "2026-10-20T13:37:41.306Z",
+  "syntheticDataOnly": true,
+  "auditSourceCommit": "173361aafc98de46f144e0bc2cd4a001a658cd5e",
+  "branch": "ticket/ma-tsk-193",
+  "sourceVersion": "0.1.0+1",
+  "finalWindowsPackage": null,
+  "finalAndroidPackage": null,
+  "finalDeliveryAccepted": false,
+  "board": {
+    "readAtUtc": "2026-10-20T13:25:53.9141234Z",
+    "boardName": "My autofinance",
+    "workspaceMatched": true,
+    "readOnly": true,
+    "tickets": [
+      {
+        "code": "MA-TSK-131",
+        "status": "done",
+        "approvedAt": null,
+        "humanDiscussion": []
+      },
+      {
+        "code": "MA-TSK-202",
+        "status": "done",
+        "approvedAt": null,
+        "humanDiscussion": [
+          {
+            "author": "Tú",
+            "text": "retry"
+          }
+        ]
+      },
+      {
+        "code": "MA-TSK-207",
+        "status": "done",
+        "approvedAt": "2026-10-12T14:56:25.247Z",
+        "humanDiscussion": [
+          {
+            "author": "Tú",
+            "text": "Propuesta visual aceptada: /mockups/autofinance-integral-v1.html"
+          }
+        ]
+      },
+      {
+        "code": "MA-TSK-217",
+        "status": "done",
+        "approvedAt": null,
+        "humanDiscussion": []
+      },
+      {
+        "code": "MA-TSK-226",
+        "status": "done",
+        "approvedAt": null,
+        "humanDiscussion": []
+      },
+      {
+        "code": "MA-TSK-235",
+        "status": "done",
+        "approvedAt": null,
+        "humanDiscussion": []
+      },
+      {
+        "code": "MA-TSK-239",
+        "status": "done",
+        "approvedAt": null,
+        "humanDiscussion": []
+      },
+      {
+        "code": "MA-TSK-243",
+        "status": "done",
+        "approvedAt": null,
+        "humanDiscussion": []
+      },
+      {
+        "code": "MA-TSK-245",
+        "status": "done",
+        "approvedAt": null,
+        "humanDiscussion": [
+          {
+            "author": "Tú",
+            "text": "a"
+          }
+        ]
+      },
+      {
+        "code": "MA-TSK-247",
+        "status": "in-progress",
+        "approvedAt": null,
+        "humanDiscussion": []
+      }
+    ]
+  },
+  "toolchain": {
+    "flutter": "3.47.0",
+    "dart": "3.13.0",
+    "javaRequired": "17",
+    "sdkChanged": false,
+    "lockfileChanged": false
+  },
+  "sourceOverlay": [
+    {
+      "file": "lib/app/drive_upload_factory.dart",
+      "sha256": "8df339fa68363bc23ac2ccc2911c83e22cda67b81ddb43301dac2e09aa3a560b"
+    },
+    {
+      "file": "lib/features/synchronization/data/validated_drive_uploader.dart",
+      "sha256": "385e7a13b28429bf96fd90ab7e559ebd8609100951751fe0107c2a42315a7d93"
+    },
+    {
+      "file": "lib/features/synchronization/domain/drive_upload.dart",
+      "sha256": "bd80f446624c41f22a0a069dab89ef4b18b8260b77ed410eaac330b1b8c1e0c9"
+    },
+    {
+      "file": "lib/features/synchronization/data/http_drive_transfer_client.dart",
+      "sha256": "66917c15afa7d5ed54019659fc068bc0ff9f6a6d42278210dcaa174e79739336"
+    },
+    {
+      "file": "lib/features/synchronization/data/stored_installation_sync_state.dart",
+      "sha256": "84fbbe60293b1050dc8af8d37fef99d1b33205c802af49357b9b9f49f042d9f4"
+    },
+    {
+      "file": "lib/features/synchronization/domain/drive_transfer.dart",
+      "sha256": "2f820ef6472999b7d9cff2351d3a1617804ad37c678547b4792873be217fb1ce"
+    },
+    {
+      "file": "lib/features/synchronization/domain/installation_sync_state.dart",
+      "sha256": "17cceed36816af30ec47a82103333039d30671d26dd42f8e6802df7b0e301f35"
+    },
+    {
+      "file": "lib/features/synchronization/synchronization.dart",
+      "sha256": "7fb66a557236d3435c11e5a0dd0ef5ed899c167e452326117235e1a33ab92e77"
+    }
+  ],
+  "comparison": {
+    "referenceCommit": "68a87c138b7fa63240c2051fa9a78f340840efe7",
+    "referencePurpose": "EP-028 MA-TSK-233 documentary reference; current same Drive overlay added to both",
+    "pristineHistoricalCheckout": false,
+    "normalization": "UTF-8 text CRLF to LF; raw overlay hashes recorded separately",
+    "inputsCompared": 318,
+    "differingInputs": [],
+    "inputSetSha256Lf": "5da07e5c3d0cd64668714313b85a7b874235bb08396dbf8bb9cc418b6e8a09c4",
+    "directlyComparedTestFiles": [
+      {
+        "file": "test/movements/pending_lifecycle_test.dart",
+        "candidateSha256Lf": "8ca308de49cce7beb5331a5687f18e127472c77dd887f92cdc0e0d148ffa32f3",
+        "referenceSha256Lf": "8ca308de49cce7beb5331a5687f18e127472c77dd887f92cdc0e0d148ffa32f3"
+      },
+      {
+        "file": "test/synchronization/local_recovery_journey_test.dart",
+        "candidateSha256Lf": "bcda75976c80602061c6df3af6d0e0d6c7f55ad438644e1cf0eeeb5161d48855",
+        "referenceSha256Lf": "bcda75976c80602061c6df3af6d0e0d6c7f55ad438644e1cf0eeeb5161d48855"
+      }
+    ],
+    "historicalOriginalOverlayReconstructed": false,
+    "rootCauseProvenByComparison": false
+  },
+  "existingEvidenceCatalog": [
+    {
+      "id": "E01",
+      "file": "docs/ep-001/casos-referencia.md",
+      "sha256": "e178a10ac0003b19a7bb8c042e7fc2e74a3f7437179037a6f1971c6a56e28544",
+      "documentaryCommit": "6f71a0c7309fec658e3a8a00791067c7808cdbf6",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E02",
+      "file": "docs/ep-010/verificacion-recorrido.md",
+      "sha256": "909626bbd445642b7cec66cdeed36701e31df3720e7a0d066fb1668badb3254b",
+      "documentaryCommit": "45bc5745d78c9937244a60edf334209c44ed7463",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E03",
+      "file": "docs/ep-011/verificacion-presupuesto-mensual.md",
+      "sha256": "4546d7b79cfd9d0f18397c632f5152c03477bdee3cf8fab0b314cd8fc61b65ae",
+      "documentaryCommit": "8a0e3d986acf06e0fc003c8ee0fa0da720b863da",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E04",
+      "file": "docs/ep-013/integracion-csv.md",
+      "sha256": "446ffefb7d25aa01681bc0cd1f8ebd85bf4ec5fc8ddc8cc764a0f2fd61fc6590",
+      "documentaryCommit": "ca3e91155c0e1ad498d4d304f0de85c95e18a7f7",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E05",
+      "file": "docs/ep-015/verificacion-categorizacion.md",
+      "sha256": "68204c5bde76e747db1a141f310489d71a12e9db07639d470a89a46292666322",
+      "documentaryCommit": "c0b583b01ce0b99e2e9283fdf1e38a56e8ca1d25",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E06",
+      "file": "docs/ep-016/verificacion-historico.md",
+      "sha256": "cafa62677c0291965ed1b5572161570a02801dabf7f775ee9686a0158b56968a",
+      "documentaryCommit": "906f67f73d51ffc269708a8cd0b8c29af52b0fce",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E07",
+      "file": "docs/ep-018/verificacion-integral.md",
+      "sha256": "88ac8ca8dd16e56f348154d0231abc332ea485bfa86fa74db4c417970663f7cd",
+      "documentaryCommit": "c9a059433f6c25c4ee745785663d81e6373d8dec",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E08",
+      "file": "docs/ep-019/verificacion-integrada.md",
+      "sha256": "099ec3b52a5eb9f27581f8c99a9c2f3604ba87b7263e81dd3a29827fc2c376c1",
+      "documentaryCommit": "57df0d0df328804e6ec9e71d12d0e213f1e42ea4",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E09",
+      "file": "docs/ep-021/verificacion-integral.md",
+      "sha256": "ce8464cabf8f78cfe7665ae8888fa642fcf7b074e82ef6e638042a0c42745e9e",
+      "documentaryCommit": "bba9a735dabf3de6ca693aaa6ad5d927115b20db",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E10",
+      "file": "docs/ep-022/validacion-integral.md",
+      "sha256": "61f6d4645fc7ad91a9685cc6ca46e1ee09071d9ec62350fc1ad8c70edd27750b",
+      "documentaryCommit": "696641cf25498777e5ddd758b6707c7dbadfa3a7",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E11",
+      "file": "docs/ep-023/validacion-integrada.md",
+      "sha256": "63f460732c4f869afbd57c5104771f61d2ff0185ccdc50be6f2f5fad0a4ac4ad",
+      "documentaryCommit": "fbc7dbe39a6addf8249523011dec26363e71fae4",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E12",
+      "file": "docs/ep-024/verificacion-tres-informes.md",
+      "sha256": "53db1cdc82afcd0c54f13fc513da21413e07e72e94c9dabfed5819d137065504",
+      "documentaryCommit": "27c6d4b4d3703d67d59620c321fe79bb7eb4ba0a",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E13",
+      "file": "docs/ep-025/verificacion-recorrido.md",
+      "sha256": "49407241d4af9ce0366711210ea4f55fc43b2a102fc7e3d800adbef487adb479",
+      "documentaryCommit": "e62d631604e696e28e796b422aaa43a36dbf266c",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E14",
+      "file": "docs/ep-026/validacion-integral.md",
+      "sha256": "ede8340ed9599f06a7f103aa52ee5176adec3f721fd8274693d4016e88c18ea0",
+      "documentaryCommit": "5db43b25842caae1ec99a237fda6e917b6520114",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E15",
+      "file": "docs/ep-027/verificacion-portabilidad.md",
+      "sha256": "48260a6bf42b08db27033ab5dd733b1ac4bc23c7f9b04cd0fb016a9c161a07f1",
+      "documentaryCommit": "9b7e03f91cd77f1a1751643d923503e6e4f1135d",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E16",
+      "file": "docs/ep-028/verificacion-e2e.md",
+      "sha256": "41e5a95324195ac7f28f0a18fa98608661491a4b036f86fe010469f32ff71483",
+      "documentaryCommit": "60ded3fb86cd9bb9fafe04844ce3bef9a67f85ed",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E17",
+      "file": "docs/ep-014/verificacion-reapertura-131.md",
+      "sha256": "406b1e32f1cf2a220c40a603d480f24d7a626533ae768a728a6317eb1925ba92",
+      "documentaryCommit": "d45f94455fd758a5b1876f0a6dc013bb1568ec92",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E18",
+      "file": "docs/ep-029/verificacion-final-245.md",
+      "sha256": "166c16e5248bc27e3fda12a1b4a93fc909f80bbce881203bc70c476ddbefc426",
+      "documentaryCommit": "173361aafc98de46f144e0bc2cd4a001a658cd5e",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E19",
+      "file": "docs/ep-006/verificacion-recuperacion.md",
+      "sha256": "c50fba141c2e682b4b6825fe996a9d78a193811f7b53e9dce8818de38bf17aa7",
+      "documentaryCommit": "656bef7891cafc55df996a43156bd76d17c4a04e",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    },
+    {
+      "id": "E20",
+      "file": "docs/ep-007/verificacion-sincronizacion.md",
+      "sha256": "15ecb6cd07c29c0120e2d74541dfcf22d28801dcb8dff4d8451a79f0d3e057b4",
+      "documentaryCommit": "d954b63c33e113247667481d5670d79d7fe3ca69",
+      "sourceVersionAtDocumentaryCommit": "0.1.0+1",
+      "binaryCommitEstablishedByThisAudit": false
+    }
+  ],
+  "runs": [
+    {
+      "localIgnoredFile": ".tools/ma-tsk-247/quality.log",
+      "sha256": "1f8c65aba72884054ef3adca5ad825e8b050ad51ed2f9e43a14973655968f64c",
+      "encoding": "utf16le",
+      "exitCode": 1,
+      "status": "blocked-network-before-analysis",
+      "observedLastWriteUtc": "2026-10-20T13:16:59.519Z",
+      "result": null,
+      "lastTestResult": null,
+      "failures": []
+    },
+    {
+      "localIgnoredFile": ".tools/ma-tsk-247/quality-authorized.log",
+      "sha256": "0214d8506f8c308067fc96dbd9722fd0d31e854314197962470a26157a0970a2",
+      "encoding": "utf16le",
+      "exitCode": 1,
+      "status": "failed-tests",
+      "observedLastWriteUtc": "2026-10-20T13:32:08.947Z",
+      "result": {
+        "duration": "13:06",
+        "passed": 2012,
+        "failed": 2,
+        "message": "Some tests failed."
+      },
+      "lastTestResult": "13:06 +2012 -2: Some tests failed.",
+      "failures": [
+        "<workspace>/test/movements/pending_lifecycle_test.dart: EP-015 completo con SQLite: Windows tabla",
+        "<workspace>/test/movements/pending_lifecycle_test.dart: EP-015 completo con SQLite: Android tarjetas"
+      ]
+    },
+    {
+      "localIgnoredFile": ".tools/ma-tsk-247/candidate-directed.log",
+      "sha256": "ed332a7b53ece802a3fb7cf2f80211c4bfef1ab4b483d8d54c44c16930d249c7",
+      "encoding": "utf16le",
+      "exitCode": 1,
+      "status": "failed-tests",
+      "observedLastWriteUtc": "2026-10-20T13:34:21.894Z",
+      "result": {
+        "duration": "01:45",
+        "passed": 8,
+        "failed": 2,
+        "message": "Some tests failed."
+      },
+      "lastTestResult": "01:45 +8 -2: Some tests failed.",
+      "failures": [
+        "<workspace>/test/movements/pending_lifecycle_test.dart: EP-015 completo con SQLite: Windows tabla",
+        "<workspace>/test/movements/pending_lifecycle_test.dart: EP-015 completo con SQLite: Android tarjetas"
+      ]
+    },
+    {
+      "localIgnoredFile": ".tools/ma-tsk-247/reference-directed.log",
+      "sha256": "ca5700347b2f78b0677bb700bd155aaf00b35952cdb0cbbf08b0b58800552490",
+      "encoding": "utf16le",
+      "exitCode": 1,
+      "status": "failed-tests",
+      "observedLastWriteUtc": "2026-10-20T13:36:46.640Z",
+      "result": {
+        "duration": "01:47",
+        "passed": 8,
+        "failed": 2,
+        "message": "Some tests failed."
+      },
+      "lastTestResult": "01:47 +8 -2: Some tests failed.",
+      "failures": [
+        "<workspace>/.tools/ma-tsk-247/reference/test/movements/pending_lifecycle_test.dart: EP-015 completo con SQLite: Windows tabla",
+        "<workspace>/.tools/ma-tsk-247/reference/test/movements/pending_lifecycle_test.dart: EP-015 completo con SQLite: Android tarjetas"
+      ]
+    }
+  ],
+  "execution": {
+    "host": "Windows x64, Flutter test",
+    "nativeRunnersExecuted": false,
+    "globalQualityCommand": "./scripts/check-quality.ps1",
+    "globalQualityMode": "script unchanged, default concurrency, authorized network/native file locks; initial sandbox failed pub.dev advisories",
+    "directedCommand": "flutter test --no-pub --concurrency=1 --reporter expanded test/movements/pending_lifecycle_test.dart test/synchronization/local_recovery_journey_test.dart",
+    "directedOrder": [
+      "candidate after full quality ended",
+      "reference after candidate ended"
+    ],
+    "timeoutsOrAssertionsChanged": false,
+    "appEnvironmentVariantsReached": false,
+    "productBuildsExecuted": false,
+    "buildsReason": "Documentation-only audit; no platform or product code changed; final packages blocked"
+  },
+  "limitations": [
+    "No physical-device or production-package test executed by T01",
+    "No Google real authorization or remote transfer executed",
+    "No Openbank sample read, reader absent",
+    "No final human visual or delivery acceptance",
+    "Current concurrent Drive overlay is not the exact historical working tree",
+    "Targeted passes do not erase a failed full quality run"
+  ]
+}
