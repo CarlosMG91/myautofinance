@@ -45,11 +45,13 @@ export function verifyPreservation(before, after, { recovery = false } = {}) {
   }
 }
 
-export function pendingRuntimeChecks(device) {
+export function pendingRuntimeChecks(device, { expectedApi, expectedPages } = {}) {
   requireValue(Number.isInteger(device.api) && device.api >= 24
     && Number.isInteger(device.pageSize) && device.pageSize > 0
     && Array.isArray(device.supportedAbis) && device.supportedAbis.length > 0,
   'Missing effective Android runtime evidence');
+  requireValue(expectedApi === undefined || device.api === Number(expectedApi), 'Unexpected Android API');
+  requireValue(expectedPages === undefined || device.pageSize === Number(expectedPages), 'Unexpected Android page size');
   return [
     ...(device.api === 24 ? [] : ['API24']),
     ...(device.api === 36 ? [] : ['API36']),
@@ -60,7 +62,8 @@ export function pendingRuntimeChecks(device) {
 
 async function main() {
   const { values } = parseArgs({ options: { serial: { type: 'string' }, avd: { type: 'string' },
-    sdk: { type: 'string' }, jdk: { type: 'string' } } });
+    sdk: { type: 'string' }, jdk: { type: 'string' },
+    'expected-api': { type: 'string' }, 'expected-pages': { type: 'string' } } });
   requireValue(values.serial?.startsWith('emulator-') && values.avd && values.sdk && values.jdk,
     'Require --serial emulator-ID --avd DISPOSABLE_NAME --sdk PATH --jdk PATH');
   const sdk = resolve(values.sdk), jdk = resolve(values.jdk);
@@ -112,8 +115,11 @@ async function main() {
       supportedAbis: property('ro.product.cpu.abilist').split(',').filter(Boolean),
       pageSize: Number(adb(['shell', 'getconf', 'PAGESIZE']).trim()),
     };
+    console.log(`Runtime: ${JSON.stringify(evidence.device)}`);
+    save();
     evidence.pending = ['N-to-N1-preservation', 'native-rejections',
-      'native-process-and-restore-interruption', ...pendingRuntimeChecks(evidence.device)];
+      'native-process-and-restore-interruption', ...pendingRuntimeChecks(evidence.device,
+        { expectedApi: values['expected-api'], expectedPages: values['expected-pages'] })];
     save();
     console.log('Cloning committed sources; concurrent edits excluded.');
     command('git', ['clone', '--no-local', '--quiet', root, checkout]);
@@ -165,6 +171,9 @@ async function main() {
       const hash = sha(readFileSync(apk));
       const manifest = JSON.parse(readFileSync(join(checkout, 'dist-private/android/ci-fixture', hash, 'manifest.json')));
       evidence[label] = manifest; save();
+      console.log(`${label}: ${JSON.stringify({ versionName: manifest.apk.versionName,
+        versionCode: manifest.apk.versionCode, apkSha256: hash,
+        certificateSha256: manifest.apk.certificateSha256 })}`);
       return { apk, manifest };
     };
     const n = build('0.1.0+24301', 'N');
@@ -272,6 +281,7 @@ async function main() {
     verifyPreservation(recovered, await runPhase('verify', 'N1-recovery-restarted'));
     evidence.status = 'passed-current-emulator';
     evidence.pending = pendingRuntimeChecks(evidence.device);
+    console.log(JSON.stringify({ status: evidence.status, completeDelivery: false, pending: evidence.pending }));
     save(); console.log(`Evidence: ${join(work, 'evidence.json')}`);
   } catch (error) {
     evidence.status = 'failed'; evidence.error = String(error.message); save();

@@ -14,13 +14,22 @@ permissions:
 
 jobs:
   upgrade:
-    name: N a N+1 API ${{ matrix.api }} x86_64
+    name: N a N+1 API ${{ matrix.api }} x86_64 ${{ matrix.pages }} B
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     strategy:
       fail-fast: false
       matrix:
-        api: [24, 36]
+        include:
+          - api: 24
+            target: google_apis
+            pages: 4096
+          - api: 36
+            target: google_apis
+            pages: 4096
+          - api: 36
+            target: google_apis_ps16k
+            pages: 16384
     defaults:
       run:
         shell: pwsh
@@ -67,9 +76,9 @@ jobs:
         with:
           api-level: ${{ matrix.api }}
           arch: x86_64
-          target: google_apis
+          target: ${{ matrix.target }}
           avd-name: Autofinance243
           disable-animations: true
-          script: node scripts/android-upgrade.mjs --serial emulator-5554 --avd Autofinance243 --sdk "$ANDROID_HOME" --jdk "$JAVA_HOME"
+          script: node scripts/android-upgrade.mjs --serial emulator-5554 --avd Autofinance243 --sdk "$ANDROID_HOME" --jdk "$JAVA_HOME" --expected-api ${{ matrix.api }} --expected-pages ${{ matrix.pages }}
       # Only synthetic, APP_ENV=test, ephemeral fixture keys. No APK/key/artifact
       # upload and no production signing or Google account in this workflow.

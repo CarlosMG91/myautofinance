@@ -116,6 +116,13 @@ la ABI traducida de un emulador nunca elimina el requisito de teléfono ARM64.
 El CSV servido procede del checkout del commit registrado, no de cambios
 concurrentes del directorio principal.
 
+La matriz CI prepara API 24/4 KB, API 36/4 KB y API 36/16 KB mediante la
+imagen `google_apis_ps16k`. Pasa `--expected-api` y `--expected-pages` al
+runner: una imagen que arranque con otra API o tamaño de página falla antes
+de generar claves o APK. Los logs muestran hardware, versiones, hashes y
+certificados sintéticos, sin subir APK, claves ni snapshots de sesión.
+La definición de esta matriz no acredita su ejecución.
+
 Google real, APK production definitivo y Openbank real corresponden a T09 y
 a la entrega EP-014/MA-TSK-131. El proveedor de control no sustituye ninguna de
 esas pruebas. La [verificación de ejecución](verificacion-actualizacion.md)

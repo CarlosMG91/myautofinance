@@ -65,6 +65,9 @@ test('runtime gates use measured API and pages, never infer a phone from transla
   assert.deepEqual(pendingRuntimeChecks({ ...device, api: 36, pageSize: 16384 }),
     ['API24', 'ARM64-phone-T09', 'production-Google-Openbank-T09']);
   assert.ok(!pendingRuntimeChecks({ ...device, api: 24 }).includes('API24'));
+  assert.throws(() => pendingRuntimeChecks(device, { expectedApi: '36' }));
+  assert.throws(() => pendingRuntimeChecks(device, { expectedPages: '16384' }));
+  assert.doesNotThrow(() => pendingRuntimeChecks(device, { expectedApi: '37', expectedPages: '4096' }));
   for (const missing of ['api', 'pageSize', 'supportedAbis']) {
     const incomplete = { ...device }; delete incomplete[missing];
     assert.throws(() => pendingRuntimeChecks(incomplete));
