@@ -32,10 +32,10 @@ export function verifyPreservation(before, after, { recovery = false } = {}) {
   requireValue(isDeepStrictEqual(before.snapshot.tables, after.snapshot.tables), 'Financial tables changed');
   if (!recovery) requireValue(isDeepStrictEqual(before.snapshot.files, after.snapshot.files), 'Support files changed');
   else {
-    // Recovery legitimately appends its journal/backup/catalog. Existing backup images
-    // and the pending sync record must still be byte-identical.
+    // Recovery appends journals/backups and advances the two catalog slots.
+    // Every other pre-existing support file remains byte-identical.
     for (const [path, hash] of Object.entries(before.snapshot.files)) {
-      if (path === 'drive-sync/state.json' || path.endsWith('/autofinance.sqlite') || path === 'upgrade-backup-id') {
+      if (!/^sqlite\/local-backups\/catalog-[ab]\.json$/.test(path)) {
         requireValue(after.snapshot.files[path] === hash, `Recovery lost ${path}`);
       }
     }
@@ -43,6 +43,19 @@ export function verifyPreservation(before, after, { recovery = false } = {}) {
   for (const key of ['package', 'keyAlias', 'keyCreated', 'ciphertextSha256']) {
     requireValue(before.native[key] === after.native[key], `Native persistence changed: ${key}`);
   }
+}
+
+export function pendingRuntimeChecks(device) {
+  requireValue(Number.isInteger(device.api) && device.api >= 24
+    && Number.isInteger(device.pageSize) && device.pageSize > 0
+    && Array.isArray(device.supportedAbis) && device.supportedAbis.length > 0,
+  'Missing effective Android runtime evidence');
+  return [
+    ...(device.api === 24 ? [] : ['API24']),
+    ...(device.api === 36 ? [] : ['API36']),
+    ...(device.pageSize === 16384 ? [] : ['16KB-runtime']),
+    'ARM64-phone-T09', 'production-Google-Openbank-T09',
+  ];
 }
 
 async function main() {
@@ -53,7 +66,10 @@ async function main() {
   const sdk = resolve(values.sdk), jdk = resolve(values.jdk);
   const suffix = process.platform === 'win32' ? '.exe' : '';
   const adbPath = join(sdk, 'platform-tools', `adb${suffix}`);
-  const command = (file, args, options = {}) => execFileSync(file, args,
+  // This workspace may be owned by the sandbox account on Windows. Trust only
+  // this explicitly selected source directory, without changing global Git config.
+  const command = (file, args, options = {}) => execFileSync(file,
+    file === 'git' ? ['-c', `safe.directory=${root.replaceAll('\\', '/')}`, ...args] : args,
     { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...options });
   const adb = args => command(adbPath, ['-s', values.serial, ...args]);
   requireValue(adb(['emu', 'avd', 'name']).trim().split(/[\r\n]+/)[0] === values.avd, 'Disposable AVD identity mismatch');
@@ -70,6 +86,7 @@ async function main() {
   const password = randomBytes(48).toString('base64');
   const evidence = { schemaVersion: 1, ticket: 'MA-TSK-243', createdUtc: new Date().toISOString(),
     serial: values.serial, avd: values.avd, completeDelivery: false, realGoogleLogin: false,
+    runnerSha256: sha(readFileSync(fileURLToPath(import.meta.url))),
     sourceCommit: command('git', ['rev-parse', 'HEAD'], { cwd: root }).trim(), results: {} };
   const save = () => writeFileSync(join(work, 'evidence.json'), JSON.stringify(evidence, null, 2) + '\n');
   let phase, pending, server, port;
@@ -85,6 +102,19 @@ async function main() {
     return { store, certificate: sha(readFileSync(cert)) };
   };
   try {
+    const property = name => adb(['shell', 'getprop', name]).trim();
+    evidence.device = {
+      avd: values.avd, serial: values.serial,
+      api: Number(property('ro.build.version.sdk')),
+      os: property('ro.build.version.release'),
+      fingerprint: property('ro.build.fingerprint'),
+      primaryCpuAbi: property('ro.product.cpu.abi'),
+      supportedAbis: property('ro.product.cpu.abilist').split(',').filter(Boolean),
+      pageSize: Number(adb(['shell', 'getconf', 'PAGESIZE']).trim()),
+    };
+    evidence.pending = ['N-to-N1-preservation', 'native-rejections',
+      'native-process-and-restore-interruption', ...pendingRuntimeChecks(evidence.device)];
+    save();
     console.log('Cloning committed sources; concurrent edits excluded.');
     command('git', ['clone', '--no-local', '--quiet', root, checkout]);
     evidence.sourceCommit = command('git', ['rev-parse', 'HEAD'], { cwd: checkout }).trim();
@@ -94,7 +124,7 @@ async function main() {
     server = createServer(async (request, response) => {
       if (request.headers['x-upgrade-token'] !== token) { response.writeHead(403).end(); return; }
       if (request.url === '/command' && request.method === 'GET') {
-        response.end(JSON.stringify({ phase, csv: readFileSync(join(root, 'docs/ep-001/historico-ejemplo.csv'), 'utf8') }));
+        response.end(JSON.stringify({ phase, csv: readFileSync(join(checkout, 'docs/ep-001/historico-ejemplo.csv'), 'utf8') }));
       } else if (request.url === '/result' && request.method === 'POST') {
         const chunks = [];
         for await (const chunk of request) chunks.push(chunk);
@@ -122,6 +152,7 @@ async function main() {
       AUTOFINANCE_SIGNING_FIXTURE: '1', AUTOFINANCE_SIGNING_FIXTURE_SHA256: key.certificate });
     const pubspec = join(checkout, 'pubspec.yaml'), original = readFileSync(pubspec, 'utf8');
     const build = (version, label) => {
+      evidence.currentStep = `build-${label}`; save();
       writeFileSync(pubspec, original.replace(/^version:\s*\S+/m, `version: ${version}`));
       console.log(`T05 generator: ${label} ${version}`);
       const log = join(work, `${label}-build.log`);
@@ -142,6 +173,7 @@ async function main() {
     adb(['reverse', `tcp:${port}`, `tcp:${port}`]); reverseAdded = true;
     const runPhase = async (action, label) => {
       phase = action;
+      evidence.currentStep = label; save();
       adb(['shell', 'am', 'force-stop', packageId]);
       const result = await new Promise((resolveResult, reject) => {
         const timer = setTimeout(() => { pending = null; reject(new Error(`Timeout: ${label}`)); }, 120000);
@@ -157,6 +189,7 @@ async function main() {
     };
     const install = apk => adb(['install', '-r', apk]); // Never -d, uninstall, or clear.
     requireValue(install(n.apk).includes('Success'), 'N installation failed');
+    evidence.installedPackageN = adb(['shell', 'dumpsys', 'package', packageId]); save();
     const before = await runPhase('seed', 'N-seed');
     requireValue(before.native.versionName === '0.1.0' && before.native.versionCode === 24301, 'Installed N differs');
     const reboot = async () => {
@@ -181,7 +214,7 @@ async function main() {
       let output;
       try { output = install(apk); } catch (error) { output = `${error.stdout ?? ''}\n${error.stderr ?? ''}`; }
       requireValue(output.includes(reason) && !output.includes('Success'), `Expected ${reason}`);
-      evidence.results[label] = { rejection: reason }; save();
+      evidence.results[label] = { rejection: reason, output }; save();
       verifyPreservation(before, await runPhase('verify', `${label}-preserved`));
     };
     await rejectInstall(n.apk, 'INSTALL_FAILED_VERSION_DOWNGRADE', 'downgrade');
@@ -238,7 +271,7 @@ async function main() {
     verifyPreservation(before, recovered, { recovery: true });
     verifyPreservation(recovered, await runPhase('verify', 'N1-recovery-restarted'));
     evidence.status = 'passed-current-emulator';
-    evidence.pending = ['API24', 'API36', '16KB-runtime', 'ARM64-phone-T09', 'production-Google-Openbank-T09'];
+    evidence.pending = pendingRuntimeChecks(evidence.device);
     save(); console.log(`Evidence: ${join(work, 'evidence.json')}`);
   } catch (error) {
     evidence.status = 'failed'; evidence.error = String(error.message); save();

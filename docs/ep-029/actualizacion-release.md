@@ -41,7 +41,7 @@ confirmar y conserva el commit exacto en `evidence.json`. Sobre esa copia:
   intente regenerar enlaces de plugins de escritorio al resolver Android.
 - Cambia solo en esa copia `pubspec.yaml`: `0.1.0+24301` y `0.1.1+24302`.
 
-Cada APK pasa los controles T05 de manifiesto, firma, payload, ZIP/ELF de 16 KB
+Los dos APK N/N+1 pasan los controles T05 de manifiesto, firma, payload, ZIP/ELF de 16 KB
 y estabilidad de fuentes. Se conservan sus manifiestos, hashes, certificados
 y logs en el directorio privado ignorado. La clave PKCS12 se crea en un
 directorio temporal **fuera del repositorio**, sus contraseñas se pasan por
@@ -81,6 +81,13 @@ PackageManager dentro de la app y conserva `dumpsys package`. Intenta instalar
 N y un APK con otra firma, exige el rechazo concreto de Android y vuelve a
 comparar el estado completo. Reinicia el dispositivo y verifica otra vez.
 
+Los rechazos SDK/ABI utilizan dos candidatos deliberadamente incompatibles,
+fuera de la entrega T05: uno exige API 99 y el otro contiene únicamente una
+ABI real del payload que el dispositivo no anuncia. Se construyen con aapt2,
+la biblioteca SQLite ya compilada y las herramientas fijadas, con el mismo
+paquete/certificado y código 24303. El SDK o ABI debe ser el motivo efectivo
+del rechazo, sin quedar oculto por otra firma o por downgrade. No se lanzan.
+
 Finalmente interrumpe el servicio real de restauración justo después del
 intercambio de la imagen, antes de confirmar su diario. La siguiente apertura
 debe recuperar el estado financiero previo sin tablas parciales ni falso cero.
@@ -88,13 +95,26 @@ Solo en ese paso se permite que el catálogo y los diarios evolucionen; deben
 conservarse las imágenes existentes, el estado Drive y el registro cifrado.
 Una segunda reapertura debe ser estable.
 
+El oráculo de recuperación conserva también cada diario y archivo de soporte
+anterior: únicamente `sqlite/local-backups/catalog-a.json` y `catalog-b.json`
+pueden cambiar. La desaparición o sustitución de un diario falla el ensayo.
+
 ## Matriz y límites
 
 El informe de ejecución debe identificar API, ABI, páginas, versiones y hashes
 efectivos. Un build universal y la alineación ZIP/ELF no prueban ejecución en
 API 24, 16 KB o teléfono ARM64. El runner declara esos gates pendientes y nunca
 etiqueta una entrega completa. Los rechazos ABI/SDK del inspector T01 se
-conservan en sus pruebas; su ensayo nativo se registra por separado.
+conservan en sus pruebas; los candidatos incompatibles del runner solo se
+acreditan si llegan a ejecutarse y Android devuelve el rechazo esperado.
+
+El runner registra por ADB API, versión del sistema, fingerprint, ABI y tamaño
+de página **antes** de compilar o abrir SQLite. Conserva el paso en curso,
+el hash del runner, PackageManager de N y la salida de cada rechazo. Tras un
+recorrido completo solo acredita las API y páginas medidas en esa ejecución;
+la ABI traducida de un emulador nunca elimina el requisito de teléfono ARM64.
+El CSV servido procede del checkout del commit registrado, no de cambios
+concurrentes del directorio principal.
 
 Google real, APK production definitivo y Openbank real corresponden a T09 y
 a la entrega EP-014/MA-TSK-131. El proveedor de control no sustituye ninguna de

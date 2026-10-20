@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { verifyPair, verifyPreservation } from '../android-upgrade.mjs';
+import { verifyPair, verifyPreservation, pendingRuntimeChecks } from '../android-upgrade.mjs';
 
 const manifest = versionCode => ({ appEnvironment: 'test', purpose: 'ci-ephemeral-fixture',
   buildMode: 'release', format: 'universal-apk', expectedCertificate: 'fixture-cert',
@@ -48,6 +48,25 @@ test('legitimate recovery may append journals and change catalog, never lose ima
   after.snapshot.files['journal-2.json'] = 'new-journal';
   assert.throws(() => verifyPreservation(before, after));
   assert.doesNotThrow(() => verifyPreservation(before, after, { recovery: true }));
+  for (const path of ['journal-1.json', 'drive-sync/state.json']) {
+    const changed = structuredClone(after); delete changed.snapshot.files[path];
+    assert.throws(() => verifyPreservation(before, changed, { recovery: true }));
+    changed.snapshot.files[path] = 'replaced';
+    assert.throws(() => verifyPreservation(before, changed, { recovery: true }));
+  }
   delete after.snapshot.files['sqlite/local-backups/backups/id/autofinance.sqlite'];
   assert.throws(() => verifyPreservation(before, after, { recovery: true }));
+});
+
+test('runtime gates use measured API and pages, never infer a phone from translated ABI', () => {
+  const device = { api: 37, pageSize: 4096, supportedAbis: ['x86_64', 'arm64-v8a'] };
+  assert.deepEqual(pendingRuntimeChecks(device),
+    ['API24', 'API36', '16KB-runtime', 'ARM64-phone-T09', 'production-Google-Openbank-T09']);
+  assert.deepEqual(pendingRuntimeChecks({ ...device, api: 36, pageSize: 16384 }),
+    ['API24', 'ARM64-phone-T09', 'production-Google-Openbank-T09']);
+  assert.ok(!pendingRuntimeChecks({ ...device, api: 24 }).includes('API24'));
+  for (const missing of ['api', 'pageSize', 'supportedAbis']) {
+    const incomplete = { ...device }; delete incomplete[missing];
+    assert.throws(() => pendingRuntimeChecks(incomplete));
+  }
 });

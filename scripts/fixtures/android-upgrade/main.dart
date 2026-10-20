@@ -40,15 +40,25 @@ void require(bool condition, String message) {
 }
 
 Future<Map<String, dynamic>> exchange(String route, [Object? body]) async {
+  return exchangeAt(
+    Uri.parse('http://127.0.0.1:$_port/$route'),
+    _token,
+    body: body,
+  );
+}
+
+Future<Map<String, dynamic>> exchangeAt(
+  Uri uri,
+  String token, {
+  Object? body,
+}) async {
   final client = HttpClient();
   try {
-    final uri = Uri.parse('http://127.0.0.1:$_port/$route');
     final request = body == null
         ? await client.getUrl(uri)
         : await client.postUrl(uri);
-    request.headers.set('X-Upgrade-Token', _token);
-    request.encoding = utf8;
-    if (body != null) request.write(jsonEncode(body));
+    request.headers.set('X-Upgrade-Token', token);
+    if (body != null) request.add(utf8.encode(jsonEncode(body)));
     final response = await request.close();
     require(response.statusCode == 200, 'Controlled provider rejected request');
     return jsonDecode(await utf8.decoder.bind(response).join())
