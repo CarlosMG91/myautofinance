@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { verifyPair, verifyPreservation, pendingRuntimeChecks } from '../android-upgrade.mjs';
+import { verifyPair, verifyPreservation, pendingRuntimeChecks, kernelPageSize } from '../android-upgrade.mjs';
 
 const manifest = versionCode => ({ appEnvironment: 'test', purpose: 'ci-ephemeral-fixture',
   buildMode: 'release', format: 'universal-apk', expectedCertificate: 'fixture-cert',
@@ -71,5 +71,14 @@ test('runtime gates use measured API and pages, never infer a phone from transla
   for (const missing of ['api', 'pageSize', 'supportedAbis']) {
     const incomplete = { ...device }; delete incomplete[missing];
     assert.throws(() => pendingRuntimeChecks(incomplete));
+  }
+});
+
+test('API 24 page measurement uses real kernel mappings and rejects absent or ambiguous evidence', () => {
+  assert.equal(kernelPageSize('KernelPageSize:        4 kB\nMMUPageSize: 4 kB\nKernelPageSize: 4 kB\n'), 4096);
+  assert.equal(kernelPageSize('KernelPageSize:\t16 kB\r\n'), 16384);
+  for (const text of ['', 'MMUPageSize: 4 kB', 'KernelPageSize: 0 kB',
+    'KernelPageSize: 4 kB\nKernelPageSize: 16 kB']) {
+    assert.throws(() => kernelPageSize(text));
   }
 });

@@ -45,6 +45,14 @@ export function verifyPreservation(before, after, { recovery = false } = {}) {
   }
 }
 
+export function kernelPageSize(smaps) {
+  const sizes = new Set([...smaps.matchAll(/^KernelPageSize:[ \t]+(\d+)[ \t]+kB/gm)]
+    .map(match => Number(match[1]) * 1024));
+  requireValue(sizes.size === 1 && [4096, 16384].includes([...sizes][0]),
+    'Missing or ambiguous Android kernel page size');
+  return [...sizes][0];
+}
+
 export function pendingRuntimeChecks(device, { expectedApi, expectedPages } = {}) {
   requireValue(Number.isInteger(device.api) && device.api >= 24
     && Number.isInteger(device.pageSize) && device.pageSize > 0
@@ -106,6 +114,17 @@ async function main() {
   };
   try {
     const property = name => adb(['shell', 'getprop', name]).trim();
+    let pageSize, pageSizeSource;
+    try {
+      pageSize = Number(adb(['shell', 'getconf', 'PAGESIZE']).trim());
+      requireValue([4096, 16384].includes(pageSize), 'Invalid getconf page size');
+      pageSizeSource = 'getconf';
+    } catch {
+      // API 24's stock image has no getconf. Measure the native cat process's
+      // mappings instead; never substitute the expected size or an SDK guess.
+      pageSize = kernelPageSize(adb(['shell', 'cat', '/proc/self/smaps']));
+      pageSizeSource = 'proc-self-smaps';
+    }
     evidence.device = {
       avd: values.avd, serial: values.serial,
       api: Number(property('ro.build.version.sdk')),
@@ -113,7 +132,7 @@ async function main() {
       fingerprint: property('ro.build.fingerprint'),
       primaryCpuAbi: property('ro.product.cpu.abi'),
       supportedAbis: property('ro.product.cpu.abilist').split(',').filter(Boolean),
-      pageSize: Number(adb(['shell', 'getconf', 'PAGESIZE']).trim()),
+      pageSize, pageSizeSource,
     };
     console.log(`Runtime: ${JSON.stringify(evidence.device)}`);
     save();
@@ -200,6 +219,8 @@ async function main() {
     requireValue(install(n.apk).includes('Success'), 'N installation failed');
     evidence.installedPackageN = adb(['shell', 'dumpsys', 'package', packageId]); save();
     const before = await runPhase('seed', 'N-seed');
+    requireValue(before.native.api === evidence.device.api
+      && before.native.pageSize === evidence.device.pageSize, 'Native runtime differs from ADB measurement');
     requireValue(before.native.versionName === '0.1.0' && before.native.versionCode === 24301, 'Installed N differs');
     const reboot = async () => {
       adb(['reboot']);

@@ -123,6 +123,11 @@ de generar claves o APK. Los logs muestran hardware, versiones, hashes y
 certificados sintéticos, sin subir APK, claves ni snapshots de sesión.
 La definición de esta matriz no acredita su ejecución.
 
+En imágenes antiguas sin `getconf` (API 24), las páginas se miden leyendo
+`KernelPageSize` de `/proc/self/smaps`, sin root. Un dato ausente o ambiguo
+detiene el ensayo. Tras cargar N se exige que `Os.sysconf` dentro del APK
+coincida con la medición inicial por ADB.
+
 Google real, APK production definitivo y Openbank real corresponden a T09 y
 a la entrega EP-014/MA-TSK-131. El proveedor de control no sustituye ninguna de
 esas pruebas. La [verificación de ejecución](verificacion-actualizacion.md)
