@@ -1,0 +1,452 @@
+{
+  "ticket": "MA-TSK-254",
+  "date": "2026-10-20",
+  "status": "blocked-final-packages-and-physical-device",
+  "sourceCommit": "cec01ec34920644dd27a1f752bf2610e1d4b7f7d",
+  "branch": "ticket/ma-tsk-193",
+  "workingTreeHadConcurrentChanges": true,
+  "syntheticDataOnly": true,
+  "productCodeChanged": false,
+  "finalPackageExportsPerformed": false,
+  "physicalAndroidTransferPerformed": false,
+  "provenance": {
+    "originalExportTicket": "MA-TSK-226",
+    "originalExportDate": "2026-10-17",
+    "windows": "Flutter debug runner, IFileSaveDialog",
+    "android": "API 37 emulator, Downloads SAF",
+    "originalTransfer": "ADB pull of public documents, recorded by 226; not repeated in 254",
+    "currentAction": "Independent read of retained ZIPs in Windows; not a new native export",
+    "all16ZipHashesMatchPublished226": true,
+    "captureHashes": {
+      "windows": "4b4239a78d2bdaa145fecc2650c1c81e3fbe83e7a4a6bd15699d6c2cc1621c7d",
+      "android": "56314da87b89c5c6b62eca5dc01702381264f96b4ccbad647c7adeb23734ac88"
+    }
+  },
+  "tools": {
+    "flutter": "3.47.0",
+    "dart": "3.13.0",
+    "python": "3.14.2",
+    "pythonSqlite": "3.50.4",
+    "sqliteCli": "3.54.1",
+    "scriptHashes": {
+      "scripts/verify-export-portability.py": "b6b7fd1cba5826fc9e14af11ead99435a85f26482b596a1022b84f5561116dea",
+      "scripts/check-export-recovery-guide.ps1": "a987026ceb1deca7e276be24c00a35b3d892fba82f9dd0fbe2987696531f666a",
+      "docs/ep-027/recuperacion-sqlite.md": "cbebadc8aeb1d81687a4bec211b4d3d7d3a8c4260611176cd02fe06123921317",
+      "docs/ep-030/oraculos.json": "f6a94d0c9178b50fe4e49c241f9b9b147b30aa2eece307571d874d989d5eadd9"
+    },
+    "powershell": "5.1.26100.9711"
+  },
+  "t02Comparison": {
+    "passed": true,
+    "platforms": [
+      "windows",
+      "android"
+    ],
+    "baseOracle": {
+      "movements": 10,
+      "budgets": 48,
+      "januaryReal": 122975,
+      "januaryBudget": 110000,
+      "januaryDifference": 12975,
+      "annualReal": 232965,
+      "annualBudget": 1320000,
+      "januaryLiquidAssets": 900000,
+      "januaryNetWorth": 1400000,
+      "januaryCushionDisplay": "3,00 meses",
+      "cafeCount": 2
+    },
+    "csvPeriods": [
+      "all",
+      "2026-01",
+      "2025-12 empty"
+    ],
+    "cafeJanuaryRows": 2,
+    "cafeJanuaryCents": -2000,
+    "dateFilterChecked": true,
+    "integerCentsOnly": true
+  },
+  "literalGuideBaseCopies": {
+    "windows": "passed",
+    "android": "passed",
+    "newExtractionDirectories": true,
+    "originalAndExtractedHashesUnchanged": true
+  },
+  "hostTargetedTests": {
+    "passed": 57,
+    "failed": 0,
+    "nativeDestination": "mock MethodChannel; not final system picker",
+    "sqlite": "real temporary host SQLite",
+    "restrictedAttempt": {
+      "passed": 28,
+      "failed": 29,
+      "reason": "Temporary SQLite recovery blocked; authorized repeat passed"
+    }
+  },
+  "independentReading": {
+    "syntheticDataOnly": true,
+    "pythonSqliteVersion": "3.50.4",
+    "platforms": {
+      "windows": {
+        "all": {
+          "bytes": 44009,
+          "sha256": "b1c12c1a195a13cc1aa52f043443db03816bafcd3b2a872a46ec436e8e1b4d3a",
+          "datasetId": "80d68ce2-a1f2-48be-b43d-3bbe0cb58dfa",
+          "revision": "19",
+          "manifestSha256": "6b4b506173c6975bcf33662eca37e0960ea9da65711e13521ede743eacae2470",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 10,
+            "presupuestos.csv": 48,
+            "fotos.csv": 1,
+            "valores_fotos.csv": 4,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "january": {
+          "bytes": 31350,
+          "sha256": "e7947e0e08b6f5ece5268ed6742fde0f72069383eda64f97fd8d396d5f4d137a",
+          "datasetId": "80d68ce2-a1f2-48be-b43d-3bbe0cb58dfa",
+          "revision": "19",
+          "manifestSha256": "e319566155c0ac058a0811aa7767fff3b0cd0f9da9ba971936591de69b06950f",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 6,
+            "presupuestos.csv": 4,
+            "fotos.csv": 1,
+            "valores_fotos.csv": 4,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "empty": {
+          "bytes": 27506,
+          "sha256": "18b6f5203a9dff9d8bab4a57067f4a8bda6c2b930f1a229429cf338b3448f3ca",
+          "datasetId": "80d68ce2-a1f2-48be-b43d-3bbe0cb58dfa",
+          "revision": "19",
+          "manifestSha256": "fbb829a3221bca784cf13f9b230d1572ff9e15b86101c93e3a377b8c70a52dbc",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 0,
+            "presupuestos.csv": 0,
+            "fotos.csv": 0,
+            "valores_fotos.csv": 0,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "base-copy": {
+          "bytes": 215904,
+          "sha256": "2b366e35b7fb217ec1163595fbdb181048df616907ea00e45c2b183f4ac9d4ff",
+          "datasetId": "80d68ce2-a1f2-48be-b43d-3bbe0cb58dfa",
+          "revision": "19",
+          "manifestSha256": "d6804ae3c86faafeecfdea4596fc90d62184eddc79fbc17eb460b68a3aa6051e",
+          "sqliteSha256": "476fb3ea72b9290bc7caea6d5959064a2da70b0829ea4c8352dbc9d953f3449d",
+          "checks": {
+            "tables": 12,
+            "guideStatements": 13,
+            "guideIntegerOverflows": 0,
+            "exactMovementTotalCents": "232965",
+            "januaryLiquidCents": 900000,
+            "januaryNetCents": 1400000
+          }
+        },
+        "partial": {
+          "bytes": 30351,
+          "sha256": "a8d1c76b6f120c0b05047ba592a4ad33399856ec852b2166fa44ab03c078978e",
+          "datasetId": "80d68ce2-a1f2-48be-b43d-3bbe0cb58dfa",
+          "revision": "21",
+          "manifestSha256": "9ca9d4b65813a1ed33921185a2971dd088254b67eb3babe0e02195563dadfb44",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 4,
+            "presupuestos.csv": 4,
+            "fotos.csv": 1,
+            "valores_fotos.csv": 2,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "zero": {
+          "bytes": 30711,
+          "sha256": "4162a053269c46f08d59fb5163d591aed4d9ae04f0a68a67b11c94137def12c5",
+          "datasetId": "80d68ce2-a1f2-48be-b43d-3bbe0cb58dfa",
+          "revision": "23",
+          "manifestSha256": "4dcdab7abf3037c6d2ffb3a603afdf051a4445737fb1a2115d1dfc4c906d788c",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 4,
+            "presupuestos.csv": 4,
+            "fotos.csv": 1,
+            "valores_fotos.csv": 4,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "history": {
+          "bytes": 45101,
+          "sha256": "caee041cd6dce94496127fc3accd6617ee44f92f80951402c7f90c1678db691f",
+          "datasetId": "80d68ce2-a1f2-48be-b43d-3bbe0cb58dfa",
+          "revision": "24",
+          "manifestSha256": "52a148bc85b6e8740a0fe4e25d4ecc44884b266d2dd4ea48a85a9feb32965d2c",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 10,
+            "presupuestos.csv": 48,
+            "fotos.csv": 2,
+            "valores_fotos.csv": 8,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 4
+          }
+        },
+        "variant-copy": {
+          "bytes": 215904,
+          "sha256": "d0fb104bbc28687658f992d39f07cd83fd53a3876055759945a92523446b8eaf",
+          "datasetId": "80d68ce2-a1f2-48be-b43d-3bbe0cb58dfa",
+          "revision": "24",
+          "manifestSha256": "6eb84eaca9f069b7ff3e0ccc0c9e6dd91278491be14d3656297e7a6168ec3c4d",
+          "sqliteSha256": "f8799b696dbcf814514f44ad7843262f557cb371026d1e95303db537ffb789ed",
+          "checks": {
+            "tables": 12,
+            "guideStatements": 13,
+            "guideIntegerOverflows": 1,
+            "exactMovementTotalCents": "9223372036855058772",
+            "januaryLiquidCents": 900000,
+            "januaryNetCents": 1400000
+          }
+        }
+      },
+      "android": {
+        "all": {
+          "bytes": 44009,
+          "sha256": "a2421e27ff5259064ccb7b8713b516b5ea047964b34ac95982c36a9c4581f4fc",
+          "datasetId": "e4114e8e-1d90-4849-812d-2d4b200b593b",
+          "revision": "19",
+          "manifestSha256": "2e214e9a03fc2d28908eda423729c56878a48637efe57cfe6a871fa8579b2f5f",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 10,
+            "presupuestos.csv": 48,
+            "fotos.csv": 1,
+            "valores_fotos.csv": 4,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "january": {
+          "bytes": 31350,
+          "sha256": "dce70e24bfd4231f8e4d34fe631765e782ace59e9beb901ad0f454a42dc50012",
+          "datasetId": "e4114e8e-1d90-4849-812d-2d4b200b593b",
+          "revision": "19",
+          "manifestSha256": "8d0afbacba4248a286bf4fc98a8fc732d853c3bd4c0f7940f16f791c65550352",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 6,
+            "presupuestos.csv": 4,
+            "fotos.csv": 1,
+            "valores_fotos.csv": 4,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "empty": {
+          "bytes": 27506,
+          "sha256": "883e328965eb2b4eb47581c588207b946faacc91fc88b04dbc43601a81f40e72",
+          "datasetId": "e4114e8e-1d90-4849-812d-2d4b200b593b",
+          "revision": "19",
+          "manifestSha256": "5ce049bc93024851967232f1930ecae396c30a7f22a209dcb0113de15109bac3",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 0,
+            "presupuestos.csv": 0,
+            "fotos.csv": 0,
+            "valores_fotos.csv": 0,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "base-copy": {
+          "bytes": 215904,
+          "sha256": "e42f6d3403c0d7e6c8801d2af64ddc763cbd607f2ddaa5555ee85a1620f27cc5",
+          "datasetId": "e4114e8e-1d90-4849-812d-2d4b200b593b",
+          "revision": "19",
+          "manifestSha256": "cb4eaebfc8e5fc2198cd4a35d5edb89f535bb021473c109fc98baf314d1f1f31",
+          "sqliteSha256": "07c8d2f2a1bf72052bf01562fff937b5809aa97343418b05ec35851305a9f6d7",
+          "checks": {
+            "tables": 12,
+            "guideStatements": 13,
+            "guideIntegerOverflows": 0,
+            "exactMovementTotalCents": "232965",
+            "januaryLiquidCents": 900000,
+            "januaryNetCents": 1400000
+          }
+        },
+        "partial": {
+          "bytes": 30351,
+          "sha256": "5495180a8577623ccc8710a9dfc44df0e5270080f244e9ef13bb047af65e3e3d",
+          "datasetId": "e4114e8e-1d90-4849-812d-2d4b200b593b",
+          "revision": "21",
+          "manifestSha256": "9aea71d0ae063ebb94e0187a2a272d2b6de60b5e059f1b9704fecbad2ed96457",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 4,
+            "presupuestos.csv": 4,
+            "fotos.csv": 1,
+            "valores_fotos.csv": 2,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "zero": {
+          "bytes": 30711,
+          "sha256": "c989896326ba7585006a4d9fdb2d1ef30aa152ae92737a406be18560b838434e",
+          "datasetId": "e4114e8e-1d90-4849-812d-2d4b200b593b",
+          "revision": "23",
+          "manifestSha256": "6fc85fc5f212edf7882fe67625c045c08c5f4b032f8bb5dc3be75c73d1eef26a",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 4,
+            "presupuestos.csv": 4,
+            "fotos.csv": 1,
+            "valores_fotos.csv": 4,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 3
+          }
+        },
+        "history": {
+          "bytes": 45110,
+          "sha256": "8e2b4a96065a22a5e51a9965e79f3c44b7364463bd3422c796aa1c1fcf686f1d",
+          "datasetId": "e4114e8e-1d90-4849-812d-2d4b200b593b",
+          "revision": "24",
+          "manifestSha256": "0ad7e48faaccd23bc8ac2a3314b5bee2a2708343dbfaa8af32d4ceffc2221c3c",
+          "sqliteSha256": null,
+          "checks": {
+            "movimientos.csv": 10,
+            "presupuestos.csv": 48,
+            "fotos.csv": 2,
+            "valores_fotos.csv": 8,
+            "cuentas.csv": 4,
+            "categorias.csv": 10,
+            "liquidez_cuentas.csv": 4
+          }
+        },
+        "variant-copy": {
+          "bytes": 215904,
+          "sha256": "94a5d2918ee5b6609937326c752f539f61776eb1b9e4024dc2653ccac95e0e9b",
+          "datasetId": "e4114e8e-1d90-4849-812d-2d4b200b593b",
+          "revision": "24",
+          "manifestSha256": "4919917acbbed931d5d5d5aea09f80ebfd15a6d29c6341beea1f0353abeff5c1",
+          "sqliteSha256": "93cbbd71318b032f3104cc7a2f2f89f5e7c03764b4a8c5d5a6d6692297963246",
+          "checks": {
+            "tables": 12,
+            "guideStatements": 13,
+            "guideIntegerOverflows": 1,
+            "exactMovementTotalCents": "9223372036854706772",
+            "januaryLiquidCents": 900000,
+            "januaryNetCents": 1400000
+          }
+        }
+      }
+    },
+    "negativeChecks": {
+      "windows": [
+        "truncatedZipRejected",
+        "mismatchingManifestRejected",
+        "guideTruncatedZipRejected",
+        "guideHashMismatchRejected",
+        "guideRevisionMismatchRejected",
+        "guideUnsupportedVersionRejected",
+        "guideExistingDestinationProtected"
+      ],
+      "android": [
+        "truncatedZipRejected",
+        "mismatchingManifestRejected",
+        "guideTruncatedZipRejected",
+        "guideHashMismatchRejected",
+        "guideRevisionMismatchRejected",
+        "guideUnsupportedVersionRejected",
+        "guideExistingDestinationProtected"
+      ]
+    }
+  },
+  "blockers": [
+    {
+      "id": "P01",
+      "owner": "EP-028 MA-TSK-233/235",
+      "missing": "Identified final Windows package/manifests/hash and isolated installed test profile"
+    },
+    {
+      "id": "P02",
+      "owner": "EP-029 MA-TSK-245",
+      "missing": "Identified final Android package/manifests/hash and accessible physical test phone; only emulator-5554 enumerated"
+    }
+  ],
+  "finalAcceptance": false,
+  "quality": {
+    "lockfileResolution": "passed enforce-lockfile; no lockfile change",
+    "format": {
+      "files": 508,
+      "changed": 0
+    },
+    "analysis": "passed, no issues",
+    "generalSuite": {
+      "passed": 2026,
+      "failed": 3,
+      "approved": false
+    },
+    "failures": [
+      {
+        "file": "test/synchronization/local_recovery_journey_test.dart",
+        "cases": [
+          "EP-001 restore/restart",
+          "disk failure rollback"
+        ],
+        "owner": "EP-006; EP-030 T01/T07 coordination",
+        "isolatedFileResult": "8/8 passed"
+      },
+      {
+        "file": "test/wealth/wealth_photo_screen_test.dart",
+        "line": 295,
+        "expectedText": "Pendientes: Z Deuda sintética",
+        "observedMatchingWidgets": 0,
+        "owner": "EP-017; EP-026/030 coordination",
+        "isolatedFileResult": "14 passed, 1 failed; same assertion"
+      }
+    ],
+    "isolatedRepeat": {
+      "passed": 22,
+      "failed": 1
+    },
+    "bootstrap": {
+      "development": "passed",
+      "test": "passed",
+      "production": "passed",
+      "invalid-synthetic": "passed"
+    },
+    "generalSuiteRepeated": false,
+    "platformBuilds": "not run; documentation/evidence changes only"
+  },
+  "localLogSha256": {
+    ".tools/ma-tsk-254/quality-authorized.log": "e546d515d6471543b3fac283feada5a94bb512a66d35fe706f1fe329c9fedee8",
+    ".tools/ma-tsk-254/targeted-authorized.log": "c261e1674b2e329a1a1973a0f9400d42f60bd356994f8093bf8e6094c894e304",
+    ".tools/ma-tsk-254/recovery-photo-repeat.log": "3ae19139a8f1dd895a488f8b6d95a0c54ab1fff72acc364313de40dca3c6875b",
+    ".tools/ma-tsk-254/guide-windows.log": "8d4e700eab1fc5fceda4c5acdd26f33284be3c686e2471a52b203c51eea369cf",
+    ".tools/ma-tsk-254/guide-android.log": "a13ca7dee3dff0b2674dc57fbecff7050ace50fb2576b7d6adb422f789cfcf35",
+    ".tools/ma-tsk-254/independent.json": "288e697793d198fb3d9df5419e0147e81a814ebe699642ee670894fa07ec54b8",
+    ".tools/ma-tsk-254/bootstrap-development.log": "4bb292f4e04d983de0d54fa463626e1b457aa79d07ca5b173e7539c1b41e3837",
+    ".tools/ma-tsk-254/bootstrap-test.log": "4bb292f4e04d983de0d54fa463626e1b457aa79d07ca5b173e7539c1b41e3837",
+    ".tools/ma-tsk-254/bootstrap-production.log": "4bb292f4e04d983de0d54fa463626e1b457aa79d07ca5b173e7539c1b41e3837",
+    ".tools/ma-tsk-254/bootstrap-invalid-synthetic.log": "55e5b405bd5a6169fd2ab39d6959e9f3882976549fa06df2e891a656f0c07349"
+  }
+}
