@@ -1,114 +1,238 @@
 {
+  "schemaVersion": 2,
   "ticket": "MA-TSK-243",
   "status": "blocked-native-opening",
-  "createdUtc": "2026-10-19T05:52:24.597Z",
-  "sourceCommit": "d218446928e83eff5d65e73b230b21eae40776a7",
-  "evidenceSha256": "1d5e4110f0023bd4afaa6956db62587f52bde9fa94ddfa2fd8bd16686fc8d372",
-  "device": {
-    "avd": "Autofinance243",
-    "serial": "emulator-5580",
-    "api": 37,
-    "os": "Android 17",
-    "primaryCpuAbi": "x86_64",
-    "supportedAbis": [
-      "x86_64",
-      "arm64-v8a"
-    ],
-    "pageSize": 4096,
-    "fingerprint": "google/sdk_gphone64_x86_64/emu64xa:17/CE2A.260420.019/15611780:user/release-keys"
+  "recordedUtc": "2026-10-20T06:54:10.883Z",
+  "completeDelivery": false,
+  "previousAttempt": {
+    "date": "2026-10-19",
+    "sourceCommit": "d218446928e83eff5d65e73b230b21eae40776a7",
+    "evidenceSha256": "1d5e4110f0023bd4afaa6956db62587f52bde9fa94ddfa2fd8bd16686fc8d372"
   },
-  "builds": {
-    "N": {
-      "appEnvironment": "test",
-      "purpose": "ci-ephemeral-fixture",
-      "buildMode": "release",
-      "apk": {
-        "applicationId": "com.carlosmg91.myautofinance",
-        "splitName": null,
-        "versionCode": 24301,
-        "versionName": "0.1.0",
-        "minimumSdk": 24,
-        "compileSdk": 36,
-        "targetSdk": 36,
-        "abis": [
-          "arm64-v8a",
-          "armeabi-v7a",
-          "x86_64"
+  "attempts": [
+    {
+      "status": "blocked-native-opening",
+      "createdUtc": "2026-10-20T06:31:46.244Z",
+      "sourceCommit": "f717d0c373474d33bca3d81dcb8fd9c4b676ae20",
+      "runnerSha256": "f9b323ce9b018940fe8565820d448135763e5ab483fe080c68c3dba5028aafdf",
+      "fixtureOverlaySha256": "215405ba7ed5582f8b49c1a78c4e854f2d5edca644864bdabcf6851598be2658",
+      "probeSha256": "cfd38e870992c71c56ab584d0d6a5a3b43ba2f625b109845f5af94fae73e27fb",
+      "evidenceFile": ".tools/243-native-3qpJXe/evidence.json",
+      "evidenceSha256": "02eff55336c0ab2287475aea58b4145a3ef412ab7a121e155d34f4b5fae102a8",
+      "device": {
+        "avd": "Autofinance243Api24_20261020",
+        "serial": "emulator-5584",
+        "api": 24,
+        "os": "7.0",
+        "fingerprint": "Android/sdk_google_phone_x86_64/generic_x86_64:7.0/NYC/6696031:userdebug/dev-keys",
+        "primaryCpuAbi": "x86_64",
+        "supportedAbis": [
+          "x86_64",
+          "x86"
         ],
-        "debuggable": false,
-        "debugCertificate": false,
-        "certificateSha256": "abe949c03734e7806097da41cb95251e9a428b673f193b19adadb50ce753db47",
-        "certificateSha1": "8d5b7024b7a9b7419bb08accd9d13550d189384d",
-        "apkSha256": "3aa0157b41648faba2421a57b2359a8f6f8fe76a0bd77ba0401c264bd01a0627",
-        "size": 53947243
+        "pageSize": 4096,
+        "pageSizeSource": "proc-self-smaps"
       },
-      "inputsSha256": "fe2685c36474550b3eca0ca15fc929e6dea3759690a05fa9a0cf6a9ff9caab5e",
-      "nativeLibraryCount": 12,
-      "checks": {
-        "apksigner": true,
-        "aapt2": true,
-        "zipalign16KB": true,
-        "elf16KB": true,
-        "payload": true,
-        "sourceStable": true
+      "builds": {
+        "N": {
+          "appEnvironment": "test",
+          "purpose": "ci-ephemeral-fixture",
+          "buildMode": "release",
+          "apk": {
+            "applicationId": "com.carlosmg91.myautofinance",
+            "splitName": null,
+            "versionCode": 24301,
+            "versionName": "0.1.0",
+            "minimumSdk": 24,
+            "compileSdk": 36,
+            "targetSdk": 36,
+            "abis": [
+              "arm64-v8a",
+              "armeabi-v7a",
+              "x86_64"
+            ],
+            "debuggable": false,
+            "debugCertificate": false,
+            "certificateSha256": "ccfd8263d7dd41ba7ec6c6bbae066ea6617568f0394ecc3d79981a095d9eb0b7",
+            "certificateSha1": "09fd72c95b01e7a5f18942f293290022c6f86fc7",
+            "apkSha256": "b627290c0c98078e9b5a77798e66cda6f56ba6b9e67db3453554e9a3ef32e58c",
+            "size": 53947243
+          },
+          "sourceSha256": "f07a5a1e3be53641017f8ab5aa7e1da45c5a527ab1a01e393185526571ff7b3c",
+          "lockfileSha256": "d074c4d1fbff6d019850c1def7bd866da2b4fcd5c060f72847c81caf7406e697",
+          "nativeLibraryCount": 12,
+          "checks": {
+            "apksigner": true,
+            "aapt2": true,
+            "zipalign16KB": true,
+            "elf16KB": true,
+            "payload": true,
+            "sourceStable": true
+          }
+        }
+      },
+      "native": {
+        "installedVersionName": "0.1.0",
+        "installedVersionCode": 24301,
+        "failedStep": "N-seed/store.open",
+        "error": "La base está bloqueada por una restauración o recuperación pendiente.",
+        "storageDiagnostic": {
+          "prefixes": [
+            {
+              "path": "/data",
+              "type": "directory",
+              "resolved": "/data"
+            },
+            {
+              "path": "/data/user",
+              "type": "directory",
+              "resolved": "/data/user"
+            },
+            {
+              "path": "/data/user/0",
+              "type": "link",
+              "resolved": "/data/data"
+            },
+            {
+              "path": "/data/user/0/com.carlosmg91.myautofinance",
+              "type": "directory",
+              "resolved": "/data/data/com.carlosmg91.myautofinance"
+            },
+            {
+              "path": "/data/user/0/com.carlosmg91.myautofinance/files",
+              "type": "directory",
+              "resolved": "/data/data/com.carlosmg91.myautofinance/files"
+            }
+          ],
+          "pathPolicyFailure": {
+            "error": "No se pudo completar la copia local (invalidMetadata). Se han conservado la base y las copias anteriores.",
+            "stack": "#0      invalidBackupMetadata (package:myautofinance/features/synchronization/data/backup_json.dart:17)\n#1      BackupStorage.safe (package:myautofinance/features/synchronization/data/backup_storage.dart:123)\n<asynchronous suspension>\n#2      storageDiagnostic (package:myautofinance/main.dart:204)\n<asynchronous suspension>\n#3      main (package:myautofinance/main.dart:176)\n<asynchronous suspension>\n"
+          }
+        },
+        "datasetLoaded": false,
+        "upgradeAttempted": false,
+        "preservationVerified": false,
+        "keystoreUpgradeVerified": false,
+        "realGoogleLogin": false,
+        "completeDelivery": false
       }
     },
-    "N1": {
-      "appEnvironment": "test",
-      "purpose": "ci-ephemeral-fixture",
-      "buildMode": "release",
-      "apk": {
-        "applicationId": "com.carlosmg91.myautofinance",
-        "splitName": null,
-        "versionCode": 24302,
-        "versionName": "0.1.1",
-        "minimumSdk": 24,
-        "compileSdk": 36,
-        "targetSdk": 36,
-        "abis": [
-          "arm64-v8a",
-          "armeabi-v7a",
-          "x86_64"
+    {
+      "status": "blocked-native-opening",
+      "createdUtc": "2026-10-20T06:45:36.636Z",
+      "sourceCommit": "f717d0c373474d33bca3d81dcb8fd9c4b676ae20",
+      "runnerSha256": "f9b323ce9b018940fe8565820d448135763e5ab483fe080c68c3dba5028aafdf",
+      "fixtureOverlaySha256": "5fefcccef7b038a29f7756ff79f2df947d3e0a0a69eff56516e752599a985bbd",
+      "probeSha256": "cfd38e870992c71c56ab584d0d6a5a3b43ba2f625b109845f5af94fae73e27fb",
+      "evidenceFile": ".tools/243-native-Kc4Qlf/evidence.json",
+      "evidenceSha256": "08f584a149b0fb4ce6ba66f519aa3f7aa838de33c27d6b2df95a2386b3e1e0e9",
+      "device": {
+        "avd": "Autofinance243Api3616K_20261020",
+        "serial": "emulator-5586",
+        "api": 36,
+        "os": "16",
+        "fingerprint": "google/sdk_gphone16k_x86_64/emu64xa16k:16/BE2A.250530.026.F3/13894323:userdebug/dev-keys",
+        "primaryCpuAbi": "x86_64",
+        "supportedAbis": [
+          "x86_64",
+          "arm64-v8a"
         ],
-        "debuggable": false,
-        "debugCertificate": false,
-        "certificateSha256": "abe949c03734e7806097da41cb95251e9a428b673f193b19adadb50ce753db47",
-        "certificateSha1": "8d5b7024b7a9b7419bb08accd9d13550d189384d",
-        "apkSha256": "226d52cc671db0daa4bc3d01b65783c60402a8fd28c545565238998f41295fba",
-        "size": 53947243
+        "pageSize": 16384,
+        "pageSizeSource": "getconf"
       },
-      "inputsSha256": "f9050b65a72d279169ef30c7ce4ae61df6e18abad05f60b7f31d30f186f09fae",
-      "nativeLibraryCount": 12,
-      "checks": {
-        "apksigner": true,
-        "aapt2": true,
-        "zipalign16KB": true,
-        "elf16KB": true,
-        "payload": true,
-        "sourceStable": true
+      "builds": {
+        "N": {
+          "appEnvironment": "test",
+          "purpose": "ci-ephemeral-fixture",
+          "buildMode": "release",
+          "apk": {
+            "applicationId": "com.carlosmg91.myautofinance",
+            "splitName": null,
+            "versionCode": 24301,
+            "versionName": "0.1.0",
+            "minimumSdk": 24,
+            "compileSdk": 36,
+            "targetSdk": 36,
+            "abis": [
+              "arm64-v8a",
+              "armeabi-v7a",
+              "x86_64"
+            ],
+            "debuggable": false,
+            "debugCertificate": false,
+            "certificateSha256": "8fbed2ca4c2810a11a431870f4ae5413100425f2843334b8aa1ed4a358f801bb",
+            "certificateSha1": "2a27f50810f37e859402af89811607849931a803",
+            "apkSha256": "5f676f64d4ce01bac6addd59cc89e19dae5aeca6bb098b91fd0da706e1767af3",
+            "size": 53947243
+          },
+          "sourceSha256": "8394f70db7fec5bacc1d2ae2bfc26f4584d6bfab47ab6a199a27e6f354924f15",
+          "lockfileSha256": "d074c4d1fbff6d019850c1def7bd866da2b4fcd5c060f72847c81caf7406e697",
+          "nativeLibraryCount": 12,
+          "checks": {
+            "apksigner": true,
+            "aapt2": true,
+            "zipalign16KB": true,
+            "elf16KB": true,
+            "payload": true,
+            "sourceStable": true
+          }
+        }
+      },
+      "native": {
+        "installedVersionName": "0.1.0",
+        "installedVersionCode": 24301,
+        "failedStep": "N-seed/store.open",
+        "error": "La base está bloqueada por una restauración o recuperación pendiente.",
+        "storageDiagnostic": {
+          "prefixes": [
+            {
+              "path": "/data",
+              "type": "directory",
+              "resolved": "/data"
+            },
+            {
+              "path": "/data/user",
+              "type": "directory",
+              "resolved": "/data/user"
+            },
+            {
+              "path": "/data/user/0",
+              "type": "link",
+              "resolved": "/data/data"
+            },
+            {
+              "path": "/data/user/0/com.carlosmg91.myautofinance",
+              "type": "directory",
+              "resolved": "/data/data/com.carlosmg91.myautofinance"
+            },
+            {
+              "path": "/data/user/0/com.carlosmg91.myautofinance/files",
+              "type": "directory",
+              "resolved": "/data/data/com.carlosmg91.myautofinance/files"
+            }
+          ],
+          "pathPolicyFailure": {
+            "error": "No se pudo completar la copia local (invalidMetadata). Se han conservado la base y las copias anteriores.",
+            "stack": "#0      invalidBackupMetadata (package:myautofinance/features/synchronization/data/backup_json.dart:17)\n#1      BackupStorage.safe (package:myautofinance/features/synchronization/data/backup_storage.dart:123)\n<asynchronous suspension>\n#2      storageDiagnostic (package:myautofinance/main.dart:204)\n<asynchronous suspension>\n#3      main (package:myautofinance/main.dart:176)\n<asynchronous suspension>\n"
+          }
+        },
+        "datasetLoaded": false,
+        "upgradeAttempted": false,
+        "preservationVerified": false,
+        "keystoreUpgradeVerified": false,
+        "realGoogleLogin": false,
+        "completeDelivery": false
       }
     }
-  },
-  "native": {
-    "installedVersionName": "0.1.0",
-    "installedVersionCode": 24301,
-    "failedStep": "N-seed/store.open",
-    "error": "La base est� bloqueada por una restauraci�n o recuperaci�n pendiente.",
-    "datasetLoaded": false,
-    "upgradeAttempted": false,
-    "preservationVerified": false,
-    "keystoreUpgradeVerified": false,
-    "realGoogleLogin": false,
-    "completeDelivery": false
-  },
+  ],
   "pending": [
     "native-opening-blocker",
     "N-to-N1-preservation",
     "native-downgrade-signature-SDK-ABI-rejections",
     "native-process-and-restore-interruption",
-    "API24",
-    "API36",
-    "16KB-runtime",
+    "API24-complete-native-journey",
+    "API36-4KB-runtime",
+    "API36-16KB-complete-native-journey",
     "ARM64-phone-T09",
     "production-Google-Openbank-T09"
   ]
