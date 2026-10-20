@@ -53,7 +53,9 @@ void main() {
       );
       expect(image.state.datasetId, state.datasetId);
       expect(image.state.revision, state.revision);
-      expect(image.schemaVersion, 6);
+      // La copia recién creada debe usar el esquema de la base activa;
+      // las migraciones publicadas se verifican en sus suites específicas.
+      expect(image.schemaVersion, db.schemaVersion);
       expect((await Directory(directory).list().toList()), hasLength(2));
       final manifest = decodeBackupEnvelope(
         await File(p.join(directory, 'manifest.json')).readAsBytes(),

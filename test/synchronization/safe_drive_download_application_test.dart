@@ -8,6 +8,8 @@ import 'package:http/testing.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
 import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
+import 'package:myautofinance/app/data/sqlite/sqlite_wealth_repository.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_restore_image_policy.dart';
 import 'package:myautofinance/app/drive_access_factory.dart';
 import 'package:myautofinance/app/drive_download_factory.dart';
@@ -15,6 +17,7 @@ import 'package:myautofinance/app/local_backup_factory.dart';
 import 'package:myautofinance/app/sync_state_factory.dart';
 import 'package:myautofinance/features/synchronization/data/drive_metadata_credential.dart';
 import 'package:myautofinance/features/synchronization/data/backup_json.dart';
+import 'package:myautofinance/features/synchronization/data/backup_storage.dart';
 import 'package:myautofinance/features/synchronization/data/local_backup_service.dart';
 import 'package:myautofinance/features/synchronization/data/local_restore_candidate_service.dart';
 import 'package:myautofinance/features/synchronization/data/local_restore_service.dart';
@@ -23,8 +26,13 @@ import 'package:myautofinance/features/synchronization/data/stored_installation_
 import 'package:myautofinance/features/synchronization/data/safe_drive_download_application.dart';
 import 'package:myautofinance/features/synchronization/drive_download.dart';
 import 'package:myautofinance/features/synchronization/synchronization.dart';
+import 'package:myautofinance/features/movements/movements.dart';
+import 'package:myautofinance/features/wealth/wealth.dart';
+
+import '../support/integral_reference.dart';
 
 class _Provider implements DriveSessionProvider, DriveMetadataCredentialSource {
+  int clearCalls = 0;
   final session = DriveSession(
     account: DriveAccount(permissionId: 'account'),
     validUntil: DateTime.utc(2030),
@@ -48,7 +56,10 @@ class _Provider implements DriveSessionProvider, DriveMetadataCredentialSource {
   Future<DriveSession> renew({required String accountId}) =>
       throw UnimplementedError();
   @override
-  Future<void> clearLocalSession() async {}
+  Future<void> clearLocalSession() async {
+    clearCalls++;
+  }
+
   @override
   Future<void> rememberFolder(DriveFolderBinding folder) async {}
 }
@@ -192,12 +203,14 @@ void main() {
   late Directory support;
   late LocalDatabaseStore store;
   late DriveAccessInstallation drive;
+  late _Provider provider;
   late _Remote remote;
   late _Active active;
   late _Faults persistence;
   late StoredInstallationSyncState state;
   late DriveDownloadApplication service;
   late List<int> previous;
+  late List<String> integralManuals;
   late DriveTransferCancellation cancellation;
 
   void beforeApply(Future<void> Function(ValidatedDriveDownload) action) {
@@ -241,7 +254,7 @@ void main() {
     cancellation: cancellation,
     review: review ?? (_) async => true,
   );
-  Future<void> originalAvailable() async {
+  Future<void> originalAvailable({String? knownVersion}) async {
     final snapshot = await store.createConsistentBackup();
     expect(
       await contents(await File(snapshot.path).readAsBytes()),
@@ -250,7 +263,7 @@ void main() {
     await File(snapshot.path).parent.delete(recursive: true);
     final sync = await state.inspect(accountId: 'account', fileId: 'copy');
     expect(sync.localStatus, isNot(SyncLocalStatus.clean));
-    expect(sync.knownRemoteVersion, isNull);
+    expect(sync.knownRemoteVersion, knownVersion);
   }
 
   setUp(() async {
@@ -270,7 +283,7 @@ void main() {
     final old = await store.createConsistentBackup();
     previous = await File(old.path).readAsBytes();
     await File(old.path).parent.delete(recursive: true);
-    final provider = _Provider();
+    provider = _Provider();
     drive = DriveAccessInstallation(
       provider: provider,
       credentials: provider,
@@ -326,6 +339,218 @@ void main() {
     await store.close();
     await support.delete(recursive: true);
   });
+
+  // T07: el mismo CSV y las fotos de T02, sin localizar una instalación real.
+  Future<void> prepareIntegralImages() async {
+    final db = await store.open();
+    await db.writeTransaction(
+      () => db.customStatement('DELETE FROM categories'),
+    );
+    await seedIntegralReference(db);
+    final base = await store.createConsistentBackup();
+    remote.bytes = await File(base.path).readAsBytes();
+    await File(base.path).parent.delete(recursive: true);
+    final creator = createLocalBackupCreator(
+      store: store,
+      supportDirectory: () async => support,
+    );
+    integralManuals = [(await creator.createManual()).backupId];
+    final account = (await SqliteMovementRepository(db).readYear(2026))
+        .first
+        .data
+        .accountId;
+    await SqliteMovementRepository(db).create(
+      MovementInput(
+        accountId: account,
+        valueDate: ValueDate(2026, 1, 31),
+        concept: 'Corrección sintética T07',
+        amountCents: -12345,
+      ),
+    );
+    final changed = await store.createConsistentBackup();
+    previous = await File(changed.path).readAsBytes();
+    await File(changed.path).parent.delete(recursive: true);
+    integralManuals.add((await creator.createManual()).backupId);
+  }
+
+  Future<void> verifyIntegralFigures({required bool changed}) async {
+    final db = await store.open();
+    final movements = SqliteMovementRepository(db);
+    final january = await movements.readMonth(2026, 1);
+    expect(
+      january.fold<int>(0, (sum, row) => sum + row.data.amountCents),
+      changed ? 110630 : 122975,
+    );
+    expect(await movements.readYear(2026), hasLength(changed ? 11 : 10));
+    final cafes = january.where((row) => row.data.concept == 'Café').toList();
+    expect(cafes, hasLength(2));
+    expect(cafes.first.id, isNot(cafes.last.id));
+    expect(
+      (await db
+              .customSelect('SELECT sum(amount_cents) AS n FROM budgets')
+              .getSingle())
+          .read<int>('n'),
+      1320000,
+    );
+    final photos = SqliteWealthRepository(db);
+    final januaryPhoto = await photos.read(Month(2026, 1));
+    expect(januaryPhoto.status, WealthSnapshotStatus.complete);
+    expect(
+      januaryPhoto.values
+          .where((v) => v.account.liquidity == Liquidity.liquid)
+          .fold<int>(0, (sum, v) => sum + v.amountCents),
+      900000,
+    );
+    expect(
+      (await photos.read(Month(2026, 2))).status,
+      WealthSnapshotStatus.absent,
+    );
+    expect(
+      (await db.customSelect('PRAGMA integrity_check').getSingle())
+          .data
+          .values
+          .single,
+      'ok',
+    );
+    expect(await db.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
+  }
+
+  Future<Map<String, dynamic>> catalogSnapshot() async => (await BackupStorage(
+    NativeBackupPersistence(),
+    DateTime.now,
+  ).loadSlots(p.join(support.path, 'sqlite'))).latest!;
+
+  for (final fault in ['cancel', 'offline', 'truncated', 'future', 'backup']) {
+    test('T07 base T02: $fault conserva datos, catálogo y remoto', () async {
+      await prepareIntegralImages();
+      final remoteBefore = List<int>.of(remote.bytes);
+      final versionBefore = remote.version;
+      final catalog = createLocalBackupCatalog(
+        supportDirectory: () async => support,
+      );
+      final before = (await catalog.read()).entries
+          .map((e) => e.backupId)
+          .toList();
+      final catalogBefore = await catalogSnapshot();
+      Future<void> verifyCatalog() async {
+        final current = await catalogSnapshot();
+        // El creador reserva un ordinal durable antes de capturar SQLite.
+        // Un respaldo fallido puede consumirlo sin publicar ninguna entrada.
+        expect(
+          backupCounter(current['nextCreationOrder']),
+          backupCounter(catalogBefore['nextCreationOrder']) +
+              (fault == 'backup' ? 1 : 0),
+        );
+        expect(
+          backupCounter(current['generation']),
+          greaterThanOrEqualTo(backupCounter(catalogBefore['generation'])),
+        );
+        final expected = {...catalogBefore};
+        for (final key in ['generation', 'writtenAtUtc', 'nextCreationOrder']) {
+          current.remove(key);
+          expected.remove(key);
+        }
+        expect(current, expected); // Entradas, hashes, epoch y contraste.
+      }
+
+      remote.offline = fault == 'offline';
+      active.failBackup = fault == 'backup';
+      if (fault == 'truncated') remote.body = remote.bytes.take(512).toList();
+      if (fault == 'future') {
+        final file = File(p.join(support.path, 'future.sqlite'));
+        await file.writeAsBytes(remote.bytes, flush: true);
+        final db = sqlite3.open(file.path);
+        db.execute('PRAGMA user_version=99');
+        db.close();
+        remote.bytes = await file.readAsBytes();
+      }
+      final offeredBytes = List<int>.of(remote.bytes);
+      final result = await apply(
+        review: (review) async {
+          expect(review.requiresConfirmation, isTrue);
+          return fault != 'cancel';
+        },
+      );
+      expect(result.status, isNot(DriveDownloadApplicationStatus.downloaded));
+      if (fault == 'cancel') {
+        expect(result.status, DriveDownloadApplicationStatus.cancelled);
+        expect(remote.downloads, 0);
+      }
+      expect(result.remote, isNull);
+      await originalAvailable(); // Todas las tablas, datasetId y revisión.
+      await verifyIntegralFigures(changed: true);
+      expect((await catalog.read()).entries.map((e) => e.backupId), before);
+      await verifyCatalog();
+      expect(remote.bytes, offeredBytes);
+      if (fault != 'future') expect(remote.bytes, remoteBefore);
+      expect(remote.version, versionBefore);
+      final calls = remote.requests.length;
+      await store.close();
+      store = LocalDatabaseStore(supportDirectory: () async => support);
+      await originalAvailable();
+      await verifyIntegralFigures(changed: true);
+      await verifyCatalog();
+      expect(remote.requests.length, calls);
+    });
+  }
+
+  test(
+    'T07 base T02: descargar y recuperar explícitamente la versión local',
+    () async {
+      await prepareIntegralImages();
+      final remoteBefore = List<int>.of(remote.bytes);
+      final result = await apply();
+      expect(result.status, DriveDownloadApplicationStatus.downloaded);
+      await verifyIntegralFigures(changed: false);
+      final downloaded = await store.createConsistentBackup();
+      expect(
+        await contents(await File(downloaded.path).readAsBytes()),
+        await contents(remoteBefore),
+      );
+      await File(downloaded.path).parent.delete(recursive: true);
+      final saved = result.restore!.previousBackupId!;
+      final restored = await createLocalRestorer(
+        store: store,
+        supportDirectory: () async => support,
+      ).restore(saved, confirmed: true);
+      expect(restored.status, LocalRestoreStatus.restored);
+      final calls = remote.requests.length;
+      await store.close();
+      store = LocalDatabaseStore(supportDirectory: () async => support);
+      await originalAvailable(knownVersion: '7');
+      await verifyIntegralFigures(changed: true);
+      expect(
+        (await createLocalSyncContrastReader(
+          supportDirectory: () async => support,
+        ).read()).required,
+        isTrue,
+      );
+      expect(
+        (await drive.access.restoreLocalSession()).account?.permissionId,
+        'account',
+      );
+      expect(provider.clearCalls, 0);
+      expect(remote.requests.length, calls);
+      expect(remote.bytes, remoteBefore);
+      expect(remote.version, '7');
+      final listing = await createLocalBackupCatalog(
+        supportDirectory: () async => support,
+      ).read();
+      expect(
+        listing.entries.map((e) => e.backupId),
+        containsAll([...integralManuals, saved, restored.previousBackupId!]),
+      );
+      // La versión descargada también sigue recuperable, sin contactar Drive.
+      expect(
+        (await createLocalRestorer(
+          store: store,
+          supportDirectory: () async => support,
+        ).restore(restored.previousBackupId!, confirmed: true)).status,
+        LocalRestoreStatus.restored,
+      );
+      await verifyIntegralFigures(changed: false);
+    },
+  );
 
   test('confirmación rechazada conserva activa sin transferencia', () async {
     expect(remote.requests, isEmpty);
