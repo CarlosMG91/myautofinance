@@ -1,0 +1,359 @@
+{
+  "ticket": "MA-TSK-255",
+  "reviewDate": "2026-10-21",
+  "generatedAtUtc": "2026-10-21T05:50:52.310Z",
+  "status": "blocked-final-candidate-and-effective-evidence",
+  "sourceCommit": "8c0c8981fbe1369954085ecd8973727f88635de8",
+  "board": {
+    "method": "GET http://localhost:4310/api/data",
+    "name": "My autofinance",
+    "workspaceMatches": true,
+    "ticket255": "in-progress",
+    "ticket256": "ready",
+    "visual217": {
+      "approvedAt": null,
+      "discussion": null
+    },
+    "mutated": false
+  },
+  "syntheticDataOnly": true,
+  "productCodeChanged": false,
+  "newBuilds": false,
+  "newCaptures": false,
+  "finalPackageExecution": false,
+  "physicalDeviceExecution": false,
+  "realGoogleExecution": false,
+  "sourceEvidenceNote": "documentCommit identifica la última revisión confirmada del archivo; sha256 identifica sus bytes actuales. La matriz tiene una actualización documental propia pendiente de este commit.",
+  "sourceEvidence": [
+    {
+      "path": "docs/ep-030/auditoria-cobertura.md",
+      "sha256": "19e44f1c92a09d179f0339daa238ecebaaa5218807034013e7ca7cbd16dd4b12",
+      "documentCommit": "79b118f808ac9edab920b1e13e5837a0d2b615e6"
+    },
+    {
+      "path": "docs/ep-030/evidencia-auditoria.json",
+      "sha256": "000825b35bd8fa40e4f40845007774fac7aa7e8812a0b5094e01728102a1e8d6",
+      "documentCommit": "79b118f808ac9edab920b1e13e5837a0d2b615e6"
+    },
+    {
+      "path": "docs/ep-030/datos-sinteticos.md",
+      "sha256": "4cbaa1b77309d43561f257b564990a5c58625a54979147d57e6c6afd3ced9128",
+      "documentCommit": "c6f8f715912eb77a06fc0f4659e5cb64f5cc8ef0"
+    },
+    {
+      "path": "docs/ep-030/verificacion-datos.md",
+      "sha256": "1fb6054d649481608f911c25ef9af298bf5793c6b571248ec591766b8b581e16",
+      "documentCommit": "c6f8f715912eb77a06fc0f4659e5cb64f5cc8ef0"
+    },
+    {
+      "path": "docs/ep-030/oraculos.json",
+      "sha256": "f6a94d0c9178b50fe4e49c241f9b9b147b30aa2eece307571d874d989d5eadd9",
+      "documentCommit": "c6f8f715912eb77a06fc0f4659e5cb64f5cc8ef0"
+    },
+    {
+      "path": "docs/ep-030/oauth-windows.md",
+      "sha256": "4a63e137489e73fda20e1df2e203c9d91a5ca0a91367ba0aebe9939a0bec3121",
+      "documentCommit": "4c9cb51c8f2a46c6c99b80f8872b91e1b6053fe7"
+    },
+    {
+      "path": "docs/ep-030/verificacion-windows.md",
+      "sha256": "87637b3a246abd5cab40d4b1aba8685954416d9691612953a91cd2002d694920",
+      "documentCommit": "ae035c98840c5e676697144cbb93a7719eaef2cf"
+    },
+    {
+      "path": "docs/ep-030/verificacion-android.md",
+      "sha256": "5e2bd3af60c47bfec48be12cd35891f2bb3e69c83c4b0530a9cbb41b76c00947",
+      "documentCommit": "f550e73392cd8c81dad23ee1b5bdb0dc73ede213"
+    },
+    {
+      "path": "docs/ep-030/verificacion-drive-real.md",
+      "sha256": "69dbbe46dacb0c6d89e0e31c084c808a04e359baa2f262f1d76ffe5378e541ff",
+      "documentCommit": "8c0c8981fbe1369954085ecd8973727f88635de8"
+    },
+    {
+      "path": "docs/ep-030/verificacion-fallos-recuperacion.md",
+      "sha256": "b513002e2487faefc1fc4c6d626abc2052a8dd92dbed823e606dddd5f45bb2f1",
+      "documentCommit": "cec01ec34920644dd27a1f752bf2610e1d4b7f7d"
+    },
+    {
+      "path": "docs/ep-030/verificacion-portabilidad.md",
+      "sha256": "dad97af431dacd39b52fc21e3b60f048ef1be777d61a9366f9153178bb2c6a5b",
+      "documentCommit": "ed5809f16553ac4314c36e49c397ed971efd2cb7"
+    },
+    {
+      "path": "docs/ep-030/evidencia-portabilidad.json",
+      "sha256": "87ba672159a8467e86132f17286d7ef55530fbcf90c1ba93c68af9ae76feb5e1",
+      "documentCommit": "ed5809f16553ac4314c36e49c397ed971efd2cb7"
+    },
+    {
+      "path": "docs/ep-025/verificacion-recorrido.md",
+      "sha256": "49407241d4af9ce0366711210ea4f55fc43b2a102fc7e3d800adbef487adb479",
+      "documentCommit": "e62d631604e696e28e796b422aaa43a36dbf266c"
+    },
+    {
+      "path": "docs/ep-026/validacion-integral.md",
+      "sha256": "ede8340ed9599f06a7f103aa52ee5176adec3f721fd8274693d4016e88c18ea0",
+      "documentCommit": "5db43b25842caae1ec99a237fda6e917b6520114"
+    },
+    {
+      "path": "docs/ep-026/prototipo/aprobacion.md",
+      "sha256": "075f9f99ca8fb516fa4a22260ba36cdec7294d218ba5811373d1eff197b20851",
+      "documentCommit": "5db43b25842caae1ec99a237fda6e917b6520114"
+    },
+    {
+      "path": "docs/ep-027/verificacion-portabilidad.md",
+      "sha256": "48260a6bf42b08db27033ab5dd733b1ac4bc23c7f9b04cd0fb016a9c161a07f1",
+      "documentCommit": "9b7e03f91cd77f1a1751643d923503e6e4f1135d"
+    },
+    {
+      "path": "docs/ep-027/evidencia-portabilidad.json",
+      "sha256": "ae2190f7f91c538d54e0f4bab341f78f64dcb4bfc04d32ca47bb65426353a4d6",
+      "documentCommit": "9b7e03f91cd77f1a1751643d923503e6e4f1135d"
+    },
+    {
+      "path": "docs/ep-028/verificacion-e2e.md",
+      "sha256": "41e5a95324195ac7f28f0a18fa98608661491a4b036f86fe010469f32ff71483",
+      "documentCommit": "60ded3fb86cd9bb9fafe04844ce3bef9a67f85ed"
+    },
+    {
+      "path": "docs/ep-029/verificacion-final-245.md",
+      "sha256": "166c16e5248bc27e3fda12a1b4a93fc909f80bbce881203bc70c476ddbefc426",
+      "documentCommit": "173361aafc98de46f144e0bc2cd4a001a658cd5e"
+    },
+    {
+      "path": "docs/ep-029/evidencia-actualizacion.json",
+      "sha256": "44f1eb4e066e6ebc532ad81bbbe29ff8488b6a8fac47c51ecbd9fcfe40529aea",
+      "documentCommit": "7cad30ad5d60d2b2ee1a51251e681cdc791fe040"
+    },
+    {
+      "path": "docs/ep-014/verificacion-reapertura-131.md",
+      "sha256": "406b1e32f1cf2a220c40a603d480f24d7a626533ae768a728a6317eb1925ba92",
+      "documentCommit": "d45f94455fd758a5b1876f0a6dc013bb1568ec92"
+    },
+    {
+      "path": "toolchain.json",
+      "sha256": "85a1f3408139314b7993cee4bb3295f787bd46e43844fc115a4c93044877c083",
+      "documentCommit": "4111454be8f4b5b4473c900fb5807f7cde645903"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "144adf4d36eabc6646ceae139a711e5a55f12096a0421a3f544089e8d28124d1",
+      "documentCommit": "476b4957910e26704ee65380a065aba9c1b12732"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "2806ec2346f48225e1c648cb3e335b0a8399508280e0c41466e1e70dfc8f360e",
+      "documentCommit": "bde5cc991516eea9d9406b4205c0a841ecd90ef0"
+    },
+    {
+      "path": "config/google-oauth.public.json",
+      "sha256": "5edd7ab08658e4a9fe5e9e53db5fb0b648ae3db6d4df6e8d09e691e1855aaccf",
+      "documentCommit": "2e5b4a81121c796a2fe36d28fc5b57e6e9029553"
+    },
+    {
+      "path": "lib/core/persistence/local_database_format.dart",
+      "sha256": "eb7c54ea59c1c4bbc5d66ad4a185b3e93a4dad282b3facb5ff1b93e84d2b647d",
+      "documentCommit": "f591688cc10f1a4ebada5bb30e0f8a7b25376c04"
+    },
+    {
+      "path": "lib/app/navigation/app_router.dart",
+      "sha256": "ea1bc0ba263def69079b3d69dd6b36c2ee3c1f92e656837529113d1fe0016079",
+      "documentCommit": "8e19552ab150dcb174a8ac572f107cf252da2a86"
+    },
+    {
+      "path": "docs/ep-001/especificacion.md",
+      "sha256": "6f7b0ef32788aef595d217e628ea4495de6ec21396e3d54458be6673fd1aa2df",
+      "documentCommit": "6f71a0c7309fec658e3a8a00791067c7808cdbf6"
+    },
+    {
+      "path": "docs/ep-001/casos-referencia.md",
+      "sha256": "e178a10ac0003b19a7bb8c042e7fc2e74a3f7437179037a6f1971c6a56e28544",
+      "documentCommit": "6f71a0c7309fec658e3a8a00791067c7808cdbf6"
+    }
+  ],
+  "authoredArtifacts": [
+    {
+      "path": "docs/ep-030/auditoria-cobertura.md",
+      "sha256": "19e44f1c92a09d179f0339daa238ecebaaa5218807034013e7ca7cbd16dd4b12"
+    },
+    {
+      "path": "docs/ep-030/expediente-entrega.md",
+      "sha256": "02cd0fa880f2cf76b5b16ed02c7c4692f833c4e64b35b87539386b8042dbff14"
+    },
+    {
+      "path": "docs/ep-030/guia-cotidiana.md",
+      "sha256": "efb9f2f220f55aa8dc40dec3f0d8444b66b3b212eb677d6963d7852daa2bb0e0"
+    },
+    {
+      "path": "docs/ep-030/recorrido-aceptacion.md",
+      "sha256": "d29fce684b5863e3c35669761c87dc9c11e898dee893e07c879172edf3762a29"
+    },
+    {
+      "path": "docs/ep-030/manifiesto-entrega.json",
+      "sha256": "77f25fa7da29d0238103c9b4d48fee5c8bd24541b96c18360dd7b01d48ed6a0c"
+    }
+  ],
+  "concurrentOverlay": [
+    {
+      "path": "lib/features/synchronization/data/http_drive_transfer_client.dart",
+      "sha256": "66917c15afa7d5ed54019659fc068bc0ff9f6a6d42278210dcaa174e79739336",
+      "ownedBy255": false
+    },
+    {
+      "path": "lib/features/synchronization/data/stored_installation_sync_state.dart",
+      "sha256": "84fbbe60293b1050dc8af8d37fef99d1b33205c802af49357b9b9f49f042d9f4",
+      "ownedBy255": false
+    },
+    {
+      "path": "lib/features/synchronization/domain/drive_transfer.dart",
+      "sha256": "2f820ef6472999b7d9cff2351d3a1617804ad37c678547b4792873be217fb1ce",
+      "ownedBy255": false
+    },
+    {
+      "path": "lib/features/synchronization/domain/installation_sync_state.dart",
+      "sha256": "17cceed36816af30ec47a82103333039d30671d26dd42f8e6802df7b0e301f35",
+      "ownedBy255": false
+    },
+    {
+      "path": "lib/features/synchronization/synchronization.dart",
+      "sha256": "7fb66a557236d3435c11e5a0dd0ef5ed899c167e452326117235e1a33ab92e77",
+      "ownedBy255": false
+    },
+    {
+      "path": "lib/app/drive_upload_factory.dart",
+      "sha256": "8df339fa68363bc23ac2ccc2911c83e22cda67b81ddb43301dac2e09aa3a560b",
+      "ownedBy255": false
+    },
+    {
+      "path": "lib/features/synchronization/data/validated_drive_uploader.dart",
+      "sha256": "385e7a13b28429bf96fd90ab7e559ebd8609100951751fe0107c2a42315a7d93",
+      "ownedBy255": false
+    },
+    {
+      "path": "lib/features/synchronization/domain/drive_upload.dart",
+      "sha256": "bd80f446624c41f22a0a069dab89ef4b18b8260b77ed410eaac330b1b8c1e0c9",
+      "ownedBy255": false
+    },
+    {
+      "path": "test/synchronization/validated_drive_uploader_test.dart",
+      "sha256": "29e49b9e11595fc9097aaf650be69c2e31f2e27163aea771edd3804194b72ba5",
+      "ownedBy255": false
+    }
+  ],
+  "checks": {
+    "cases": 0,
+    "data": 0,
+    "oauthWindows": 1,
+    "oauthAndroid": 1
+  },
+  "bootstrap": [
+    {
+      "environment": "development",
+      "exitCode": 0
+    },
+    {
+      "environment": "test",
+      "exitCode": 0
+    },
+    {
+      "environment": "production",
+      "exitCode": 0
+    },
+    {
+      "environment": "invalid-synthetic",
+      "exitCode": 0
+    }
+  ],
+  "logs": [
+    {
+      "path": ".tools/ma-tsk-255/quality.log",
+      "sha256": "1f8c65aba72884054ef3adca5ad825e8b050ad51ed2f9e43a14973655968f64c",
+      "privateIgnored": true
+    },
+    {
+      "path": ".tools/ma-tsk-255/quality-authorized.log",
+      "sha256": "3dfc32341f838980badc1498658877af78787c3985c5c9f8c151fcdae2352c6b",
+      "privateIgnored": true
+    },
+    {
+      "path": ".tools/ma-tsk-255/cases.log",
+      "sha256": "392026f9ec6f39c5cae4eaab2ab3994e99cc3697d3d75b1594d8ee6170688d7d",
+      "privateIgnored": true
+    },
+    {
+      "path": ".tools/ma-tsk-255/data.log",
+      "sha256": "49b882a339392d879c9cd9162e80a0b5e2b43f95cb22810a647db96277a2eb53",
+      "privateIgnored": true
+    },
+    {
+      "path": ".tools/ma-tsk-255/oauth-windows.log",
+      "sha256": "c1300517f214c0e09bbaf7e70643084e05752154ff9601548b4486e091d946b6",
+      "privateIgnored": true
+    },
+    {
+      "path": ".tools/ma-tsk-255/oauth-android.log",
+      "sha256": "d845486cfd6b97b0491df86fb66525ffa9213f92b99ead7769d802079defe4a0",
+      "privateIgnored": true
+    },
+    {
+      "path": ".tools/ma-tsk-255/bootstrap-development.log",
+      "sha256": "4bb292f4e04d983de0d54fa463626e1b457aa79d07ca5b173e7539c1b41e3837",
+      "privateIgnored": true
+    },
+    {
+      "path": ".tools/ma-tsk-255/bootstrap-test.log",
+      "sha256": "4bb292f4e04d983de0d54fa463626e1b457aa79d07ca5b173e7539c1b41e3837",
+      "privateIgnored": true
+    },
+    {
+      "path": ".tools/ma-tsk-255/bootstrap-production.log",
+      "sha256": "4bb292f4e04d983de0d54fa463626e1b457aa79d07ca5b173e7539c1b41e3837",
+      "privateIgnored": true
+    },
+    {
+      "path": ".tools/ma-tsk-255/bootstrap-invalid-synthetic.log",
+      "sha256": "55e5b405bd5a6169fd2ab39d6959e9f3882976549fa06df2e891a656f0c07349",
+      "privateIgnored": true
+    }
+  ],
+  "quality": {
+    "status": "failed",
+    "exitCode": 1,
+    "strictLockfileResolution": "passed",
+    "formatFiles": 508,
+    "formatChangedFiles": 0,
+    "analysis": "passed-no-issues",
+    "analysisSeconds": 124.5,
+    "passedTests": 2027,
+    "failedTests": 2,
+    "testDuration": "17:24",
+    "failedFile": "test/synchronization/local_recovery_journey_test.dart",
+    "failureDetails": [
+      "EP-001 restauración tras reinicios: timeout 30 s y cierre bloqueado por recuperación pendiente",
+      "fallo de disco: esperado rolledBack, observado recoveryRequired; limpieza temporal errno 32"
+    ],
+    "baseline": "Mismos casos registrados T01/T06–T08; causa sin aislar. T09 no corrige ni declara resuelta I02.",
+    "wealthPhoto": "El caso fallido de T08 no se reproduce en la batería T09; sin corrección propia.",
+    "restrictedAttempt": "Bloqueado en pub.dev SocketException 10057, antes de análisis/pruebas",
+    "bootstrap": "Ejecutado por separado; resultados en bootstrap.json"
+  },
+  "documentChecks": {
+    "localLinks": 98,
+    "uniqueMandatoryRows": 25,
+    "sourceHashes": 29,
+    "overlayHashes": 9,
+    "logHashes": 10,
+    "blockedManifestConsistent": true
+  },
+  "blockingOwners": [
+    "EP-014/131 Openbank",
+    "EP-030/249 y EP-029/239 OAuth",
+    "EP-007/064 fuentes pendientes",
+    "EP-028/235 y EP-029/243/245 paquetes y dispositivos",
+    "EP-006/059 calidad recuperación",
+    "EP-017/026 calidad foto",
+    "EP-026/217 aceptación visual",
+    "EP-030/250–254 recorridos finales"
+  ],
+  "finalAcceptance": null
+}

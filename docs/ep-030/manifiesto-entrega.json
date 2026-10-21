@@ -1,0 +1,80 @@
+{
+  "manifestVersion": 1,
+  "ticket": "MA-TSK-255",
+  "reviewDate": "2026-10-21",
+  "status": "blocked-not-a-release",
+  "finalCandidateId": null,
+  "distribution": "private-only-outside-repository",
+  "sourceReference": {
+    "commit": "8c0c8981fbe1369954085ecd8973727f88635de8",
+    "version": "0.1.0+1",
+    "branch": "ticket/ma-tsk-193",
+    "clean": false,
+    "note": "Referencia de fuentes con overlay concurrente; no commit de paquetes finales."
+  },
+  "toolchain": {
+    "flutter": "3.47.0",
+    "dart": "3.13.0",
+    "declaredChannel": "stable",
+    "observedChannel": "[user-branch]",
+    "sha256": "85a1f3408139314b7993cee4bb3295f787bd46e43844fc115a4c93044877c083",
+    "lockfileSha256": "144adf4d36eabc6646ceae139a711e5a55f12096a0421a3f544089e8d28124d1"
+  },
+  "sqlite": {
+    "sourceSchemaVersion": 8,
+    "sourceApplicationId": "0x41464e43",
+    "finalPackageCompatibilityVerified": false,
+    "portableContract": "EP-027 v1",
+    "note": "La compatibilidad debe proceder de ambos manifiestos y pruebas finales; no garantiza downgrade."
+  },
+  "publicConfiguration": {
+    "sha256": "5edd7ab08658e4a9fe5e9e53db5fb0b648ae3db6d4df6e8d09e691e1855aaccf",
+    "status": "blocked_external",
+    "scope": "https://www.googleapis.com/auth/drive.file"
+  },
+  "windows": {
+    "status": "missing-final-candidate",
+    "version": null,
+    "sourceCommit": null,
+    "appEnvironment": null,
+    "requiredEnvironment": "production",
+    "architecture": "x64",
+    "privateArtifactAlias": null,
+    "installer": {
+      "sha256": null,
+      "size": null
+    },
+    "exe": {
+      "sha256": null,
+      "size": null
+    },
+    "manifestSha256": null,
+    "payloadManifestSha256": null,
+    "physicalInstallationEvidence": null,
+    "owner": "EP-028 MA-TSK-233/235",
+    "generator": "scripts/windows-delivery.mjs"
+  },
+  "android": {
+    "status": "missing-final-candidate",
+    "version": null,
+    "sourceCommit": null,
+    "appEnvironment": null,
+    "requiredEnvironment": "production",
+    "packageId": "com.carlosmg91.myautofinance",
+    "privateArtifactAlias": null,
+    "apk": {
+      "sha256": null,
+      "size": null
+    },
+    "manifestSha256": null,
+    "certificateSha256": null,
+    "physicalInstallationEvidence": null,
+    "owner": "EP-029 MA-TSK-241/245",
+    "generator": "scripts/android-delivery.mjs"
+  },
+  "acceptance": {
+    "visual217": null,
+    "delivery256": null
+  },
+  "note": "Los campos nulos son evidencia ausente; no completar con identidad del APK técnico, fixtures, runner o versión fuente."
+}

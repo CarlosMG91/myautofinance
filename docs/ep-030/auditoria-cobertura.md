@@ -287,3 +287,50 @@ MA-TSK-253 conserva la verificación de fallos/recuperación de los paquetes rea
 Los únicos archivos de entrega T01 son este informe y su JSON. La matriz es
 completable aunque permanezcan B01–B06; sus criterios de producto siguen
 pendientes/bloqueados. No se cierra ni se acepta EP-030 desde esta auditoría.
+
+## Actualización T09 · 2026-10-21
+
+Esta actualización conserva el inventario histórico anterior y lo contrasta con
+las salidas T04–T08 publicadas. Referencias, fechas, commits documentales y hashes
+están en [el expediente T09](expediente-entrega.md) y su
+[evidencia estructurada](evidencia-entrega.json). Cada fila mantiene el contrato,
+oráculo y propietario de la matriz original. **Ninguna fila acredita aún el
+candidato final físico W/A**: faltan paquetes y hashes finales; versión fuente
+0.1.0+1 no es versión instalada acreditada. No hay nuevas capturas T09.
+
+T04–T08 datan del 2026-10-20. Host = pruebas automatizadas Windows, incluidas
+disposiciones Android; runner/emulador se indican expresamente. Sus hashes y
+commits permiten revisar los resultados sin atribuirles production o Google real.
+
+| Criterio / plataforma | Resultado disponible y evidencia | Estado obligatorio del candidato / siguiente acción |
+|---|---|---|
+| R01 · W/A | [T02](verificacion-datos.md), [T04](verificacion-windows.md), [T05](verificacion-android.md): CSV exacto y flujo host; mismos oráculos | Bloqueado: ejecutar selector/importación/persistencia de ambos paquetes |
+| R02 · W/A | [131](../ep-014/verificacion-reapertura-131.md), T04/T05: sin muestra/lector/fixture caracterizado | Bloqueado EP-014/131; no reemplazar por CSV |
+| R03 · W/A | T04 corrige guion I01 y pasan dos variantes host con SQLite temporal | Bloqueado físico 250/251; I01 ya no es fallo vigente del guion |
+| R04 · W/A | T04 incluye selección/lote, cancelación y procedencia tras corregir I01 | Bloqueado físico 250/251/253 |
+| R05 · W/A | E02 y T04/T05 conservan cobertura existente y guion de edición/reapertura | Bloqueado en ambos paquetes |
+| R06 · W/A | E01/E02, T04/T05: reglas y suites existentes, sin nuevo ensayo físico | Bloqueado: árbol/selectores/rollback sobre candidato |
+| R07 · W/A | E03/E09, T04/T05: edición y restricciones host | Bloqueado: guardar/reabrir en ambos paquetes |
+| R08 · W/A | E09/E18, T04/T05: anual implementado y comprobaciones host | Bloqueado: anual de ambos paquetes |
+| R09 · W/A | E07, T04/T05: runner histórico Windows/emulador; propuesta/cancelación | Bloqueado: propuesta en candidato físico |
+| R10 · W/A | E08/E14/E18, T04/T05: entrada/resumen/Estado, guion actual | Bloqueado: cifras y retorno físico |
+| R11 · W/A | E10/E18, T04/T05: Real anual existente, no marcador | Bloqueado: matriz/tarjetas físicas |
+| R12 · W/A | E06/E12, T04/T05: periodos existentes y retorno | Bloqueado: persistencia/periodos físicos |
+| R13 · W/A | E12, T04/T05: filtros/desgloses existentes; runner histórico Windows/emulador | Bloqueado: filtros/retorno en paquetes |
+| R14 · W/A | [T08](verificacion-portabilidad.md) y [T06](verificacion-drive-real.md): fallo de texto en test de foto tras guardar; fotos/datos de exportación histórica comprobados | Bloqueado: contrastar fallo EP-017/026 y verificar fotos físicas; no inferir pérdida financiera |
+| R15 · W/A | E11/E18, T04/T05: indicador existente, runner histórico/emulador | Bloqueado: foto/ausencias/denominador físico |
+| R16 · W/A | [202](../ep-025/verificacion-recorrido.md): 93 dirigidas y siete hitos runner Windows/emulador | Bloqueado: diagnóstico manual de ambos paquetes finales |
+| R17 · W/A | T08: 57 dirigidas; relectura de 16 ZIP históricos Windows runner/emulador, no nuevas exportaciones nativas | Bloqueado: exportar y transferir desde finales |
+| R18 · W/A | T08: cuatro SQLite históricas, 12 tablas y guía independiente; hashes conservados | Bloqueado: consulta de copias finales de ambas instalaciones |
+| R19 · W/A | [T07](verificacion-fallos-recuperacion.md): 31 dirigidas, runner Windows debug 1/1; fallos de recuperación en suite general conservados | Bloqueado: resolver calidad EP-006/059 y recuperación/persistencia finales |
+| R20 · W/A | [T03](oauth-windows.md), T06: configuración pública blocked_external; controles específicos salida 1 | Bloqueado: 249/239 y autorización Google real compatible |
+| R21 · W/A | T06: 61 dirigidas host con proveedor/HTTP simulado; S00–S10 reales sin ejecutar | Bloqueado: Google real PC↔teléfono sobre hashes finales |
+| R22 · W/A | T07/T06: fallos inyectados host y conservación; no Google real | Bloqueado: fallos/recuperación remotos de ambos paquetes, respetando carrera aceptada |
+| R23 · W | [235](../ep-028/verificacion-e2e.md), T04: fixtures/CI sin candidato production | Bloqueado EP-028/235: instalar/actualizar en perfil aislado |
+| R24 · A | [245](../ep-029/verificacion-final-245.md), T05: APK técnico no final; apertura/actualización 243 pendiente | Bloqueado EP-029/243/245: paquete/firma/teléfono/actualización |
+| R25 · W/A | [217](../ep-026/validacion-integral.md): capturas runner parciales antiguas; consulta T09 sin approvedAt/discussion | Pendiente de aceptación visual humana 217 y accesibilidad física; después T10/256 |
+
+Las pasadas dirigidas no anulan calidad global fallida. Resultados nuevos de
+T09 se registran en el JSON/expediente, sin reescribir como actuales las pruebas
+históricas. Todos los bloqueos siguen siendo criterios sin satisfacer, aunque
+sus tickets propietarios figuren `done`. T09 y EP-030 no se cierran.
