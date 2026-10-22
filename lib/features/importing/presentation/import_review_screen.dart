@@ -110,8 +110,8 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¿Descartar la revisión?'),
-        content: const Text(
-          'El nuevo CSV iniciará otra revisión. Se perderán las asignaciones y los solapamientos revisados.',
+        content: Text(
+          'El nuevo ${c.selectionKind} iniciará otra revisión. Se perderán las asignaciones y los solapamientos revisados.',
         ),
         actions: [
           TextButton(
@@ -393,7 +393,7 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
                                 ),
                             ],
                           ),
-                        if (c.supportsCsv)
+                        if (c.supportsFileSelection)
                           ImportSection(
                             title: c.session == null
                                 ? 'Selecciona tu archivo'
@@ -406,24 +406,28 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
                                 ),
                               ],
                               if (c.session == null)
-                                const Text(
-                                  'CSV histórico · UTF-8 · separador ; · cabeceras exactas. Un archivo por carga.',
+                                Text(
+                                  c.supportsBank
+                                      ? 'Extracto original de Openbank (.xls). Un archivo por carga. Elige y confirma la cuenta de destino antes de importar.'
+                                      : 'CSV histórico · UTF-8 · separador ; · cabeceras exactas. Un archivo por carga.',
                                 ),
                               if (c.session == null)
-                                const Text(
-                                  'El presupuesto CSV tiene signo contrario al interno. La normalización la realiza el importador una sola vez.',
+                                Text(
+                                  c.supportsBank
+                                      ? 'Solo movimientos reales, pendientes de categorizar. Los saldos del extracto no modifican las fotos patrimoniales.'
+                                      : 'El presupuesto CSV tiene signo contrario al interno. La normalización la realiza el importador una sola vez.',
                                 ),
                               AfAction(
                                 label: c.session == null
-                                    ? 'Seleccionar CSV'
-                                    : 'Volver a cargar CSV',
+                                    ? 'Seleccionar ${c.selectionKind}'
+                                    : 'Volver a cargar ${c.selectionKind}',
                                 icon: AfIcons.importFile,
                                 variant: c.session == null
                                     ? AfActionVariant.primary
                                     : AfActionVariant.secondary,
                                 onPressed: c.busy || _dialog
                                     ? null
-                                    : () => c.selectCsv(
+                                    : () => c.selectFile(
                                         approveReplacement: _approveReplacement,
                                       ),
                               ),
@@ -681,8 +685,10 @@ class _ImportReviewScreenState extends State<ImportReviewScreen>
                                     '${rows.length} filas interpretadas · originales, importes normalizados, cuentas y categorías.',
                                   ),
                                   if (_details) ...[
-                                    const Text(
-                                      'Fila indica el ordinal del registro CSV. En textos multilínea puede diferir de la línea física.',
+                                    Text(
+                                      c.supportsBank
+                                          ? 'Fila indica la fila física de la tabla del extracto. Los originales conservan su localización.'
+                                          : 'Fila indica el ordinal del registro CSV. En textos multilínea puede diferir de la línea física.',
                                     ),
                                     ImportRowsView(
                                       originalLabel: c.supportsCsv

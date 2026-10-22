@@ -175,7 +175,7 @@ void main() {
   );
 
   testWidgets(
-    'Gestión en producción activa CSV, conserva origen y periodo; Openbank deshabilitado',
+    'Gestión en producción activa CSV y Openbank, conserva origen y periodo',
     (t) async {
       const channel = MethodChannel('autofinance/local_csv');
       var selections = 0;
@@ -200,7 +200,7 @@ void main() {
       final xls = t.widget<PopupMenuItem<String>>(
         find.widgetWithText(PopupMenuItem<String>, 'Importar Openbank'),
       );
-      expect(xls.enabled, isFalse);
+      expect(xls.enabled, isTrue);
       await tap(t, 'Importar CSV');
       expect(
         find.textContaining('Volver a Real anual, enero de 2026'),

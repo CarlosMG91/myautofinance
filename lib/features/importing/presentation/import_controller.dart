@@ -36,14 +36,23 @@ class ImportController extends ChangeNotifier {
     this.csvSelector,
     this.prepareCsv,
     this.csvAdapter,
+    this.bankSelector,
+    this.prepareBank,
+    this.bankAdapter,
   });
   final ImportServicesLoader load;
   final LocalCsvSelector? csvSelector;
   final CsvFilePreparation? prepareCsv;
   final ImportAdapter? csvAdapter;
+  final LocalFileSelector? bankSelector;
+  final Future<ImportFile> Function(LocalFileSelected)? prepareBank;
+  final ImportAdapter? bankAdapter;
   bool selecting = false;
   String? selectionMessage;
   bool get supportsCsv => csvSelector != null;
+  bool get supportsBank => bankSelector != null;
+  bool get supportsFileSelection => supportsCsv || supportsBank;
+  String get selectionKind => supportsBank ? 'Openbank' : 'CSV';
   ImportPhase phase = ImportPhase.idle;
   ImportSession? session;
   ImportReview? review;
@@ -77,11 +86,15 @@ class ImportController extends ChangeNotifier {
   /// aceptado descarta sus asignaciones y marcas, antes de preparar los bytes.
   Future<void> selectCsv({
     required Future<bool> Function() approveReplacement,
+  }) => selectFile(approveReplacement: approveReplacement);
+
+  Future<void> selectFile({
+    required Future<bool> Function() approveReplacement,
   }) async {
     if (_disposed ||
         selecting ||
         phase == ImportPhase.confirming ||
-        !supportsCsv) {
+        !supportsFileSelection) {
       return;
     }
     selecting = true;
@@ -90,7 +103,7 @@ class ImportController extends ChangeNotifier {
     _emit();
     LocalCsvSelection selected;
     try {
-      selected = await csvSelector!.select();
+      selected = await (bankSelector ?? csvSelector)!.select();
     } catch (_) {
       selected = const LocalCsvFailed(LocalCsvFailureCode.readFailed);
     }
@@ -101,11 +114,14 @@ class ImportController extends ChangeNotifier {
             'Selección cancelada. Se conserva la revisión anterior.';
       case LocalCsvFailed(:final code):
         selectionMessage = switch (code) {
-          LocalCsvFailureCode.accessDenied => 'Acceso denegado. Comprueba el permiso del archivo y vuelve a cargar CSV.',
-          LocalCsvFailureCode.unavailable => 'Documento no disponible. Comprueba el original y vuelve a cargar CSV.',
+          LocalCsvFailureCode.accessDenied =>
+            'Acceso denegado. Comprueba el permiso del archivo y vuelve a cargar $selectionKind.',
+          LocalCsvFailureCode.unavailable =>
+            'Documento no disponible. Comprueba el original y vuelve a cargar $selectionKind.',
           LocalCsvFailureCode.busy =>
-            'Ya hay un selector abierto. Ciérralo y vuelve a cargar CSV.',
-          LocalCsvFailureCode.readFailed => 'No se pudo leer el archivo. Comprueba el original y vuelve a cargar CSV.',
+            'Ya hay un selector abierto. Ciérralo y vuelve a cargar $selectionKind.',
+          LocalCsvFailureCode.readFailed =>
+            'No se pudo leer el archivo. Comprueba el original y vuelve a cargar $selectionKind.',
         };
       case LocalCsvSelected():
         if ((_file != null || session != null) && !await approveReplacement()) {
@@ -120,14 +136,15 @@ class ImportController extends ChangeNotifier {
         phase = ImportPhase.reading;
         _emit();
         try {
-          final file = await prepareCsv!(selected);
+          final file = await (prepareBank ?? prepareCsv)!(selected);
           if (_disposed || nextGeneration != _generation) return;
           phase = ImportPhase.idle;
-          await start(file, csvAdapter!);
+          await start(file, (bankAdapter ?? csvAdapter)!);
         } catch (_) {
           if (_disposed || nextGeneration != _generation) return;
           phase = ImportPhase.error;
-          message = 'No se pudo preparar el CSV. Corrige el original y vuelve a cargar CSV. Cero cambios.';
+          message =
+              'No se pudo preparar el archivo $selectionKind. Corrige el original y vuelve a cargar $selectionKind. Cero cambios.';
           _emit();
         }
         return;
@@ -195,7 +212,7 @@ class ImportController extends ChangeNotifier {
       if (_disposed || generation != _generation) return;
       final data = await services.source.read(currentSession);
       if (_disposed || generation != _generation) return;
-      if (supportsCsv && data.sameFileBatchId != null) {
+      if (supportsFileSelection && data.sameFileBatchId != null) {
         final batch = await services.history.getBatch(data.sameFileBatchId!);
         if (_disposed || generation != _generation) return;
         if (batch == null) throw StateError('Lote no disponible');

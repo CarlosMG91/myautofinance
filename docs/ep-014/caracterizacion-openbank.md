@@ -1,5 +1,10 @@
 # MA-TSK-124 · Caracterización del extracto Openbank
 
+**Actualización 2026-10-22:** muestra privada aportada y estructura contrastada.
+La caracterización vigente y los fixtures sintéticos están en
+[formato observado](formato-observado.md). Los apartados siguientes conservan
+el registro histórico de cuando faltaba esa muestra.
+
 **Estado: bloqueado por falta de muestra verificable del usuario.**
 
 ## Reapertura: comprobación del 2026-10-18

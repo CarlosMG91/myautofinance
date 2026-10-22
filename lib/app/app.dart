@@ -3,7 +3,8 @@ import 'navigation/diagnostic_route.dart';
 import '../features/movements/presentation/movement_list_controller.dart';
 import '../features/movements/presentation/pending_movement_controller.dart';
 import '../features/importing/presentation/import_controller.dart';
-import '../features/importing/importing.dart' show LocalCsvSelector;
+import '../features/importing/importing.dart'
+    show LocalCsvSelector, LocalFileSelector;
 import '../features/budget/presentation/budget_source.dart';
 import '../features/monthly_status/presentation/monthly_status_screen.dart';
 import '../features/actual_spending/presentation/annual_actual_screen.dart';
@@ -53,6 +54,7 @@ class AutofinanceApp extends StatefulWidget {
     this.diagnosticReferences,
     this.imports,
     this.csvSelector,
+    this.openbankSelector,
     this.navigationSession,
     this.navigationClock,
   });
@@ -78,6 +80,7 @@ class AutofinanceApp extends StatefulWidget {
   final DiagnosticReferenceExists? diagnosticReferences;
   final ImportServicesLoader? imports;
   final LocalCsvSelector? csvSelector;
+  final LocalFileSelector? openbankSelector;
   final NavigationSession? navigationSession;
   final NavigationClock? navigationClock;
 
@@ -175,6 +178,7 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
                 widget.localSession?.diagnosticReferences,
             imports: widget.imports ?? widget.localSession?.imports,
             csvSelector: widget.csvSelector,
+            openbankSelector: widget.openbankSelector,
             allowTestImports: widget.config.environment == AppEnvironment.test,
             navigationSession: _navigation,
           ),
@@ -205,6 +209,7 @@ class _AutofinanceAppState extends State<AutofinanceApp> {
               widget.localSession?.diagnosticReferences,
           imports: widget.imports ?? widget.localSession?.imports,
           csvSelector: widget.csvSelector,
+          openbankSelector: widget.openbankSelector,
           allowTestImports: widget.config.environment == AppEnvironment.test,
           navigationSession: _navigation,
         ),

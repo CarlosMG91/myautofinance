@@ -1,0 +1,24 @@
+{
+  "formatVersion": "openbank-xhtml-iso8859-1-v1",
+  "sha256": "599934351fb5d2410048029836e5a549ba1c1bd0ef40af64665fdecc2c462eb4",
+  "count": 4,
+  "signedCents": -73905,
+  "physicalRows": [
+    12,
+    13,
+    14,
+    15
+  ],
+  "valueDates": [
+    "2026-02-20",
+    "2026-02-18",
+    "2026-02-18",
+    "2026-02-17"
+  ],
+  "amounts": [
+    120000,
+    -250,
+    -250,
+    -193405
+  ]
+}

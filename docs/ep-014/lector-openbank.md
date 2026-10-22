@@ -1,5 +1,9 @@
 # MA-TSK-125 · Lector Openbank pendiente de caracterización
 
+**Actualización 2026-10-22:** implementado `OpenbankReader` para la variante
+XHTML ISO-8859-1 observada en el extracto privado. Contrato, límites y pruebas:
+[formato observado](formato-observado.md). Lo siguiente es el registro histórico.
+
 **Estado: bloqueado; lector no implementado.** Comprobación del 2026-10-08.
 
 ## Evidencia del requisito previo

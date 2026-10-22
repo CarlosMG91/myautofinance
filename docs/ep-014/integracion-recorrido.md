@@ -1,5 +1,10 @@
 # MA-TSK-130 · Integración Openbank pendiente del lector
 
+**Actualización 2026-10-22:** ruta `/importaciones/openbank` conectada con lector,
+selector y confirmación comunes. La entrada de Gestión se habilita cuando
+existen servicios de importación. Véase [formato observado](formato-observado.md)
+y [verificación de habilitación](habilitacion-openbank.md). Registro histórico debajo.
+
 **Estado: bloqueado; recorrido productivo no implementado.** Última comprobación:
 2026-10-18. Este registro no completa los criterios del ticket ni cierra EP-014.
 

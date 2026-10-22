@@ -6,7 +6,8 @@ import 'movement_list_route.dart';
 import 'pending_movement_route.dart';
 import '../../features/movements/presentation/pending_movement_controller.dart';
 import 'import_route.dart';
-import '../../features/importing/importing.dart' show LocalCsvSelector;
+import '../../features/importing/importing.dart'
+    show LocalCsvSelector, LocalFileSelector;
 import '../../features/importing/presentation/import_controller.dart';
 import 'budget_route.dart';
 import 'annual_budget_navigation.dart';
@@ -74,6 +75,7 @@ abstract final class AppRouter {
     DiagnosticReferenceExists? diagnosticReferences,
     ImportServicesLoader? imports,
     LocalCsvSelector? csvSelector,
+    LocalFileSelector? openbankSelector,
     bool allowTestImports = false,
     NavigationSession? navigationSession,
   }) {
@@ -223,6 +225,7 @@ abstract final class AppRouter {
               load: imports,
               allowTestLaunch: allowTestImports,
               csvSelector: csvSelector,
+              openbankSelector: openbankSelector,
               pendingMovements: categories == null ? null : pendingMovements,
             );
     } else if (budgets != null &&
@@ -440,7 +443,8 @@ class _WealthRouteState extends State<_WealthRoute> {
                     label:
                         "Volver a Patrimonio, ${month.value.substring(0, 7)}",
                   )
-                : path == AppRoutes.importCsv
+                : path == AppRoutes.importCsv ||
+                      path == AppRoutes.importOpenbank
                 ? CsvImportOrigin(
                     '${AppRoutes.wealth}?${period(month)}',
                     'Volver a Patrimonio, ${month.value.substring(0, 7)}',
@@ -1087,8 +1091,8 @@ class _ManagementMenu extends StatelessWidget {
     (
       id: 'openbank',
       label: 'Importar Openbank',
-      path: '/importaciones/openbank',
-      enabled: false,
+      path: AppRoutes.importOpenbank,
+      enabled: importsAvailable,
       icon: AfIcons.importFile,
     ),
     (
@@ -1190,7 +1194,7 @@ class _ManagementMenu extends StatelessWidget {
                 route: source,
                 label: 'Volver a ${_BackupOrigin(source).label}',
               )
-            : path == AppRoutes.importCsv
+            : path == AppRoutes.importCsv || path == AppRoutes.importOpenbank
             ? CsvImportOrigin(source, 'Volver a ${_BackupOrigin(source).label}')
             : path == AppRoutes.movements
             ? MovementListOrigin(source, context: session?.context)
@@ -1205,11 +1209,7 @@ class _ManagementMenu extends StatelessWidget {
       AfAction(
         label: e.label,
         icon: e.icon,
-        unavailableReason: e.enabled
-            ? null
-            : e.id == 'openbank'
-            ? 'Recorrido pendiente de conectar.'
-            : 'Servicio local no disponible.',
+        unavailableReason: e.enabled ? null : 'Servicio local no disponible.',
         onPressed: e.enabled ? () => open(context, e.id) : null,
       ),
   ];

@@ -21,6 +21,7 @@ dependencies:
   path_provider: ^2.1.6
   sqlite3: ^3.7.0
   uuid: ^4.6.0
+  xml: 6.6.1
 
 dev_dependencies:
   google_sign_in_platform_interface: 3.1.0

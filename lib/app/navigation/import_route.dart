@@ -10,6 +10,7 @@ import '../../features/movements/movements.dart';
 import '../../features/movements/presentation/pending_movement_controller.dart';
 import 'movement_list_route.dart';
 import '../csv_import_factory.dart';
+import '../openbank_import_factory.dart';
 
 /// Entrada del recorrido de pruebas. Ningún selector de producción la genera.
 class ImportReviewLaunch {
@@ -35,12 +36,14 @@ class ImportRoute extends StatefulWidget {
     required this.load,
     this.allowTestLaunch = false,
     this.csvSelector,
+    this.openbankSelector,
     this.pendingMovements,
   });
   final RouteSettings settings;
   final ImportServicesLoader load;
   final bool allowTestLaunch;
   final LocalCsvSelector? csvSelector;
+  final LocalFileSelector? openbankSelector;
   final PendingMovementLoader? pendingMovements;
   @override
   State<ImportRoute> createState() => _ImportRouteState();
@@ -55,6 +58,12 @@ class _ImportRouteState extends State<ImportRoute> {
       _controller = createCsvImportController(
         widget.load,
         selector: widget.csvSelector,
+      );
+    }
+    if (Uri.parse(widget.settings.name!).path == AppRoutes.importOpenbank) {
+      _controller = createOpenbankImportController(
+        widget.load,
+        selector: widget.openbankSelector,
       );
     }
     if (Uri.parse(widget.settings.name!).path == AppRoutes.importReview &&

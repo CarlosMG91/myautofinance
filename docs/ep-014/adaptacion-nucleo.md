@@ -1,5 +1,9 @@
 # MA-TSK-126 · Conexión Openbank pendiente del lector
 
+**Actualización 2026-10-22:** `OpenbankImportAdapter` conecta el lector observado
+con EP-012 y mantiene cuenta global pendiente y categoría nula. Véase
+[formato observado](formato-observado.md). Se conserva debajo el registro anterior.
+
 **Estado: bloqueado; adaptación no implementada.** Comprobación del 2026-10-08.
 
 ## Evidencia del bloqueo
