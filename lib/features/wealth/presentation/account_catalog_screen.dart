@@ -60,7 +60,9 @@ class _AccountCatalogScreenState extends State<AccountCatalogScreen> {
       await widget.onOpen(id);
       if (!mounted) return;
       final data = widget.controller.catalog();
-      setState(() => _data = data);
+      setState(() {
+        _data = data;
+      });
       await data;
     } catch (_) {
       if (mounted) {

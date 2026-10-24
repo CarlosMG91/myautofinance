@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -27,8 +28,11 @@ Future<void> wealthLifecycleJourney(
   Directory directory, {
   Directory? captures,
   Future<void> Function()? androidBack,
+  bool rejectionRegression = false,
 }) async {
   var session = LocalBackupSession(supportDirectory: () async => directory);
+  Completer<void>? catalogGate;
+  var pendingLoads = 0;
   Future<T> io<T>(Future<T> Function() action) async {
     Object? error;
     StackTrace? trace;
@@ -45,7 +49,7 @@ Future<void> wealthLifecycleJourney(
     return result as T;
   }
 
-  Future<void> settle({Finder? until}) async {
+  Future<void> settle({Finder? until, bool Function()? ready}) async {
     for (var turn = 0; turn < 300; turn++) {
       await tester.runAsync(() async {
         await tester.pump();
@@ -62,13 +66,19 @@ Future<void> wealthLifecycleJourney(
               )
               .evaluate()
               .isEmpty &&
-          (until == null || until.evaluate().isNotEmpty)) {
+          (until == null || until.evaluate().isNotEmpty) &&
+          (ready == null || ready())) {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         return;
       }
     }
-    fail('La operación patrimonial SQLite no terminó.');
+    fail(
+      'La operación patrimonial SQLite no terminó. '
+      'Esperado: $until; cargas del servicio: $pendingLoads; '
+      'foco: ${FocusManager.instance.primaryFocus}; '
+      'botones: ${find.byWidgetPredicate((w) => w is ButtonStyleButton).evaluate().map((e) => '${e.widget.runtimeType}:${(e.widget as ButtonStyleButton).enabled}').join(', ')}',
+    );
   }
 
   Future<void> tap(String label) async {
@@ -84,6 +94,14 @@ Future<void> wealthLifecycleJourney(
     final target = buttons.evaluate().isEmpty
         ? find.text(label).last
         : buttons.last;
+    // Volver del editor inicia una relectura asíncrona del catálogo. Puede
+    // conservar sus filas sin indicador de carga y con acciones deshabilitadas.
+    // Esperar la acción concreta evita perder el clic y esperar luego un campo
+    // de un formulario que nunca se abrió.
+    bool enabled() =>
+        buttons.evaluate().isEmpty ||
+        tester.widget<ButtonStyleButton>(buttons.last).enabled;
+    if (!enabled()) await settle(until: target, ready: enabled);
     await tester.ensureVisible(target);
     await tester.runAsync(() => tester.tap(target));
     await settle();
@@ -171,7 +189,18 @@ Future<void> wealthLifecycleJourney(
     await tester.pumpWidget(
       RepaintBoundary(
         key: const ValueKey('wealth-journey-capture'),
-        child: AutofinanceApp(localSession: session),
+        child: AutofinanceApp(
+          localSession: session,
+          wealth: () async {
+            pendingLoads++;
+            try {
+              await catalogGate?.future;
+              return await session.wealth();
+            } finally {
+              pendingLoads--;
+            }
+          },
+        ),
       ),
     );
     await settle();
@@ -189,6 +218,19 @@ Future<void> wealthLifecycleJourney(
   }) async {
     await tap('Crear ficha');
     await enter(field('Nombre'), name);
+    expect(tester.widget<TextField>(field('Nombre')).enabled, isNot(false));
+    expect(
+      tester
+          .widget<EditableText>(
+            find.descendant(
+              of: field('Nombre'),
+              matching: find.byType(EditableText),
+            ),
+          )
+          .focusNode
+          .hasFocus,
+      isTrue,
+    );
     if (kind != AccountKind.account) {
       await choose<AccountKind>(
         kind == AccountKind.debt ? 'Deuda' : 'Cartera agregada',
@@ -255,9 +297,74 @@ Future<void> wealthLifecycleJourney(
     expect(await image(), empty);
     await sql('DROP TRIGGER wealth_account_failure');
     await tap('Cancelar');
+    if (rejectionRegression) catalogGate = Completer<void>();
     await tap('Descartar cambios');
 
+    if (rejectionRegression) {
+      expect(
+        find.textContaining('No se pudo abrir o actualizar'),
+        findsNothing,
+      );
+      final createButton = find.widgetWithText(FilledButton, 'Crear ficha');
+      expect(tester.widget<FilledButton>(createButton).enabled, isFalse);
+      expect(field('Nombre'), findsNothing);
+      expect(pendingLoads, 1);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is AfStatus && w.kind == AfStatusKind.loading,
+        ),
+        findsNothing,
+      );
+      // La conexión sigue respondiendo y el rechazo no dejó escritura alguna.
+      expect(await image(), empty);
+      debugPrint(
+        'MA-TSK-260: catálogo pendiente, Crear ficha deshabilitado, '
+        'Nombre ausente; SQLite responde sin cambios tras rollback.',
+      );
+      // El siguiente frame libera la consulta: sin esperar enabled, el helper
+      // antiguo pierde el clic antes de ese frame. No depende de un retardo.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        catalogGate!.complete();
+        catalogGate = null;
+      });
+      WidgetsBinding.instance.scheduleFrame();
+    }
+
     final principal = await create('Cuenta principal');
+    expect((await image())['accounts'], hasLength(1));
+    if (rejectionRegression) {
+      expect(pendingLoads, 0);
+      expect(field('Nombre'), findsNothing);
+      expect(find.text('Volver a Patrimonio, 2026-01'), findsOneWidget);
+      final saved = await image();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await io(session.store.close);
+      session.controller.dispose();
+      session = LocalBackupSession(supportDirectory: () async => directory);
+      await mount(1);
+      expect(await image(), saved);
+      await io(() async {
+        final db = await session.store.open();
+        expect(
+          (await db.customSelect('PRAGMA integrity_check').getSingle())
+              .data
+              .values
+              .single,
+          'ok',
+        );
+        expect(
+          await db.customSelect('PRAGMA foreign_key_check').get(),
+          isEmpty,
+        );
+      });
+      expect(
+        (await io(() async => (await session.wealth()).details(principal)))
+            .account
+            .name,
+        'Cuenta principal',
+      );
+      return;
+    }
     final saving = await create('Cuenta de ahorro');
     final portfolio = await create(
       'Cartera',
