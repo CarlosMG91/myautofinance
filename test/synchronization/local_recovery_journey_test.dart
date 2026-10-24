@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myautofinance/app/data/sqlite/database_failure.dart';
 import 'package:myautofinance/app/data/sqlite/local_database.dart';
 import 'package:myautofinance/app/data/sqlite/local_database_store.dart';
 import 'package:myautofinance/app/data/sqlite/sqlite_movement_repository.dart';
@@ -60,10 +62,30 @@ class _FullDisk extends NativeBackupPersistence {
   }
 }
 
-void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-  late Directory support;
-  late LocalDatabaseStore store;
+class _PausedInstall extends NativeBackupPersistence {
+  final entered = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<void> move(
+    String source,
+    String target, {
+    bool replace = false,
+  }) async {
+    if (p.basename(target) == 'journal-003.json') {
+      entered.complete();
+      await release.future;
+    }
+    await super.move(source, target, replace: replace);
+  }
+}
+
+final class _RecoveryJourney {
+  _RecoveryJourney(this.support)
+    : store = LocalDatabaseStore(supportDirectory: () async => support);
+
+  final Directory support;
+  LocalDatabaseStore store;
   late CreatedLocalBackup first;
   late Map<String, Object?> original, modified;
   String root() => p.join(support.path, 'sqlite');
@@ -92,9 +114,29 @@ void main() {
         supportDirectory: () async => support,
         persistence: persistence,
       );
-  setUp(() async {
-    support = await Directory.systemTemp.createTemp('recovery-ep001-');
-    store = LocalDatabaseStore(supportDirectory: () async => support);
+
+  Future<LocalRestoreResult> restoreAndVerify(
+    String backupId,
+    Map<String, Object?> expected,
+  ) async {
+    final reader = createLocalSyncContrastReader(
+      supportDirectory: () async => support,
+    );
+    final before = await reader.read();
+    final result = await restorer().restore(backupId, confirmed: true);
+    expect(result.status, LocalRestoreStatus.restored);
+    expect(result.previousBackupId, isNotNull);
+    expect(result.maintenancePending, false);
+    await verify(expected);
+    await restart();
+    await verify(expected);
+    final after = await reader.read();
+    expect(after.required, true);
+    expect(after.restoreEpoch, isNot(before.restoreEpoch));
+    return result;
+  }
+
+  Future<void> seed() async {
     final db = await store.open();
     final account = await seedRecoveryReference(db);
     original = await contents(db);
@@ -149,150 +191,265 @@ void main() {
       ),
     );
     modified = await contents(db);
-  });
-  tearDown(() async {
+  }
+
+  Future<void>? _running;
+  Future<void>? _disposing;
+
+  Future<void> run(Future<void> Function() body) =>
+      _running = Future<void>.sync(body);
+
+  Future<void> dispose() => _disposing ??= _dispose();
+
+  Future<void> _dispose() async {
+    // Un timeout del observador no cancela I/O. Drenar el cuerpo antes de
+    // cerrar SQLite o borrar su carpeta; el fallo ya lo recibe quien espera run.
+    try {
+      await _running;
+    } catch (_) {
+      // La limpieza también es obligatoria cuando falla una aserción.
+    }
     await store.close();
     await support.delete(recursive: true);
-  });
+  }
+}
 
-  test('EP-001: dos manuales, restauración y recuperación de la anterior tras reinicios', () async {
-    final second = await createLocalBackupCreator(
-      store: store,
-      supportDirectory: () async => support,
-    ).createManual();
-    await restart();
-    await verify(modified);
-    final result = await restorer().restore(first.backupId, confirmed: true);
-    expect(result.status, LocalRestoreStatus.restored);
-    await restart();
-    await verify(original);
-    final signal = await createLocalSyncContrastReader(
-      supportDirectory: () async => support,
-    ).read();
-    expect(signal.required, true);
-    expect(
-      (await restorer().restore(
-        result.previousBackupId!,
-        confirmed: true,
-      )).status,
-      LocalRestoreStatus.restored,
-    );
-    await restart();
-    await verify(modified);
-    expect(
-      (await createLocalSyncContrastReader(
-        supportDirectory: () async => support,
-      ).read()).restoreEpoch,
-      isNot(signal.restoreEpoch),
-    );
-    for (var i = 0; i < 4; i++) {
-      expect(
-        (await restorer().restore(first.backupId, confirmed: true)).status,
-        LocalRestoreStatus.restored,
-      );
-    }
-    await restart();
-    await verify(original);
-    final listing = await createLocalBackupCatalog(
-      supportDirectory: () async => support,
-    ).read();
-    expect(
-      listing.entries.where((e) => e.origin == LocalBackupOrigin.preRestore),
-      hasLength(3),
-    );
-    expect(
-      listing.entries
-          .where((e) => e.origin == LocalBackupOrigin.manual)
-          .map((e) => e.backupId),
-      unorderedEquals([first.backupId, second.backupId]),
-    );
-    // La segunda manual sigue restaurable después de la poda y los reinicios.
-    expect(
-      (await restorer().restore(second.backupId, confirmed: true)).status,
-      LocalRestoreStatus.restored,
-    );
-    await restart();
-    await verify(modified);
-  });
+// Siete intercambios, reaperturas y retención con fsync nativo superan los
+// 30 s en Windows. El plazo sigue siendo finito; las señales sincronizan I/O.
+const _journeyTimeout = Timeout(Duration(minutes: 3));
 
+void _journeyTest(
+  String name,
+  Future<void> Function(_RecoveryJourney) body, {
+  Timeout timeout = _journeyTimeout,
+}) {
+  test(name, () async {
+    final journey = _RecoveryJourney(
+      await Directory.systemTemp.createTemp('recovery-ep001-'),
+    );
+    addTearDown(journey.dispose);
+    await journey.run(() async {
+      await journey.seed();
+      await body(journey);
+    });
+  }, timeout: timeout);
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test(
-    'fallo de disco tras instalar: rollback íntegro y sin contraste nuevo',
+    'observador terminado: drena la restauración y aísla el siguiente fixture',
     () async {
-      final result = await restorer(persistence: _FullDisk())
-          .restore(first.backupId, confirmed: true);
+      final owner = _RecoveryJourney(
+        await Directory.systemTemp.createTemp('recovery-owner-'),
+      );
+      addTearDown(owner.dispose);
+      final gate = _PausedInstall();
+      final operation = owner.run(() async {
+        await owner.seed();
+        final result = await owner
+            .restorer(persistence: gate)
+            .restore(owner.first.backupId, confirmed: true);
+        expect(result.status, LocalRestoreStatus.restored);
+        await owner.restart();
+        await owner.verify(owner.original);
+      });
+      try {
+        await Future.any([
+          gate.entered.future,
+          operation.then((_) => fail('No se alcanzó la instalación pausada.')),
+        ]);
+        // Equivalente a que venza el plazo de quien observa el Future:
+        // termina la espera, pero Dart no cancela el intercambio pendiente.
+        final observerEnded = Completer<void>();
+        final observation = Future.any([operation, observerEnded.future]);
+        observerEnded.complete();
+        await observation;
+
+        var disposed = false;
+        final cleanup = owner.dispose().then((_) => disposed = true);
+        final next = _RecoveryJourney(
+          await Directory.systemTemp.createTemp('recovery-next-'),
+        );
+        addTearDown(next.dispose);
+        await next.run(() async {
+          await next.seed();
+          await next.verify(next.modified);
+          await next.store.close();
+        });
+        expect(next.support.path, isNot(owner.support.path));
+        expect(disposed, false);
+        expect(await owner.support.exists(), true);
+        await expectLater(
+          owner.store.open(),
+          throwsA(
+            isA<DatabaseFailure>().having(
+              (e) => e.code,
+              'exclusión durante el intercambio',
+              DatabaseFailureCode.restoring,
+            ),
+          ),
+        );
+        gate.release.complete();
+        await operation;
+        await cleanup;
+        expect(disposed, true);
+        expect(await owner.support.exists(), false);
+        await next.run(() async {
+          await next.restart();
+          await next.verify(next.modified);
+        });
+        await next.dispose();
+        expect(await next.support.exists(), false);
+      } finally {
+        if (!gate.release.isCompleted) gate.release.complete();
+        await operation;
+      }
+    },
+    timeout: _journeyTimeout,
+  );
+
+  _journeyTest(
+    'EP-001: dos manuales, restauración y recuperación de la anterior tras reinicios',
+    (journey) async {
+      final second = await createLocalBackupCreator(
+        store: journey.store,
+        supportDirectory: () async => journey.support,
+      ).createManual();
+      await journey.restart();
+      await journey.verify(journey.modified);
+      final result = await journey.restoreAndVerify(
+        journey.first.backupId,
+        journey.original,
+      );
+      await journey.restoreAndVerify(
+        result.previousBackupId!,
+        journey.modified,
+      );
+      final automaticIds = <String>[];
+      for (var i = 0; i < 4; i++) {
+        final restored = await journey.restoreAndVerify(
+          journey.first.backupId,
+          journey.original,
+        );
+        automaticIds.add(restored.previousBackupId!);
+      }
+      final listing = await createLocalBackupCatalog(
+        supportDirectory: () async => journey.support,
+      ).read();
+      expect(
+        listing.entries
+            .where((e) => e.origin == LocalBackupOrigin.preRestore)
+            .map((e) => e.backupId),
+        unorderedEquals(automaticIds.skip(1)),
+      );
+      expect(
+        listing.entries
+            .where((e) => e.origin == LocalBackupOrigin.manual)
+            .map((e) => e.backupId),
+        unorderedEquals([journey.first.backupId, second.backupId]),
+      );
+      // La segunda manual sigue restaurable después de la poda y los reinicios.
+      await journey.restoreAndVerify(second.backupId, journey.modified);
+    },
+  );
+
+  _journeyTest(
+    'fallo de disco tras instalar: rollback íntegro y sin contraste nuevo',
+    (journey) async {
+      final result = await journey
+          .restorer(persistence: _FullDisk())
+          .restore(journey.first.backupId, confirmed: true);
       expect(result.status, LocalRestoreStatus.rolledBack);
       expect(result.previousBackupId, isNotNull);
-      await restart();
-      await verify(modified);
+      await journey.restart();
+      await journey.verify(journey.modified);
       expect(
         (await createLocalSyncContrastReader(
-          supportDirectory: () async => support,
+          supportDirectory: () async => journey.support,
         ).read()).required,
         false,
       );
       expect(
-        (await restorer().restore(first.backupId, confirmed: true)).status,
+        (await journey.restorer().restore(
+          journey.first.backupId,
+          confirmed: true,
+        )).status,
         LocalRestoreStatus.restored,
       );
-      await restart();
-      await verify(original);
+      await journey.restart();
+      await journey.verify(journey.original);
     },
   );
 
-  test('cuarta fallida conserva exceso; siguiente éxito retiene las tres más recientes', () async {
-    for (var i = 0; i < 3; i++) {
+  _journeyTest(
+    'cuarta fallida conserva exceso; siguiente éxito retiene las tres más recientes',
+    (journey) async {
+      for (var i = 0; i < 3; i++) {
+        expect(
+          (await journey.restorer().restore(
+            journey.first.backupId,
+            confirmed: true,
+          )).status,
+          LocalRestoreStatus.restored,
+        );
+      }
       expect(
-        (await restorer().restore(first.backupId, confirmed: true)).status,
-        LocalRestoreStatus.restored,
+        (await journey
+                .restorer(persistence: _FullDisk())
+                .restore(journey.first.backupId, confirmed: true))
+            .status,
+        LocalRestoreStatus.rolledBack,
       );
-    }
-    expect(
-      (await restorer(
-        persistence: _FullDisk(),
-      ).restore(first.backupId, confirmed: true)).status,
-      LocalRestoreStatus.rolledBack,
-    );
-    await restart();
-    await verify(original);
-    final catalog = createLocalBackupCatalog(
-      supportDirectory: () async => support,
-    );
-    final excess =
-        (await catalog.read()).entries
+      await journey.restart();
+      await journey.verify(journey.original);
+      final catalog = createLocalBackupCatalog(
+        supportDirectory: () async => journey.support,
+      );
+      final excess =
+          (await catalog.read()).entries
+              .where((e) => e.origin == LocalBackupOrigin.preRestore)
+              .toList()
+            ..sort((a, b) => a.creationOrder.compareTo(b.creationOrder));
+      expect(excess, hasLength(4));
+      final result = await journey.restorer().restore(
+        journey.first.backupId,
+        confirmed: true,
+      );
+      expect(result.status, LocalRestoreStatus.restored);
+      await journey.restart();
+      await journey.verify(journey.original);
+      final entries = (await catalog.read()).entries;
+      expect(
+        entries
             .where((e) => e.origin == LocalBackupOrigin.preRestore)
-            .toList()
-          ..sort((a, b) => a.creationOrder.compareTo(b.creationOrder));
-    expect(excess, hasLength(4));
-    final result = await restorer().restore(first.backupId, confirmed: true);
-    expect(result.status, LocalRestoreStatus.restored);
-    await restart();
-    await verify(original);
-    final entries = (await catalog.read()).entries;
-    expect(
-      entries
-          .where((e) => e.origin == LocalBackupOrigin.preRestore)
-          .map((e) => e.backupId),
-      unorderedEquals([
-        excess[2].backupId,
-        excess[3].backupId,
-        result.previousBackupId,
-      ]),
-    );
-    expect(
-      entries
-          .where((e) => e.origin == LocalBackupOrigin.manual)
-          .single
-          .backupId,
-      first.backupId,
-    );
-  });
+            .map((e) => e.backupId),
+        unorderedEquals([
+          excess[2].backupId,
+          excess[3].backupId,
+          result.previousBackupId,
+        ]),
+      );
+      expect(
+        entries
+            .where((e) => e.origin == LocalBackupOrigin.manual)
+            .single
+            .backupId,
+        journey.first.backupId,
+      );
+    },
+  );
 
   for (final damage in ['truncated', 'future']) {
-    test(
+    _journeyTest(
       '$damage: rechaza sin perder activa ni manual y persiste al reiniciar',
-      () async {
+      (journey) async {
         final image = File(
-          p.join(root(), first.relativeDirectory, 'autofinance.sqlite'),
+          p.join(
+            journey.root(),
+            journey.first.relativeDirectory,
+            'autofinance.sqlite',
+          ),
         );
         if (damage == 'truncated') {
           await image.writeAsBytes(
@@ -318,16 +475,16 @@ void main() {
             NativeBackupPersistence(),
             DateTime.now,
           );
-          final catalog = (await storage.loadSlots(root())).latest!;
+          final catalog = (await storage.loadSlots(journey.root())).latest!;
           final entry =
               (catalog['entries'] as List).single as Map<String, dynamic>;
           entry['descriptor'] = metadata;
           entry['manifestPayloadSha256'] = backupPayloadHash(metadata);
-          await storage.commitCatalog(root(), catalog);
+          await storage.commitCatalog(journey.root(), catalog);
         }
         final bytes = await image.readAsBytes();
-        final result = await restorer().restore(
-          first.backupId,
+        final result = await journey.restorer().restore(
+          journey.first.backupId,
           confirmed: true,
         );
         expect(result.status, LocalRestoreStatus.rejected);
@@ -337,12 +494,12 @@ void main() {
               ? LocalRestoreCandidateIssue.futureSchema
               : LocalRestoreCandidateIssue.sizeMismatch,
         );
-        await restart();
-        await verify(modified);
+        await journey.restart();
+        await journey.verify(journey.modified);
         expect(await image.readAsBytes(), bytes);
         expect(
           (await createLocalSyncContrastReader(
-            supportDirectory: () async => support,
+            supportDirectory: () async => journey.support,
           ).read()).required,
           false,
         );
@@ -355,10 +512,10 @@ void main() {
     'journal-003.json',
     'journal-004.json',
   ]) {
-    test(
+    _journeyTest(
       'proceso terminado en $phase: recuperación real y segundo reinicio',
-      () async {
-        await store.close();
+      (journey) async {
+        await journey.store.close();
         final config = jsonDecode(
           await File('.dart_tool/package_config.json').readAsString(),
         ) as Map<String, dynamic>;
@@ -401,8 +558,8 @@ void main() {
             'test',
             '--no-pub',
             '--reporter=expanded',
-            '--dart-define=CRASH_SUPPORT=${support.path}',
-            '--dart-define=CRASH_BACKUP=${first.backupId}',
+            '--dart-define=CRASH_SUPPORT=${journey.support.path}',
+            '--dart-define=CRASH_BACKUP=${journey.first.backupId}',
             '--dart-define=CRASH_PHASE=$phase',
             'test/support/restore_crash_worker.dart',
           ],
@@ -425,28 +582,31 @@ void main() {
           process.kill();
           await process.exitCode;
         }
-        await restart();
+        await journey.restart();
         final completed = phase == 'journal-004.json';
-        await verify(completed ? original : modified);
+        await journey.verify(completed ? journey.original : journey.modified);
         final signal = await createLocalSyncContrastReader(
-          supportDirectory: () async => support,
+          supportDirectory: () async => journey.support,
         ).read();
         expect(signal.required, completed);
         final listing = await createLocalBackupCatalog(
-          supportDirectory: () async => support,
+          supportDirectory: () async => journey.support,
         ).read();
         final previous = listing.entries.singleWhere(
           (e) => e.origin == LocalBackupOrigin.preRestore,
         );
-        await restart();
-        await verify(completed ? original : modified);
+        await journey.restart();
+        await journey.verify(completed ? journey.original : journey.modified);
         // El bloqueo del proceso muerto se liberó y la anterior sigue restaurable.
         expect(
-          (await restorer().restore(previous.backupId, confirmed: true)).status,
+          (await journey.restorer().restore(
+            previous.backupId,
+            confirmed: true,
+          )).status,
           LocalRestoreStatus.restored,
         );
-        await restart();
-        await verify(modified);
+        await journey.restart();
+        await journey.verify(journey.modified);
       },
       timeout: const Timeout(Duration(minutes: 3)),
     );
