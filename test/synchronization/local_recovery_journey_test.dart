@@ -43,6 +43,9 @@ Future<Map<String, Object?>> contents(LocalDatabase db) async {
 }
 
 class _FullDisk extends NativeBackupPersistence {
+  _FullDisk({this.beforeFailure});
+
+  final Future<void> Function(String stage)? beforeFailure;
   bool armed = true;
   @override
   Future<void> move(
@@ -52,6 +55,7 @@ class _FullDisk extends NativeBackupPersistence {
   }) async {
     if (armed && p.basename(target) == 'journal-003.json') {
       armed = false;
+      await beforeFailure?.call(p.dirname(target));
       throw const FileSystemException(
         'synthetic disk full',
         '',
@@ -60,6 +64,58 @@ class _FullDisk extends NativeBackupPersistence {
     }
     await super.move(source, target, replace: replace);
   }
+}
+
+// Lectura independiente y cerrada de las imágenes apartadas, sin abrir otro
+// store ni modificar los archivos de la operación que estamos observando.
+Map<String, Object?> _imageContents(String path) {
+  final db = sqlite3.open(path, mode: OpenMode.readOnly);
+  try {
+    expect(db.select('PRAGMA integrity_check').single.values.single, 'ok');
+    expect(db.select('PRAGMA foreign_key_check'), isEmpty);
+    return {
+      for (final table in db.select(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT GLOB 'sqlite_*' ORDER BY name",
+      ))
+        table['name'] as String: [
+          for (final row in db.select(
+            'SELECT * FROM "${table['name']}" ORDER BY rowid',
+          ))
+            Map<String, Object?>.from(row),
+        ],
+    };
+  } finally {
+    db.close();
+  }
+}
+
+Future<List<String>> _journalPhases(String directory) async {
+  final journals = await Directory(directory)
+      .list()
+      .where(
+        (f) => RegExp(r'^journal-\d{3}\.json$').hasMatch(p.basename(f.path)),
+      )
+      .toList();
+  journals.sort((a, b) => a.path.compareTo(b.path));
+  return [
+    for (final file in journals)
+      decodeBackupEnvelope(await File(file.path).readAsBytes())['phase']
+          as String,
+  ];
+}
+
+Future<Map<String, String>> _fileHashes(String directory) async => {
+  await for (final file in Directory(directory).list(recursive: true))
+    if (file is File)
+      p.relative(file.path, from: directory): sha256
+          .convert(await file.readAsBytes())
+          .toString(),
+};
+
+void _sameContrast(LocalSyncContrast actual, LocalSyncContrast expected) {
+  expect(actual.restoreEpoch, expected.restoreEpoch);
+  expect(actual.required, expected.required);
+  expect(actual.unreliable, expected.unreliable);
 }
 
 class _PausedInstall extends NativeBackupPersistence {
@@ -232,6 +288,8 @@ void _journeyTest(
       await journey.seed();
       await body(journey);
     });
+    await journey.dispose();
+    expect(await journey.support.exists(), false);
   }, timeout: timeout);
 }
 
@@ -357,18 +415,87 @@ void main() {
   _journeyTest(
     'fallo de disco tras instalar: rollback íntegro y sin contraste nuevo',
     (journey) async {
+      final reader = createLocalSyncContrastReader(
+        supportDirectory: () async => journey.support,
+      );
+      final before = await reader.read();
+      final manual = p.join(journey.root(), journey.first.relativeDirectory);
+      expect(before.required, false);
+      expect(before.unreliable, false);
+      final manualHashes = await _fileHashes(manual);
+      late String stage;
+      late List<String> phases;
+      late Map<String, Object?> installed, previous;
+      late bool stagedImageExists, installedJournalExists;
+      final disk = _FullDisk(
+        beforeFailure: (directory) async {
+          stage = directory;
+          phases = await _journalPhases(stage);
+          installed = _imageContents(
+            p.join(journey.root(), 'autofinance.sqlite'),
+          );
+          previous = _imageContents(
+            p.join(stage, 'previous', 'autofinance.sqlite'),
+          );
+          stagedImageExists = await File(p.join(stage, 'autofinance.sqlite'))
+              .exists();
+          installedJournalExists = await File(p.join(stage, 'journal-003.json'))
+              .exists();
+        },
+      );
       final result = await journey
-          .restorer(persistence: _FullDisk())
+          .restorer(persistence: disk)
           .restore(journey.first.backupId, confirmed: true);
+      expect(disk.armed, false, reason: 'La inyección debe haberse ejecutado.');
+      expect(phases, ['protected', 'isolating', 'installing']);
+      expect(stagedImageExists, false);
+      expect(installedJournalExists, false);
+      expect(installed, journey.original);
+      expect(previous, journey.modified);
       expect(result.status, LocalRestoreStatus.rolledBack);
       expect(result.previousBackupId, isNotNull);
+      expect(result.maintenancePending, false);
+      final archived = p.join(
+        journey.root(),
+        'local-backups',
+        'diagnostics',
+        p.basename(stage),
+      );
+      expect(await Directory(stage).exists(), false);
+      expect(await _journalPhases(archived), [
+        'protected',
+        'isolating',
+        'installing',
+        'rollingBack',
+        'rolledBack',
+      ]);
+      expect(
+        _imageContents(p.join(archived, 'failed', 'autofinance.sqlite')),
+        journey.original,
+      );
+      await journey.verify(journey.modified);
+      _sameContrast(await reader.read(), before);
       await journey.restart();
       await journey.verify(journey.modified);
+      _sameContrast(await reader.read(), before);
+      expect(await _fileHashes(manual), manualHashes);
+      final catalog = await createLocalBackupCatalog(
+        supportDirectory: () async => journey.support,
+      ).read();
       expect(
-        (await createLocalSyncContrastReader(
-          supportDirectory: () async => journey.support,
-        ).read()).required,
-        false,
+        catalog.entries.map((e) => e.backupId),
+        unorderedEquals([journey.first.backupId, result.previousBackupId]),
+      );
+      final backup = catalog.entries.singleWhere(
+        (e) => e.backupId == result.previousBackupId,
+      );
+      expect(backup.origin, LocalBackupOrigin.preRestore);
+      expect(backup.availability, LocalBackupAvailability.present);
+      expect(backup.validation, LocalBackupValidationState.valid);
+      // No basta que exista el ID: el respaldo debe abrir y restaurar la imagen.
+      await journey.restoreAndVerify(
+        result.previousBackupId!,
+        journey.modified,
       );
       expect(
         (await journey.restorer().restore(
@@ -380,6 +507,63 @@ void main() {
       await journey.restart();
       await journey.verify(journey.original);
     },
+  );
+
+  test(
+    'fallo de disco con observador terminado: drena rollback antes de limpiar',
+    () async {
+      final owner = _RecoveryJourney(
+        await Directory.systemTemp.createTemp('recovery-disk-owner-'),
+      );
+      addTearDown(owner.dispose);
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      final disk = _FullDisk(
+        beforeFailure: (_) async {
+          entered.complete();
+          await release.future;
+        },
+      );
+      final operation = owner.run(() async {
+        await owner.seed();
+        final result = await owner
+            .restorer(persistence: disk)
+            .restore(owner.first.backupId, confirmed: true);
+        expect(result.status, LocalRestoreStatus.rolledBack);
+        await owner.restart();
+        await owner.verify(owner.modified);
+        await owner.restoreAndVerify(owner.first.backupId, owner.original);
+      });
+      try {
+        await Future.any([
+          entered.future,
+          operation.then((_) => fail('No se alcanzó la inyección de disco.')),
+        ]);
+        final observerEnded = Completer<void>()..complete();
+        await Future.any([operation, observerEnded.future]);
+        var disposed = false;
+        final disposal = owner.dispose().then((_) => disposed = true);
+        final next = _RecoveryJourney(
+          await Directory.systemTemp.createTemp('recovery-after-disk-'),
+        );
+        addTearDown(next.dispose);
+        await next.run(() async {
+          await next.seed();
+          await next.verify(next.modified);
+        });
+        expect(disposed, false);
+        expect(await owner.support.exists(), true);
+        release.complete();
+        await operation;
+        await disposal;
+        expect(await owner.support.exists(), false);
+        await next.verify(next.modified);
+      } finally {
+        if (!release.isCompleted) release.complete();
+        await operation;
+      }
+    },
+    timeout: _journeyTimeout,
   );
 
   _journeyTest(
@@ -394,18 +578,38 @@ void main() {
           LocalRestoreStatus.restored,
         );
       }
-      expect(
-        (await journey
-                .restorer(persistence: _FullDisk())
-                .restore(journey.first.backupId, confirmed: true))
-            .status,
-        LocalRestoreStatus.rolledBack,
+      final reader = createLocalSyncContrastReader(
+        supportDirectory: () async => journey.support,
       );
-      await journey.restart();
-      await journey.verify(journey.original);
+      final before = await reader.read();
+      expect(before.restoreEpoch, isNotNull);
+      expect(before.required, true);
+      expect(before.unreliable, false);
       final catalog = createLocalBackupCatalog(
         supportDirectory: () async => journey.support,
       );
+      final priorIds = (await catalog.read()).entries
+          .map((e) => e.backupId)
+          .toSet();
+      final copies = p.join(journey.root(), 'local-backups', 'backups');
+      final beforeHashes = await _fileHashes(copies);
+      final failed = await journey
+          .restorer(persistence: _FullDisk())
+          .restore(journey.first.backupId, confirmed: true);
+      expect(failed.status, LocalRestoreStatus.rolledBack);
+      expect(failed.previousBackupId, isNotNull);
+      _sameContrast(await reader.read(), before);
+      expect(
+        (await catalog.read()).entries.map((e) => e.backupId),
+        unorderedEquals({...priorIds, failed.previousBackupId}),
+      );
+      final afterHashes = await _fileHashes(copies);
+      for (final entry in beforeHashes.entries) {
+        expect(afterHashes[entry.key], entry.value);
+      }
+      await journey.restart();
+      await journey.verify(journey.original);
+      _sameContrast(await reader.read(), before);
       final excess =
           (await catalog.read()).entries
               .where((e) => e.origin == LocalBackupOrigin.preRestore)
